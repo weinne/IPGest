@@ -1,0 +1,151 @@
+### Prompt Completo para o Desenvolvimento de SaaS para Igrejas Presbiterianas no Replit
+
+**Objetivo do Projeto**  
+Desenvolver um SaaS (Software as a Service) multitenant voltado para igrejas presbiterianas, que siga rigorosamente as diretrizes do Manual Presbiteriano da Igreja Presbiteriana do Brasil (IPB). O sistema deve permitir que igrejas se cadastrem e utilizem a plataforma mediante o pagamento de uma assinatura, oferecendo funcionalidades para gestão de membros, grupos, lideranças, geração de relatórios e atas, além de comunicação com membros via e-mail e SMS. A solução deve ser segura, escalável e intuitiva, respeitando as normas administrativas, espirituais e legais da IPB.
+
+---
+
+**Funcionalidades Principais**
+
+1. **Gestão de Membros**  
+   - Cadastro completo de membros com informações detalhadas (nome, data de nascimento, endereço, telefone, e-mail, etc.).  
+   - Classificação de membros em:  
+     - **Comungantes**: Membros que fizeram profissão de fé e têm direito à Ceia do Senhor.  
+     - **Não-Comungantes**: Menores de 18 anos batizados na infância, que ainda não professaram a fé.  
+   - Registro e acompanhamento de alterações de status, incluindo:  
+     - **Admissão**: Por batismo, profissão de fé ou transferência de outra igreja.  
+     - **Transferência**: Para outra congregação ou igreja, com emissão de carta de transferência.  
+     - **Falecimento**: Registro de óbito para atualização do rol de membros.  
+     - Outras situações, como exclusão por disciplina, conforme o Código de Disciplina da IPB.  
+   - **Recepção de Membros**:  
+     - Membros de igrejas evangélicas reconhecidas pela IPB podem ser recebidos por transferência.  
+     - Membros de denominações não reconhecidas devem passar por batismo e/ou profissão de fé.
+
+2. **Gestão de Grupos**  
+   - Criação e gerenciamento de **sociedades internas oficiais** da IPB:  
+     - UCP (União de Crianças Presbiterianas).  
+     - UPA (União Presbiteriana de Adolescentes).  
+     - UMP (União de Mocidade Presbiteriana).  
+     - SAF (Sociedade Auxiliadora Feminina).  
+     - UPH (União Presbiteriana de Homens).  
+   - Criação de grupos adicionais, como grupos de estudo bíblico e ministérios (louvor, evangelismo, ensino).  
+   - Associação e remoção de membros em grupos, garantindo que apenas membros ativos e autorizados participem, conforme as regras de cada sociedade ou ministério.
+
+3. **Gestão de Lideranças**  
+   - Registro e gerenciamento das lideranças da igreja:  
+     - **Conselho**: Presbíteros e pastores responsáveis pelo governo espiritual.  
+     - **Junta Diaconal**: Diáconos focados em assistência social e administração prática.  
+     - **Equipe Pastoral**: Pastores e auxiliares responsáveis pela pregação, ensino e cuidado pastoral.  
+   - Definição de funções específicas:  
+     - **Ministros**: Orientam a liturgia, instruem novos membros, supervisionam a igreja e cuidam dos necessitados.  
+     - **Presbíteros**: Auxiliam no governo, disciplina e cuidado espiritual dos membros.  
+     - **Diáconos**: Responsáveis por assistência social, coleta de ofertas e manutenção da ordem.  
+   - Registro do processo de eleição por assembleia de membros comungantes, com renovação ou substituição de oficiais conforme o período de mandato.
+
+4. **Geração de Relatórios**  
+   - Criação de relatórios personalizados sobre:  
+     - Lista completa de membros (comungantes, não-comungantes, ativos, inativos, sob disciplina).  
+     - Participação em grupos e sociedades internas.  
+     - Dados financeiros, como arrecadação de dízimos e ofertas (se aplicável).  
+   - Exportação de relatórios em formatos como PDF, Excel ou CSV.  
+   - Conformidade com os padrões da IPB para relatórios anuais, incluindo estatísticas exigidas pelo Supremo Concílio.
+
+5. **Geração de Atas**  
+   - Ferramentas para criar e armazenar atas de reuniões do Conselho e Assembleias, com templates pré-definidos que incluam:  
+     - Data, local e participantes.  
+     - Assuntos discutidos e decisões tomadas.  
+     - Assinaturas dos presentes (física ou digitalmente, se permitido).  
+   - Armazenamento seguro e organizado, com busca por data ou tipo de reunião.  
+   - Processo de aprovação e registro de assinaturas, respeitando as regras de validação da IPB.
+
+6. **Comunicação com Membros**  
+   - Envio de comunicações para membros individualmente ou em grupos (lideranças, sociedades internas, etc.), via:  
+     - **E-mail**: Avisos, convites para eventos, boletins informativos.  
+     - **SMS**: Lembretes de reuniões ou mensagens urgentes.  
+   - Integração com serviços de e-mail (ex.: SendGrid, Mailgun) e SMS (ex.: Twilio) para automação.
+
+---
+
+**Requisitos Técnicos**
+
+- **Multitenancy**  
+  - Suporte a múltiplas igrejas, cada uma com seus próprios dados isolados.  
+  - Isolamento de dados por igreja para garantir privacidade e segurança.
+
+- **Autenticação e Autorização**  
+  - Sistema seguro de login (ex.: autenticação com e-mail e senha).  
+  - Controle de permissões por função:  
+    - **Administrador**: Acesso total ao sistema.  
+    - **Líder**: Acesso a áreas específicas (ex.: gestão de grupos ou atas).  
+    - **Membro comum**: Acesso apenas a informações próprias.  
+  - Uso de tecnologias como JWT (JSON Web Tokens) ou OAuth para segurança.
+
+- **Assinatura e Pagamento**  
+  - Integração com gateway de pagamento (ex.: Stripe, PayPal, PagSeguro) para gerenciar assinaturas.  
+  - Controle de acesso ao sistema com base no status da assinatura (bloqueio em caso de inadimplência).
+
+- **Interface de Usuário**  
+  - Desenvolvimento de uma interface web responsiva e intuitiva, acessível em desktops e dispositivos móveis.  
+  - Uso de frameworks como React, Vue.js ou Angular para o frontend.
+
+- **Banco de Dados**  
+  - Uso de banco de dados relacional (ex.: PostgreSQL, MySQL) para armazenar dados estruturados.  
+  - Estrutura multitenant (ex.: schema separado por igreja ou identificador de tenant).
+
+- **API**  
+  - Desenvolvimento de uma API RESTful para integração com outros sistemas ou futuros aplicativos móveis.  
+  - Uso de frameworks como Flask, Django (Python), Express (Node.js) ou Rails (Ruby) para o backend.
+
+---
+
+**Passos Iniciais para o Desenvolvimento**
+
+1. **Configuração do Ambiente**  
+   - Utilize o Replit para configurar o ambiente de desenvolvimento.  
+   - Escolha uma linguagem e framework adequados:  
+     - **Python**: Flask ou Django (com Django REST Framework para a API).  
+     - **Node.js**: Express para o backend e React para o frontend.  
+     - **Ruby**: Rails para desenvolvimento rápido.  
+   - Instale as dependências necessárias para o framework escolhido.
+
+2. **Modelagem do Banco de Dados**  
+   - Defina os modelos de dados para igrejas (tenants), membros, grupos, lideranças, atas e relatórios.  
+   - Implemente relacionamentos entre os modelos, considerando a estrutura multitenant.  
+   - Escolha uma estratégia de multitenancy (ex.: schema separado ou identificador de tenant).
+
+3. **Autenticação e Autorização**  
+   - Implemente autenticação segura (ex.: JWT, OAuth).  
+   - Defina roles e permissões para diferentes tipos de usuários.  
+   - Teste o controle de acesso para garantir o isolamento de dados entre igrejas.
+
+4. **Funcionalidades Principais**  
+   - Comece pelo módulo de **gestão de membros**: cadastro, edição, exclusão e alterações de status.  
+   - Progrida para **gestão de grupos** e **lideranças**.  
+   - Desenvolva ferramentas para **geração de relatórios** e **atas**.  
+   - Integre serviços de comunicação (e-mail e SMS).
+
+5. **Integração de Pagamento**  
+   - Escolha e integre um gateway de pagamento (ex.: Stripe, PayPal).  
+   - Implemente lógica para gerenciar assinaturas e acesso ao sistema.
+
+6. **Testes e Validação**  
+   - Realize testes unitários e de integração.  
+   - Valide o sistema com usuários reais (representantes de igrejas) para coletar feedback.
+
+---
+
+**Conformidade com o Manual da IPB**  
+- **Base Doutrinária**: Respeitar os Símbolos de Westminster (Confissão de Fé, Catecismo Maior e Breve Catecismo).  
+- **Liturgia e Disciplina**: Seguir os Princípios de Liturgia e o Código de Disciplina da IPB para processos como recepção de membros, eleição de oficiais e geração de atas.  
+- **Revisão Contínua**: Validar todas as funcionalidades contra o Manual Presbiteriano para garantir alinhamento.
+
+---
+
+**Considerações Finais**  
+- **Segurança de Dados**: Implementar criptografia de dados sensíveis, backups regulares e proteção contra ataques (ex.: SQL injection, XSS). Garantir conformidade com a LGPD.  
+- **Escalabilidade**: Projetar o sistema para ser escalável, utilizando serviços em nuvem (ex.: AWS, Google Cloud, Heroku).  
+- **Desenvolvimento no Replit**: Utilizar ferramentas de colaboração, realizar commits frequentes e testar regularmente para identificar limitações de desempenho.
+
+---
+
+Este prompt oferece uma visão completa e estruturada para o desenvolvimento do SaaS no Replit, garantindo que o sistema atenda às necessidades das igrejas presbiterianas e esteja em conformidade com as diretrizes da IPB. Agora, você pode iniciar o desenvolvimento seguindo os passos e requisitos detalhados. Boa sorte!
