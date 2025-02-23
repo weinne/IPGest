@@ -1,11 +1,12 @@
-import { useState } from "react";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UsersRound, Pencil, Eye } from "lucide-react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { DataTable } from "@/components/ui/data-table";
-import { Grupo, InsertGrupo } from "@shared/schema";
+import { Grupo } from "@shared/schema";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,9 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { FormDialog } from "@/components/ui/form-dialog";
-import { GrupoForm } from "@/components/forms/grupo-form";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const columns = [
   {
@@ -73,32 +71,9 @@ const columns = [
 
 export default function GruposPage() {
   const { toast } = useToast();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data: grupos = [], isLoading } = useQuery<Grupo[]>({
     queryKey: ["/api/grupos"],
-  });
-
-  const createGrupoMutation = useMutation({
-    mutationFn: async (data: InsertGrupo) => {
-      const response = await apiRequest("POST", "/api/grupos", data);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/grupos"] });
-      setIsCreateDialogOpen(false);
-      toast({
-        title: "Grupo criado",
-        description: "O grupo foi criado com sucesso.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao criar grupo",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
   });
 
   return (
@@ -110,7 +85,7 @@ export default function GruposPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Grupos e Sociedades
           </h1>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button>
             <UsersRound className="mr-2 h-4 w-4" />
             Novo Grupo
           </Button>
@@ -132,17 +107,6 @@ export default function GruposPage() {
             )}
           </CardContent>
         </Card>
-
-        <FormDialog
-          title="Novo Grupo"
-          isOpen={isCreateDialogOpen}
-          onClose={() => setIsCreateDialogOpen(false)}
-        >
-          <GrupoForm
-            onSubmit={(data) => createGrupoMutation.mutate(data)}
-            isSubmitting={createGrupoMutation.isPending}
-          />
-        </FormDialog>
       </main>
     </div>
   );
