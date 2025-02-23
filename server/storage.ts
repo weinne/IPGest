@@ -1,8 +1,11 @@
-import { type User, type InsertUser, type Igreja } from "@shared/schema";
+import { users, igrejas, type User, type InsertUser, type Igreja } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -12,37 +15,28 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private igrejas: Map<number, Igreja>;
-  private currentUserId: number;
-  private currentIgrejaId: number;
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.igrejas = new Map();
-    this.currentUserId = 1;
-    this.currentIgrejaId = 1;
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createIgreja(igreja: Omit<Igreja, "id">): Promise<Igreja> {
-    const id = this.currentIgrejaId++;
-    const novaIgreja = { ...igreja, id };
-    this.igrejas.set(id, novaIgreja);
+    const [novaIgreja] = await db.insert(igrejas).values(igreja).returning();
     return novaIgreja;
   }
 
@@ -64,17 +58,17 @@ export class MemStorage implements IStorage {
     });
 
     // Then create user associated with igreja
-    const id = this.currentUserId++;
-    const user: User = {
-      ...userData,
-      id,
-      role: "admin",
-      igreja_id: igreja.id,
-    };
-    
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...userData,
+        role: "admin",
+        igreja_id: igreja.id,
+      })
+      .returning();
+
     return user;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
