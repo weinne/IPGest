@@ -54,6 +54,7 @@ export function NovoMembroDialog() {
     mutationFn: async (data: InsertMembro) => {
       const res = await apiRequest("POST", "/api/membros", {
         ...data,
+        data_nascimento: data.data_nascimento ? new Date(data.data_nascimento).toISOString() : null,
         data_admissao: new Date().toISOString(),
       });
       return res.json();
