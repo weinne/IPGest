@@ -3,17 +3,18 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Membro } from "@shared/schema";
-import { UserPlus, Pencil, Eye } from "lucide-react";
+import { Pencil, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { NovoMembroDialog } from "./novo-membro-dialog";
 
 const columns = [
   {
@@ -23,7 +24,7 @@ const columns = [
   {
     accessorKey: "tipo",
     header: "Tipo",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const tipo = row.getValue("tipo") as string;
       return tipo === "comungante" ? "Comungante" : "Não Comungante";
     },
@@ -31,7 +32,7 @@ const columns = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const status = row.getValue("status") as string;
       const statusMap = {
         ativo: "Ativo",
@@ -44,14 +45,14 @@ const columns = [
   {
     accessorKey: "data_admissao",
     header: "Data de Admissão",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const date = row.getValue("data_admissao") as string;
       return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
     },
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const membro = row.original as Membro;
 
       return (
@@ -94,10 +95,7 @@ export default function MembrosPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Membros
           </h1>
-          <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Novo Membro
-          </Button>
+          <NovoMembroDialog />
         </div>
 
         <Card>

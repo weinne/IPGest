@@ -16,6 +16,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(membros);
   });
 
+  app.post("/api/membros", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const novoMembro = await storage.createMembro({
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      res.status(201).json(novoMembro);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   // Groups routes
   app.get("/api/grupos", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

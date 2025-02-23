@@ -1,4 +1,4 @@
-import { users, igrejas, membros, grupos, liderancas, type User, type InsertUser, type Igreja, type Membro, type Grupo, type Lideranca } from "@shared/schema";
+import { users, igrejas, membros, grupos, liderancas, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type Lideranca } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -15,6 +15,7 @@ export interface IStorage {
   getMembros(igreja_id: number): Promise<Membro[]>;
   getGrupos(igreja_id: number): Promise<Grupo[]>;
   getLiderancas(igreja_id: number): Promise<Lideranca[]>;
+  createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro>;
   sessionStore: session.Store;
 }
 
@@ -83,6 +84,10 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return user;
+  }
+  async createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro> {
+    const [novoMembro] = await db.insert(membros).values(membro).returning();
+    return novoMembro;
   }
 }
 
