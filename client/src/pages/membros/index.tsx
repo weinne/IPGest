@@ -1,13 +1,94 @@
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { DataTable } from "@/components/ui/data-table";
+import { Membro } from "@shared/schema";
+import { UserPlus, Pencil, Eye } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+
+const columns = [
+  {
+    accessorKey: "nome",
+    header: "Nome",
+  },
+  {
+    accessorKey: "tipo",
+    header: "Tipo",
+    cell: ({ row }) => {
+      const tipo = row.getValue("tipo") as string;
+      return tipo === "comungante" ? "Comungante" : "Não Comungante";
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      const statusMap = {
+        ativo: "Ativo",
+        inativo: "Inativo",
+        disciplina: "Em Disciplina",
+      };
+      return statusMap[status as keyof typeof statusMap] || status;
+    },
+  },
+  {
+    accessorKey: "data_admissao",
+    header: "Data de Admissão",
+    cell: ({ row }) => {
+      const date = row.getValue("data_admissao") as string;
+      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      const membro = row.original as Membro;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Abrir menu</span>
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              <Eye className="mr-2 h-4 w-4" />
+              Visualizar
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Pencil className="mr-2 h-4 w-4" />
+              Editar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
+];
 
 export default function MembrosPage() {
+  const { toast } = useToast();
+
+  const { data: membros = [], isLoading } = useQuery<Membro[]>({
+    queryKey: ["/api/membros"],
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -24,10 +105,15 @@ export default function MembrosPage() {
             <CardTitle>Lista de Membros</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* TODO: Implement member list table */}
-            <p className="text-muted-foreground">
-              Implementar listagem de membros...
-            </p>
+            {isLoading ? (
+              <div className="text-center py-4">Carregando...</div>
+            ) : (
+              <DataTable 
+                columns={columns} 
+                data={membros} 
+                searchColumn="nome"
+              />
+            )}
           </CardContent>
         </Card>
       </main>

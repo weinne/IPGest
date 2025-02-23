@@ -1,4 +1,4 @@
-import { users, igrejas, type User, type InsertUser, type Igreja } from "@shared/schema";
+import { users, igrejas, membros, type User, type InsertUser, type Igreja, type Membro } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -12,6 +12,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   createIgreja(igreja: Omit<Igreja, "id">): Promise<Igreja>;
+  getMembros(igreja_id: number): Promise<Membro[]>;
   sessionStore: session.Store;
 }
 
@@ -38,6 +39,10 @@ export class DatabaseStorage implements IStorage {
   async createIgreja(igreja: Omit<Igreja, "id">): Promise<Igreja> {
     const [novaIgreja] = await db.insert(igrejas).values(igreja).returning();
     return novaIgreja;
+  }
+
+  async getMembros(igreja_id: number): Promise<Membro[]> {
+    return await db.select().from(membros).where(eq(membros.igreja_id, igreja_id));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
