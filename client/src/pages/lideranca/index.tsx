@@ -1,11 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Lideranca } from "@shared/schema";
+import { Lideranca, InsertLideranca } from "@shared/schema";
 import { UserPlus, Pencil, Eye } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,6 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { FormDialog } from "@/components/ui/form-dialog";
+import { LiderancaForm } from "@/components/forms/lideranca-form";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const columns = [
   {
@@ -76,9 +80,32 @@ const columns = [
 
 export default function LiderancaPage() {
   const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data: liderancas = [], isLoading } = useQuery<Lideranca[]>({
     queryKey: ["/api/liderancas"],
+  });
+
+  const createLiderancaMutation = useMutation({
+    mutationFn: async (data: InsertLideranca) => {
+      const response = await apiRequest("POST", "/api/liderancas", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/liderancas"] });
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Liderança criada",
+        description: "A liderança foi criada com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar liderança",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   return (
@@ -90,7 +117,7 @@ export default function LiderancaPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Liderança
           </h1>
-          <Button>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Nova Liderança
           </Button>
@@ -112,6 +139,17 @@ export default function LiderancaPage() {
             )}
           </CardContent>
         </Card>
+
+        <FormDialog
+          title="Nova Liderança"
+          isOpen={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+        >
+          <LiderancaForm
+            onSubmit={(data) => createLiderancaMutation.mutate(data)}
+            isSubmitting={createLiderancaMutation.isPending}
+          />
+        </FormDialog>
       </main>
     </div>
   );

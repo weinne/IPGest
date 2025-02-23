@@ -1,11 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Membro } from "@shared/schema";
+import { Membro, InsertMembro } from "@shared/schema";
 import { UserPlus, Pencil, Eye } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,6 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { FormDialog } from "@/components/ui/form-dialog";
+import { MembroForm } from "@/components/forms/member-form";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const columns = [
   {
@@ -80,9 +84,32 @@ const columns = [
 
 export default function MembrosPage() {
   const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data: membros = [], isLoading } = useQuery<Membro[]>({
     queryKey: ["/api/membros"],
+  });
+
+  const createMembroMutation = useMutation({
+    mutationFn: async (data: InsertMembro) => {
+      const response = await apiRequest("POST", "/api/membros", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/membros"] });
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Membro criado",
+        description: "O membro foi criado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar membro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   return (
@@ -94,7 +121,7 @@ export default function MembrosPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Membros
           </h1>
-          <Button>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Novo Membro
           </Button>
@@ -116,6 +143,17 @@ export default function MembrosPage() {
             )}
           </CardContent>
         </Card>
+
+        <FormDialog
+          title="Novo Membro"
+          isOpen={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+        >
+          <MembroForm
+            onSubmit={(data) => createMembroMutation.mutate(data)}
+            isSubmitting={createMembroMutation.isPending}
+          />
+        </FormDialog>
       </main>
     </div>
   );

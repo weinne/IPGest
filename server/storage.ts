@@ -13,8 +13,11 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   createIgreja(igreja: Omit<Igreja, "id">): Promise<Igreja>;
   getMembros(igreja_id: number): Promise<Membro[]>;
+  createMembro(membro: Omit<Membro, "id">): Promise<Membro>;
   getGrupos(igreja_id: number): Promise<Grupo[]>;
+  createGrupo(grupo: Omit<Grupo, "id">): Promise<Grupo>;
   getLiderancas(igreja_id: number): Promise<Lideranca[]>;
+  createLideranca(lideranca: Omit<Lideranca, "id">): Promise<Lideranca>;
   sessionStore: session.Store;
 }
 
@@ -47,12 +50,27 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(membros).where(eq(membros.igreja_id, igreja_id));
   }
 
+  async createMembro(membro: Omit<Membro, "id">): Promise<Membro> {
+    const [novoMembro] = await db.insert(membros).values(membro).returning();
+    return novoMembro;
+  }
+
   async getGrupos(igreja_id: number): Promise<Grupo[]> {
     return await db.select().from(grupos).where(eq(grupos.igreja_id, igreja_id));
   }
 
+  async createGrupo(grupo: Omit<Grupo, "id">): Promise<Grupo> {
+    const [novoGrupo] = await db.insert(grupos).values(grupo).returning();
+    return novoGrupo;
+  }
+
   async getLiderancas(igreja_id: number): Promise<Lideranca[]> {
     return await db.select().from(liderancas).where(eq(liderancas.igreja_id, igreja_id));
+  }
+
+  async createLideranca(lideranca: Omit<Lideranca, "id">): Promise<Lideranca> {
+    const [novaLideranca] = await db.insert(liderancas).values(lideranca).returning();
+    return novaLideranca;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
