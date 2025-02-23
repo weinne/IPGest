@@ -86,7 +86,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   async createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro> {
-    const [novoMembro] = await db.insert(membros).values(membro).returning();
+    const [novoMembro] = await db.insert(membros).values({
+      ...membro,
+      data_admissao: new Date(),
+      data_nascimento: membro.data_nascimento ? new Date(membro.data_nascimento) : null,
+    }).returning();
     return novoMembro;
   }
 }
