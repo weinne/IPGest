@@ -31,6 +31,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, UserPlus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import cn from 'classnames';
 
 export function NovoMembroDialog() {
   const { toast } = useToast();
@@ -38,6 +39,7 @@ export function NovoMembroDialog() {
 
   const form = useForm<InsertMembro>({
     resolver: zodResolver(insertMembroSchema),
+    mode: "onChange", // Enable real-time validation
     defaultValues: {
       nome: "",
       email: "",
@@ -49,6 +51,9 @@ export function NovoMembroDialog() {
       tipo_admissao: "profissao_fe",
     },
   });
+
+  // Watch form values for real-time validation
+  const { isValid, isDirty } = form.formState;
 
   const mutation = useMutation({
     mutationFn: async (data: InsertMembro) => {
@@ -97,7 +102,14 @@ export function NovoMembroDialog() {
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value || ""} />
+                    <Input 
+                      {...field} 
+                      value={field.value || ""} 
+                      className={cn(
+                        form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
+                        form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
+                      )}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,7 +122,15 @@ export function NovoMembroDialog() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" {...field} value={field.value || ""} />
+                    <Input 
+                      type="email" 
+                      {...field} 
+                      value={field.value || ""} 
+                      className={cn(
+                        form.formState.errors.email && "border-red-500 focus-visible:ring-red-500",
+                        form.formState.dirtyFields.email && !form.formState.errors.email && "border-green-500 focus-visible:ring-green-500"
+                      )}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -123,7 +143,16 @@ export function NovoMembroDialog() {
                 <FormItem>
                   <FormLabel>Telefone</FormLabel>
                   <FormControl>
-                    <Input type="tel" {...field} value={field.value || ""} />
+                    <Input 
+                      type="tel" 
+                      {...field} 
+                      value={field.value || ""} 
+                      className={cn(
+                        form.formState.errors.telefone && "border-red-500 focus-visible:ring-red-500",
+                        form.formState.dirtyFields.telefone && !form.formState.errors.telefone && "border-green-500 focus-visible:ring-green-500"
+                      )}
+                      placeholder="(11) 98765-4321"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,7 +165,14 @@ export function NovoMembroDialog() {
                 <FormItem>
                   <FormLabel>Endereço</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value || ""} />
+                    <Input 
+                      {...field} 
+                      value={field.value || ""} 
+                      className={cn(
+                        form.formState.errors.endereco && "border-red-500 focus-visible:ring-red-500",
+                        form.formState.dirtyFields.endereco && !form.formState.errors.endereco && "border-green-500 focus-visible:ring-green-500"
+                      )}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -149,7 +185,16 @@ export function NovoMembroDialog() {
                 <FormItem>
                   <FormLabel>Data de Nascimento</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} value={field.value || ""} />
+                    <Input 
+                      type="date" 
+                      {...field} 
+                      value={field.value || ""} 
+                      className={cn(
+                        form.formState.errors.data_nascimento && "border-red-500 focus-visible:ring-red-500",
+                        form.formState.dirtyFields.data_nascimento && !form.formState.errors.data_nascimento && "border-green-500 focus-visible:ring-green-500"
+                      )}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -163,7 +208,10 @@ export function NovoMembroDialog() {
                   <FormLabel>Tipo</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className={cn(
+                        form.formState.errors.tipo && "border-red-500 focus-visible:ring-red-500",
+                        form.formState.dirtyFields.tipo && !form.formState.errors.tipo && "border-green-500 focus-visible:ring-green-500"
+                      )}>
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                     </FormControl>
@@ -184,7 +232,10 @@ export function NovoMembroDialog() {
                   <FormLabel>Tipo de Admissão</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className={cn(
+                        form.formState.errors.tipo_admissao && "border-red-500 focus-visible:ring-red-500",
+                        form.formState.dirtyFields.tipo_admissao && !form.formState.errors.tipo_admissao && "border-green-500 focus-visible:ring-green-500"
+                      )}>
                         <SelectValue placeholder="Selecione o tipo de admissão" />
                       </SelectTrigger>
                     </FormControl>
@@ -198,7 +249,11 @@ export function NovoMembroDialog() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={mutation.isPending}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={mutation.isPending || !isValid || !isDirty}
+            >
               {mutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}

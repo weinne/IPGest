@@ -75,6 +75,48 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertMembroSchema = createInsertSchema(membros).omit({ 
   igreja_id: true,
   data_admissao: true,
+}).extend({
+  nome: z.string()
+    .min(3, "Nome deve ter pelo menos 3 caracteres")
+    .max(100, "Nome não pode ter mais de 100 caracteres")
+    .regex(/^[a-zA-ZÀ-ÿ\s]*$/, "Nome deve conter apenas letras"),
+  email: z.string()
+    .email("Email inválido")
+    .optional()
+    .nullable()
+    .transform(e => e === "" ? null : e),
+  telefone: z.string()
+    .regex(/^\(?[1-9]{2}\)? ?(?:[2-8]|9[1-9])[0-9]{3}\-?[0-9]{4}$/, "Telefone inválido")
+    .optional()
+    .nullable()
+    .transform(t => t === "" ? null : t),
+  endereco: z.string()
+    .min(5, "Endereço deve ter pelo menos 5 caracteres")
+    .max(200, "Endereço não pode ter mais de 200 caracteres")
+    .optional()
+    .nullable()
+    .transform(e => e === "" ? null : e),
+  data_nascimento: z.string()
+    .refine((date) => {
+      if (!date) return true;
+      const d = new Date(date);
+      return !isNaN(d.getTime()) && d <= new Date();
+    }, "Data de nascimento inválida")
+    .optional()
+    .nullable()
+    .transform(d => d === "" ? null : d),
+  tipo: z.enum(["comungante", "nao_comungante"], {
+    required_error: "Selecione o tipo de membro",
+    invalid_type_error: "Tipo inválido",
+  }),
+  tipo_admissao: z.enum(["batismo", "profissao_fe", "transferencia"], {
+    required_error: "Selecione o tipo de admissão",
+    invalid_type_error: "Tipo de admissão inválido",
+  }),
+  status: z.enum(["ativo", "inativo", "disciplina"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
 });
 
 export const insertGrupoSchema = createInsertSchema(grupos).omit({
