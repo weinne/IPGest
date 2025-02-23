@@ -1,13 +1,85 @@
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UsersRound } from "lucide-react";
+import { UsersRound, Pencil, Eye } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { DataTable } from "@/components/ui/data-table";
+import { Grupo } from "@shared/schema";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+
+const columns = [
+  {
+    accessorKey: "nome",
+    header: "Nome",
+  },
+  {
+    accessorKey: "tipo",
+    header: "Tipo",
+    cell: ({ row }) => {
+      const tipo = row.getValue("tipo") as string;
+      const tipoMap = {
+        UCP: "UCP",
+        UPA: "UPA",
+        UMP: "UMP",
+        SAF: "SAF",
+        UPH: "UPH",
+        outro: "Outro",
+      };
+      return tipoMap[tipo as keyof typeof tipoMap] || tipo;
+    },
+  },
+  {
+    accessorKey: "descricao",
+    header: "Descrição",
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      const grupo = row.original as Grupo;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Abrir menu</span>
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              <Eye className="mr-2 h-4 w-4" />
+              Visualizar
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Pencil className="mr-2 h-4 w-4" />
+              Editar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
+];
 
 export default function GruposPage() {
+  const { toast } = useToast();
+
+  const { data: grupos = [], isLoading } = useQuery<Grupo[]>({
+    queryKey: ["/api/grupos"],
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -24,10 +96,15 @@ export default function GruposPage() {
             <CardTitle>Sociedades Internas</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* TODO: Implement groups grid */}
-            <p className="text-muted-foreground">
-              Implementar grid de grupos e sociedades...
-            </p>
+            {isLoading ? (
+              <div className="text-center py-4">Carregando...</div>
+            ) : (
+              <DataTable 
+                columns={columns} 
+                data={grupos} 
+                searchColumn="nome"
+              />
+            )}
           </CardContent>
         </Card>
       </main>

@@ -1,4 +1,4 @@
-import { users, igrejas, membros, type User, type InsertUser, type Igreja, type Membro } from "@shared/schema";
+import { users, igrejas, membros, grupos, liderancas, type User, type InsertUser, type Igreja, type Membro, type Grupo, type Lideranca } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -13,6 +13,8 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   createIgreja(igreja: Omit<Igreja, "id">): Promise<Igreja>;
   getMembros(igreja_id: number): Promise<Membro[]>;
+  getGrupos(igreja_id: number): Promise<Grupo[]>;
+  getLiderancas(igreja_id: number): Promise<Lideranca[]>;
   sessionStore: session.Store;
 }
 
@@ -43,6 +45,14 @@ export class DatabaseStorage implements IStorage {
 
   async getMembros(igreja_id: number): Promise<Membro[]> {
     return await db.select().from(membros).where(eq(membros.igreja_id, igreja_id));
+  }
+
+  async getGrupos(igreja_id: number): Promise<Grupo[]> {
+    return await db.select().from(grupos).where(eq(grupos.igreja_id, igreja_id));
+  }
+
+  async getLiderancas(igreja_id: number): Promise<Lideranca[]> {
+    return await db.select().from(liderancas).where(eq(liderancas.igreja_id, igreja_id));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
