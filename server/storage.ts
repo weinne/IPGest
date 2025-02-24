@@ -1,4 +1,4 @@
-import { users, igrejas, membros, grupos, membros_grupos, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo } from "@shared/schema";
+import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import session from "express-session";
@@ -15,7 +15,10 @@ export interface IStorage {
   getMembros(igreja_id: number): Promise<Membro[]>;
   getGrupos(igreja_id: number): Promise<Grupo[]>;
   getLiderancas(igreja_id: number): Promise<Lideranca[]>;
+  getPastores(igreja_id: number): Promise<Pastor[]>;
   createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro>;
+  createLideranca(lideranca: InsertLideranca & { igreja_id: number }): Promise<Lideranca>;
+  createPastor(pastor: InsertPastor & { igreja_id: number }): Promise<Pastor>;
   sessionStore: session.Store;
   createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo>;
   addMembrosToGrupo(grupo_id: number, membros: { membro_id: number; cargo: string }[]): Promise<void>;
@@ -59,6 +62,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(liderancas).where(eq(liderancas.igreja_id, igreja_id));
   }
 
+  async getPastores(igreja_id: number): Promise<Pastor[]> {
+    return await db.select().from(pastores).where(eq(pastores.igreja_id, igreja_id));
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const {
       igreja_nome,
@@ -96,6 +103,23 @@ export class DatabaseStorage implements IStorage {
       data_nascimento: membro.data_nascimento ? new Date(membro.data_nascimento) : null,
     }).returning();
     return novoMembro;
+  }
+
+  async createLideranca(lideranca: InsertLideranca & { igreja_id: number }): Promise<Lideranca> {
+    const [novaLideranca] = await db.insert(liderancas).values({
+      ...lideranca,
+      data_eleicao: new Date(),
+      data_inicio: new Date(),
+    }).returning();
+    return novaLideranca;
+  }
+
+  async createPastor(pastor: InsertPastor & { igreja_id: number }): Promise<Pastor> {
+    const [novoPastor] = await db.insert(pastores).values({
+      ...pastor,
+      data_inicio: new Date(),
+    }).returning();
+    return novoPastor;
   }
 
   async createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo> {
