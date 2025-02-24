@@ -64,6 +64,37 @@ const liderancasColumns = [
     },
   },
   {
+    id: "historico",
+    header: "Histórico",
+    cell: ({ row }: { row: any }) => {
+      const mandatos = row.original.mandatos as MandatoLideranca[];
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              Ver Histórico ({mandatos.length})
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Histórico de Mandatos</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {mandatos.map((mandato) => (
+                <div key={mandato.id} className="border p-4 rounded-lg">
+                  <p>Status: {mandato.status}</p>
+                  <p>Eleição: {format(new Date(mandato.data_eleicao), "dd/MM/yyyy")}</p>
+                  <p>Início: {format(new Date(mandato.data_inicio), "dd/MM/yyyy")}</p>
+                  <p>Término: {mandato.data_fim ? format(new Date(mandato.data_fim), "dd/MM/yyyy") : "-"}</p>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }: { row: any }) => {
       const lideranca = row.original as Lideranca;
@@ -185,6 +216,9 @@ export default function LiderancaPage() {
     ...lideranca,
     mandato: mandatosLiderancas.find(
       m => m.lideranca_id === lideranca.id && m.status === "ativo"
+    ),
+    mandatos: mandatosLiderancas.filter(
+      m => m.lideranca_id === lideranca.id
     ),
   }));
 
