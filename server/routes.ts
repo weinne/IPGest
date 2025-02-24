@@ -84,12 +84,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(membros);
   });
 
-  app.post("/api/membros", canWrite, async (req, res) => {
+  app.post("/api/membros", upload.single('foto'), canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
       const novoMembro = await storage.createMembro({
         ...req.body,
+        foto: req.file ? req.file.filename : null,
         igreja_id: req.user.igreja_id,
       });
       res.status(201).json(novoMembro);
@@ -111,15 +112,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/membros/:id", isAdmin, async (req, res) => {
+  app.patch("/api/membros/:id", upload.single('foto'), isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
       const membroId = parseInt(req.params.id);
-      const membro = await storage.updateMembro(membroId, {
+      const updateData = {
         ...req.body,
         igreja_id: req.user.igreja_id,
-      });
+      };
+
+      if (req.file) {
+        updateData.foto = req.file.filename;
+      }
+
+      const membro = await storage.updateMembro(membroId, updateData);
       logAudit(req, "EDIÇÃO", "membro", membroId);
       res.json(membro);
     } catch (error) {
