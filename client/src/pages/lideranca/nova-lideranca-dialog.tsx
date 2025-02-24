@@ -66,31 +66,29 @@ export function NovaLiderancaDialog() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: InsertLideranca) => {
+    mutationFn: async (values: any) => {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
-      
-      console.log("Dados do form:", data);
 
-      // Validar datas obrigatórias
+      console.log("Dados do form:", values);
+
+      const data = {
+        membro_id: values.membro_id,
+        cargo: values.cargo,
+        igreja_id: user.igreja_id,
+        data_eleicao: values.data_eleicao ? new Date(values.data_eleicao).toISOString() : undefined,
+        data_inicio: values.data_inicio ? new Date(values.data_inicio).toISOString() : undefined,
+        data_fim: values.data_fim ? new Date(values.data_fim).toISOString() : null,
+        status: values.status || 'ativo',
+      };
+
       if (!data.data_eleicao) throw new Error("Data de eleição é obrigatória");
       if (!data.data_inicio) throw new Error("Data de início é obrigatória");
 
-      // Primeiro criar a liderança
-      const formData = {
-        membro_id: data.membro_id,
-        cargo: data.cargo,
-        igreja_id: user.igreja_id,
-        data_eleicao: data.data_eleicao,
-        data_inicio: data.data_inicio,
-        data_fim: data.data_fim || null,
-        status: data.status || 'ativo',
-      };
+      console.log("Dados formatados:", data);
 
-      console.log("Dados formatados:", formData);
+      console.log("Enviando formulário:", data);
 
-      console.log("Enviando formulário:", formData);
-
-      const liderancaRes = await apiRequest("POST", "/api/liderancas", formData);
+      const liderancaRes = await apiRequest("POST", "/api/liderancas", data);
 
       if (!liderancaRes.ok) {
         throw new Error("Erro ao criar liderança");
@@ -101,9 +99,9 @@ export function NovaLiderancaDialog() {
       // Depois criar o mandato
       const mandatoRes = await apiRequest("POST", "/api/mandatos/liderancas", {
         lideranca_id: lideranca.id,
-        data_eleicao: data.data_eleicao ? new Date(data.data_eleicao).toISOString() : undefined,
-        data_inicio: data.data_inicio ? new Date(data.data_inicio).toISOString() : undefined,
-        data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : undefined,
+        data_eleicao: data.data_eleicao,
+        data_inicio: data.data_inicio,
+        data_fim: data.data_fim,
         status: data.status,
         igreja_id: user.igreja_id,
       });
