@@ -102,7 +102,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: grupoMembros.map(({ membro, cargo }) => ({
+      membros: grupoMembros?.length ? grupoMembros.map(({ membro, cargo }) => ({
         membro_id: membro.id,
         cargo,
       })),
