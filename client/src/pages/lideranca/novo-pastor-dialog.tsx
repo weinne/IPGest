@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { PastorSchema } from "@shared/schema"; // Assuming this is the correct path
+import { insertPastorSchema } from "@shared/schema"; // Assuming this is the correct path
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,7 +25,7 @@ export function NovoPastorDialog({ open, onOpenChange }: { open: boolean; onOpen
 
 
   const form = useForm({
-    resolver: zodResolver(PastorSchema),
+    resolver: zodResolver(insertPastorSchema),
     defaultValues: {
       nome: "",
       cpf: "",
