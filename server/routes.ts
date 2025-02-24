@@ -219,6 +219,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/mandatos/liderancas/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const mandatoId = parseInt(req.params.id);
+      console.log("Deletando mandato de liderança:", mandatoId);
+      await storage.deleteMandatoLideranca(mandatoId);
+      console.log("Mandato de liderança deletado com sucesso");
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Erro ao deletar mandato de liderança:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   // Mandatos de pastores
   app.get("/api/mandatos/pastores", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -249,6 +265,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(novoMandato);
     } catch (error) {
       console.error("Erro ao criar mandato de pastor:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/mandatos/pastores/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const mandatoId = parseInt(req.params.id);
+      console.log("Deletando mandato de pastor:", mandatoId);
+      await storage.deleteMandatoPastor(mandatoId);
+      console.log("Mandato de pastor deletado com sucesso");
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Erro ao deletar mandato de pastor:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
