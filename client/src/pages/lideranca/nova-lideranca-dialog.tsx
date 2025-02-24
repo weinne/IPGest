@@ -57,6 +57,9 @@ export function NovaLiderancaDialog() {
   const form = useForm<InsertLideranca>({
     resolver: zodResolver(insertLiderancaSchema),
     defaultValues: {
+      data_eleicao: new Date().toISOString(),
+      data_inicio: new Date().toISOString(),
+      data_fim: undefined,
       cargo: "presbitero",
       status: "ativo",
     },
@@ -164,7 +167,15 @@ export function NovaLiderancaDialog() {
                   <FormItem>
                     <FormLabel>Data da Eleição</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -178,7 +189,15 @@ export function NovaLiderancaDialog() {
                   <FormItem>
                     <FormLabel>Data de Início</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -192,7 +211,15 @@ export function NovaLiderancaDialog() {
                   <FormItem>
                     <FormLabel>Data de Fim (opcional)</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
