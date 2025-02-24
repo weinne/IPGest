@@ -71,6 +71,7 @@ export function NovoPastorDialog() {
         }
       });
       formData.append('igreja_id', user.igreja_id.toString());
+      formData.append('data_inicio', new Date().toISOString());
 
       const res = await fetch('/api/pastores', {
         method: 'POST',
