@@ -68,17 +68,24 @@ export function NovaLiderancaDialog() {
   const mutation = useMutation({
     mutationFn: async (data: InsertLideranca) => {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
+      
+      console.log("Dados do form:", data);
+
+      if (!data.data_eleicao) throw new Error("Data de eleição é obrigatória");
+      if (!data.data_inicio) throw new Error("Data de início é obrigatória"); 
 
       // Primeiro criar a liderança
       const formData = {
         membro_id: data.membro_id,
         cargo: data.cargo,
         igreja_id: user.igreja_id,
-        data_eleicao: data.data_eleicao ? new Date(data.data_eleicao).toISOString() : undefined,
-        data_inicio: data.data_inicio ? new Date(data.data_inicio).toISOString() : undefined,
+        data_eleicao: new Date(data.data_eleicao).toISOString(),
+        data_inicio: new Date(data.data_inicio).toISOString(),
         data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : null,
         status: data.status || 'ativo',
       };
+
+      console.log("Dados formatados:", formData);
 
       console.log("Enviando formulário:", formData);
 
