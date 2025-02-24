@@ -227,6 +227,9 @@ export const insertLiderancaSchema = createInsertSchema(liderancas).omit({
     required_error: "Selecione o status",
     invalid_type_error: "Status inválido",
   }),
+  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
+  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
+  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
 });
 
 // Types
