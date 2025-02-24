@@ -89,15 +89,15 @@ export function NovoMembroDialog() {
           Novo Membro
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex flex-col max-h-[85vh] md:max-h-[90vh] gap-0">
-        <DialogHeader className="px-6 py-4">
+      <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Cadastrar Novo Membro</DialogTitle>
           <DialogDescription>
             Preencha os dados do novo membro da igreja.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
             <form id="new-member-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4 py-4">
               <FormField
@@ -258,7 +258,7 @@ export function NovoMembroDialog() {
           </Form>
         </ScrollArea>
 
-        <div className="flex justify-end px-6 py-4 border-t">
+        <div className="flex justify-end px-6 py-4 border-t mt-auto">
           <Button 
             form="new-member-form"
             type="submit" 

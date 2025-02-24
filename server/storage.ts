@@ -226,6 +226,18 @@ export class DatabaseStorage implements IStorage {
     return updatedMandato;
   }
   async deleteMembro(id: number): Promise<void> {
+    // First check if member has any dependencies
+    const [lideranca] = await db.select().from(liderancas).where(eq(liderancas.membro_id, id));
+    const [grupoMembro] = await db.select().from(membros_grupos).where(eq(membros_grupos.membro_id, id));
+
+    if (lideranca) {
+      throw new Error("Não é possível excluir este membro pois ele está cadastrado como liderança.");
+    }
+
+    if (grupoMembro) {
+      throw new Error("Não é possível excluir este membro pois ele está cadastrado em um ou mais grupos.");
+    }
+
     await db.delete(membros).where(eq(membros.id, id));
   }
 

@@ -62,6 +62,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/membros/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const membroId = parseInt(req.params.id);
+      const membro = await storage.updateMembro(membroId, {
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      res.json(membro);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
 
   // Groups routes
   app.get("/api/grupos", async (req, res) => {
@@ -95,6 +111,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const grupoId = parseInt(req.params.id);
       await storage.deleteGrupo(grupoId);
       res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.patch("/api/grupos/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const grupoId = parseInt(req.params.id);
+      const grupo = await storage.updateGrupo(grupoId, {
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      res.json(grupo);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }
@@ -250,6 +282,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add PATCH endpoints for mandate updates
+  app.patch("/api/mandatos/liderancas/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const mandatoId = parseInt(req.params.id);
+      console.log("Atualizando mandato de liderança:", mandatoId, "dados:", req.body);
+      const mandato = await storage.updateMandatoLideranca(mandatoId, {
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      console.log("Mandato de liderança atualizado com sucesso:", mandato);
+      res.json(mandato);
+    } catch (error) {
+      console.error("Erro ao atualizar mandato de liderança:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.patch("/api/mandatos/pastores/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const mandatoId = parseInt(req.params.id);
+      console.log("Atualizando mandato de pastor:", mandatoId, "dados:", req.body);
+      const mandato = await storage.updateMandatoPastor(mandatoId, {
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      console.log("Mandato de pastor atualizado com sucesso:", mandato);
+      res.json(mandato);
+    } catch (error) {
+      console.error("Erro ao atualizar mandato de pastor:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   // Mandatos de pastores
   app.get("/api/mandatos/pastores", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -296,45 +367,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true }); //Updated to return JSON
     } catch (error) {
       console.error("Erro ao deletar mandato de pastor:", error);
-      res.status(400).json({ message: (error as Error).message });
-    }
-  });
-
-  // Add PATCH endpoints for mandate updates
-  app.patch("/api/mandatos/liderancas/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-
-    try {
-      const mandatoId = parseInt(req.params.id);
-      console.log("Atualizando mandato de liderança:", mandatoId, "dados:", req.body);
-      const mandato = await storage.updateMandatoLideranca(mandatoId, {
-        ...req.body,
-        igreja_id: req.user.igreja_id,
-      });
-      console.log("Mandato de liderança atualizado com sucesso:", mandato);
-      res.json(mandato);
-    } catch (error) {
-      console.error("Erro ao atualizar mandato de liderança:", error);
-      res.status(400).json({ message: (error as Error).message });
-    }
-  });
-
-  app.patch("/api/mandatos/pastores/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-
-    try {
-      const mandatoId = parseInt(req.params.id);
-      console.log("Atualizando mandato de pastor:", mandatoId, "dados:", req.body);
-      const mandato = await storage.updateMandatoPastor(mandatoId, {
-        ...req.body,
-        igreja_id: req.user.igreja_id,
-      });
-      console.log("Mandato de pastor atualizado com sucesso:", mandato);
-      res.json(mandato);
-    } catch (error) {
-      console.error("Erro ao atualizar mandato de pastor:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });

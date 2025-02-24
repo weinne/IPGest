@@ -23,14 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { insertGrupoSchema, type InsertGrupo, type Membro } from "@shared/schema";
-import { Loader2, UsersRound } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import cn from 'classnames';
 import {
   Command,
   CommandEmpty,
@@ -43,7 +35,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CheckIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { insertGrupoSchema, type InsertGrupo, type Membro } from "@shared/schema";
+import { Loader2, UsersRound, CheckIcon } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import cn from 'classnames';
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const tiposGrupo = {
@@ -124,14 +123,14 @@ export function NovoGrupoDialog() {
           Novo Grupo
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex flex-col max-h-[85vh] md:max-h-[90vh] gap-0">
-        <DialogHeader className="px-6 py-4">
+      <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Cadastrar Novo Grupo</DialogTitle>
           <DialogDescription>
             Preencha os dados do novo grupo ou sociedade interna.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 px-6">
+        <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
             <form id="new-group-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4 py-4">
               <FormField
@@ -341,7 +340,7 @@ export function NovoGrupoDialog() {
           </Form>
         </ScrollArea>
 
-        <div className="flex justify-end px-6 py-4 border-t">
+        <div className="flex justify-end px-6 py-4 border-t mt-auto">
           <Button 
             form="new-group-form"
             type="submit" 
