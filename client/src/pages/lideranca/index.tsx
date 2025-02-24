@@ -116,6 +116,21 @@ const liderancasColumns = [
     id: "actions",
     cell: ({ row }: { row: any }) => {
       const lideranca = row.original as Lideranca;
+      
+      return (
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setSelectedLideranca(lideranca);
+              setShowNovaLiderancaDialog(true);
+            }}
+          >
+            Novo Mandato
+          </Button>
+        </div>
+      );
       const {handleSubmit} = useForm();
       const onSubmit = (data: any) => {
         console.log(data);
