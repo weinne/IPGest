@@ -96,7 +96,16 @@ export class DatabaseStorage implements IStorage {
       ...userData
     } = insertUser;
 
-    // Create igreja first
+    // Se já temos igreja_id, não criar nova igreja
+    if (userData.igreja_id) {
+      const [user] = await db
+        .insert(users)
+        .values(userData)
+        .returning();
+      return user;
+    }
+
+    // Se não temos igreja_id, criar nova igreja primeiro
     const igreja = await this.createIgreja({
       nome: igreja_nome,
       cidade: igreja_cidade,
@@ -104,7 +113,7 @@ export class DatabaseStorage implements IStorage {
       presbitero: igreja_presbitero,
     });
 
-    // Then create user associated with igreja
+    // Então criar usuário associado com igreja
     const [user] = await db
       .insert(users)
       .values({
