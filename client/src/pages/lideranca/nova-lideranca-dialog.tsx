@@ -69,6 +69,10 @@ export function NovaLiderancaDialog() {
     mutationFn: async (data: InsertLideranca) => {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
+      // Validar datas antes de enviar
+      if (!data.data_eleicao) throw new Error("Data de eleição é obrigatória");
+      if (!data.data_inicio) throw new Error("Data de início é obrigatória");
+
       // Primeiro criar a liderança
       const formData = {
         membro_id: data.membro_id,
@@ -76,12 +80,12 @@ export function NovaLiderancaDialog() {
         igreja_id: user.igreja_id,
         data_eleicao: data.data_eleicao,
         data_inicio: data.data_inicio,
-        data_fim: data.data_fim,
-        status: data.status,
+        data_fim: data.data_fim || null,
+        status: data.status || 'ativo',
       };
 
-      console.log("Enviando dados:", formData);
-      
+      console.log("Enviando formulário:", formData);
+
       const liderancaRes = await apiRequest("POST", "/api/liderancas", formData);
 
       if (!liderancaRes.ok) {
