@@ -1,6 +1,6 @@
 import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, mandatos_pastores, mandatos_liderancas, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor, type MandatoPastor, type InsertMandatoPastor, type MandatoLideranca, type InsertMandatoLideranca } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -27,6 +27,8 @@ export interface IStorage {
   createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo>;
   addMembrosToGrupo(grupo_id: number, membros: { membro_id: number; cargo: string }[]): Promise<void>;
   getGrupoMembros(grupo_id: number): Promise<Array<{ membro: Membro; cargo: string }>>;
+  deleteMandatoLideranca(id: number): Promise<void>;
+  deleteMandatoPastor(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -182,6 +184,13 @@ export class DatabaseStorage implements IStorage {
       membro: r.membro,
       cargo: r.cargo,
     }));
+  }
+  async deleteMandatoLideranca(id: number): Promise<void> {
+    await db.delete(mandatos_liderancas).where(eq(mandatos_liderancas.id, id));
+  }
+
+  async deleteMandatoPastor(id: number): Promise<void> {
+    await db.delete(mandatos_pastores).where(eq(mandatos_pastores.id, id));
   }
 }
 
