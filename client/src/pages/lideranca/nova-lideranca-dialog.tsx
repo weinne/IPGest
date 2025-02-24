@@ -15,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -30,7 +29,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertLiderancaSchema, type InsertLideranca, type Membro } from "@shared/schema";
 import { Loader2, UserPlus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import cn from 'classnames';
+import { useAuth } from "@/hooks/use-auth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const cargos = {
@@ -48,6 +47,7 @@ const status = {
 export function NovaLiderancaDialog() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
     queryKey: ["/api/membros"],
@@ -63,7 +63,12 @@ export function NovaLiderancaDialog() {
 
   const mutation = useMutation({
     mutationFn: async (data: InsertLideranca) => {
-      const res = await apiRequest("POST", "/api/liderancas", data);
+      if (!user?.igreja_id) throw new Error("Igreja não encontrada");
+
+      const res = await apiRequest("POST", "/api/liderancas", {
+        ...data,
+        igreja_id: user.igreja_id,
+      });
       return res.json();
     },
     onSuccess: () => {

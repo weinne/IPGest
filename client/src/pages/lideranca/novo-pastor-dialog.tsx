@@ -29,7 +29,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { insertPastorSchema, type InsertPastor } from "@shared/schema";
 import { Loader2, UserPlus } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import cn from 'classnames';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,6 +48,7 @@ const yearsRange = Array.from(
 export function NovoPastorDialog() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const form = useForm<InsertPastor>({
     resolver: zodResolver(insertPastorSchema),
@@ -59,6 +60,8 @@ export function NovoPastorDialog() {
 
   const mutation = useMutation({
     mutationFn: async (data: InsertPastor) => {
+      if (!user?.igreja_id) throw new Error("Igreja não encontrada");
+
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         if (value instanceof File) {
@@ -67,6 +70,7 @@ export function NovoPastorDialog() {
           formData.append(key, value.toString());
         }
       });
+      formData.append('igreja_id', user.igreja_id.toString());
 
       const res = await fetch('/api/pastores', {
         method: 'POST',
