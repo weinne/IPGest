@@ -36,7 +36,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 
 const tiposVinculo = {
-  efetivo: "Efetivo",
+  eleito: "Eleito",
   designado: "Designado",
 } as const;
 
@@ -61,7 +61,9 @@ export function NovoPastorDialog() {
       bio: "",
       tipo_vinculo: "efetivo",
       ano_ordenacao: currentYear,
+      data_eleicao: new Date().toISOString(),
       data_inicio: new Date().toISOString(),
+      data_fim: undefined,
     },
   });
 
@@ -250,6 +252,69 @@ export function NovoPastorDialog() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="data_eleicao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data da Eleição</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="data_inicio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Início</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="data_fim"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Término (opcional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="ano_ordenacao"

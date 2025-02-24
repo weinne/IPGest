@@ -78,7 +78,7 @@ export const pastores = pgTable("pastores", {
   data_inicio: timestamp("data_inicio").notNull(),
   data_fim: timestamp("data_fim"),
   tipo_vinculo: text("tipo_vinculo", {
-    enum: ["efetivo", "designado"]
+    enum: ["eleito", "designado"]
   }).notNull(),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
@@ -211,10 +211,13 @@ export const insertPastorSchema = createInsertSchema(pastores).omit({
   foto: z.any().optional().nullable(),
   bio: z.string().max(1000, "Biografia não pode ter mais de 1000 caracteres").optional().nullable(),
   ano_ordenacao: z.number().int().min(1900).max(new Date().getFullYear()),
-  tipo_vinculo: z.enum(["efetivo", "designado"], {
+  tipo_vinculo: z.enum(["eleito", "designado"], {
     required_error: "Selecione o tipo de vínculo",
     invalid_type_error: "Tipo de vínculo inválido",
   }),
+  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
+  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
+  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
 });
 
 // Schema para inserção de lideranças
