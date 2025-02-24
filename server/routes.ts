@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import { join } from "path";
 import { mkdir } from "fs/promises";
+import { canWrite, isAdmin } from "./middleware";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -34,8 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(membros);
   });
 
-  app.post("/api/membros", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/membros", canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -49,8 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/membros/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/membros/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -62,8 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/membros/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.patch("/api/membros/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -88,8 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(grupos);
   });
 
-  app.post("/api/grupos", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/grupos", canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -103,8 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/grupos/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/grupos/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -116,8 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/grupos/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.patch("/api/grupos/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -160,8 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/liderancas", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/liderancas", canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -216,8 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/pastores", upload.single('foto'), async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/pastores", upload.single('foto'), canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -260,8 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/mandatos/liderancas", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/mandatos/liderancas", canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -278,8 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/mandatos/liderancas/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/mandatos/liderancas/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -287,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Deletando mandato de liderança:", mandatoId);
       await storage.deleteMandatoLideranca(mandatoId);
       console.log("Mandato de liderança deletado com sucesso");
-      res.json({ success: true }); //Updated to return JSON
+      res.json({ success: true });
     } catch (error) {
       console.error("Erro ao deletar mandato de liderança:", error);
       res.status(400).json({ message: (error as Error).message });
@@ -295,8 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add PATCH endpoints for mandate updates
-  app.patch("/api/mandatos/liderancas/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.patch("/api/mandatos/liderancas/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -314,8 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/mandatos/pastores/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.patch("/api/mandatos/pastores/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -349,8 +338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/mandatos/pastores", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/mandatos/pastores", canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -367,8 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/mandatos/pastores/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/mandatos/pastores/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
@@ -376,9 +363,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Deletando mandato de pastor:", mandatoId);
       await storage.deleteMandatoPastor(mandatoId);
       console.log("Mandato de pastor deletado com sucesso");
-      res.json({ success: true }); //Updated to return JSON
+      res.json({ success: true });
     } catch (error) {
       console.error("Erro ao deletar mandato de pastor:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  // User management routes
+  app.post("/api/users", isAdmin, async (req, res) => {
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Nome de usuário já existe" });
+      }
+
+      const user = await storage.createUser({
+        username: req.body.username,
+        password: req.body.password,
+        role: req.body.role || "comum",
+        igreja_id: req.user.igreja_id
+      });
+
+      res.status(201).json(user);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/users", isAdmin, async (req, res) => {
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const users = await storage.getUsersByIgreja(req.user.igreja_id);
+      res.json(users);
+    } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }
   });

@@ -35,6 +35,7 @@ export interface IStorage {
   deleteGrupo(id: number): Promise<void>;
   updateMembro(id: number, membro: Partial<InsertMembro> & { igreja_id: number }): Promise<Membro>;
   updateGrupo(id: number, grupo: Partial<InsertGrupo> & { igreja_id: number }): Promise<Grupo>;
+  getUsersByIgreja(igreja_id: number): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -277,6 +278,9 @@ export class DatabaseStorage implements IStorage {
     }
 
     return updatedGrupo;
+  }
+  async getUsersByIgreja(igreja_id: number): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.igreja_id, igreja_id));
   }
 }
 

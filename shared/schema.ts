@@ -11,12 +11,12 @@ export const igrejas = pgTable("igrejas", {
   presbitero: text("presbitero").notNull(),
 });
 
-// Users - permanece igual
+// Users - atualizando roles
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role", { enum: ["admin", "lider", "membro"] }).notNull().default("membro"),
+  role: text("role", { enum: ["administrador", "comum"] }).notNull().default("comum"),
   igreja_id: integer("igreja_id").references(() => igrejas.id),
 });
 
@@ -88,7 +88,7 @@ export const mandatos_pastores = pgTable("mandatos_pastores", {
   tipo_vinculo: text("tipo_vinculo", {
     enum: ["eleito", "designado"]
   }).notNull(),
-  status: text("status", { 
+  status: text("status", {
     enum: ["ativo", "finalizado"]
   }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
