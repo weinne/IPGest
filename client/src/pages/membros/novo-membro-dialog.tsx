@@ -89,7 +89,7 @@ export function NovoMembroDialog() {
           Novo Membro
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto pb-20"> {/*Added pb-20 for mobile keyboard*/}
+      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto">
         <DialogHeader>
           <DialogTitle>Cadastrar Novo Membro</DialogTitle>
           <DialogDescription>

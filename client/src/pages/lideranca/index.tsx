@@ -177,8 +177,8 @@ export default function LiderancaPage() {
             Liderança
           </h1>
           <div className="flex gap-4">
-            <NovaLiderancaDialog open={false} onOpenChange={() => {}} />
-            <NovoPastorDialog open={false} onOpenChange={() => {}} />
+            <NovaLiderancaDialog />
+            <NovoPastorDialog />
           </div>
         </div>
 

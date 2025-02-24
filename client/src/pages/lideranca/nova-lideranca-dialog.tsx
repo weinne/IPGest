@@ -103,7 +103,7 @@ export function NovaLiderancaDialog() {
           Nova Liderança
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto pb-20"> {/* Modified DialogContent class */}
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Cadastrar Nova Liderança</DialogTitle>
           <DialogDescription>
@@ -167,10 +167,10 @@ export function NovaLiderancaDialog() {
                   <FormItem>
                     <FormLabel>Data da Eleição</FormLabel>
                     <FormControl>
-                      <Input
-                        type="date"
+                      <Input 
+                        type="date" 
                         {...field}
-                        value={field.value?.split("T")[0] || ""}
+                        value={field.value?.split('T')[0] || ''} 
                         onChange={(e) => {
                           const date = e.target.value;
                           field.onChange(date ? new Date(date).toISOString() : undefined);
@@ -189,10 +189,10 @@ export function NovaLiderancaDialog() {
                   <FormItem>
                     <FormLabel>Data de Início</FormLabel>
                     <FormControl>
-                      <Input
-                        type="date"
+                      <Input 
+                        type="date" 
                         {...field}
-                        value={field.value?.split("T")[0] || ""}
+                        value={field.value?.split('T')[0] || ''} 
                         onChange={(e) => {
                           const date = e.target.value;
                           field.onChange(date ? new Date(date).toISOString() : undefined);
@@ -211,10 +211,10 @@ export function NovaLiderancaDialog() {
                   <FormItem>
                     <FormLabel>Data de Fim (opcional)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="date"
+                      <Input 
+                        type="date" 
                         {...field}
-                        value={field.value?.split("T")[0] || ""}
+                        value={field.value?.split('T')[0] || ''} 
                         onChange={(e) => {
                           const date = e.target.value;
                           field.onChange(date ? new Date(date).toISOString() : undefined);
@@ -273,10 +273,32 @@ export function NovaLiderancaDialog() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(status).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <Button
-                type="submit"
-                className="w-full"
+              <Button 
+                type="submit" 
+                className="w-full" 
                 disabled={mutation.isPending}
               >
                 {mutation.isPending ? (
