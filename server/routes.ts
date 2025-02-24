@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cpf: req.body.cpf,
         email: req.body.email || null,
         telefone: req.body.telefone || null,
-        foto: req.file ? `/uploads/${req.file.filename}` : null,
+        foto: req.file ? req.file.filename : null,
         bio: req.body.bio || null,
         ano_ordenacao: parseInt(req.body.ano_ordenacao),
         tipo_vinculo: req.body.tipo_vinculo,
