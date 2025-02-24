@@ -17,6 +17,24 @@ import { useToast } from "@/hooks/use-toast";
 import { NovaLiderancaDialog } from "./nova-lideranca-dialog";
 import { NovoPastorDialog } from "./novo-pastor-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Input,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+
 
 const liderancasColumns = [
   {
@@ -98,26 +116,89 @@ const liderancasColumns = [
     id: "actions",
     cell: ({ row }: { row: any }) => {
       const lideranca = row.original as Lideranca;
+      const {handleSubmit} = useForm();
+      const onSubmit = (data: any) => {
+        console.log(data);
+        //Here you should make the API call to add new mandate
+      };
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              Visualizar
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                Novo Mandato
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo Mandato</DialogTitle>
+              </DialogHeader>
+              <Form onSubmit={handleSubmit(onSubmit)}>
+                <form className="space-y-4">
+                  <FormField
+                    name="data_eleicao"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Eleição</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="data_inicio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Início</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="data_fim"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Término</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ativo">Ativo</SelectItem>
+                            <SelectItem value="inativo">Inativo</SelectItem>
+                            <SelectItem value="afastado">Afastado</SelectItem>
+                            <SelectItem value="emerito">Emérito</SelectItem>
+                            <SelectItem value="finalizado">Finalizado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit">Salvar</Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       );
     },
   },
