@@ -74,16 +74,14 @@ export function NovaLiderancaDialog() {
       if (!values.data_eleicao) throw new Error("Data de eleição é obrigatória");
       if (!values.data_inicio) throw new Error("Data de início é obrigatória");
 
-      const liderancaData = {
+      const data = {
         membro_id: values.membro_id,
         cargo: values.cargo,
         igreja_id: user.igreja_id,
-      };
-
-      const mandatoData = {
         data_eleicao: values.data_eleicao,
         data_inicio: values.data_inicio,
         data_fim: values.data_fim || null,
+        status: values.status || 'ativo',
         status: values.status || 'ativo',
       };
 
