@@ -153,7 +153,6 @@ export function NovoMembroDialog() {
               mutation.mutate({ ...data, foto: file });
             })} className="space-y-6 py-4">
 
-              {/* Informações Básicas */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informações Básicas</h3>
                 <Separator />
@@ -278,7 +277,6 @@ export function NovoMembroDialog() {
                 </div>
               </div>
 
-              {/* Contato */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Contato</h3>
                 <Separator />
@@ -349,7 +347,6 @@ export function NovoMembroDialog() {
                 />
               </div>
 
-              {/* Informações Pessoais */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informações Pessoais</h3>
                 <Separator />
@@ -475,7 +472,6 @@ export function NovoMembroDialog() {
                 )}
               </div>
 
-              {/* Informações Eclesiásticas */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informações Eclesiásticas</h3>
                 <Separator />
