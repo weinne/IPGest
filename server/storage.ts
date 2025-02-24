@@ -29,6 +29,8 @@ export interface IStorage {
   getGrupoMembros(grupo_id: number): Promise<Array<{ membro: Membro; cargo: string }>>;
   deleteMandatoLideranca(id: number): Promise<void>;
   deleteMandatoPastor(id: number): Promise<void>;
+  updateMandatoLideranca(id: number, mandato: Partial<InsertMandatoLideranca> & { igreja_id: number }): Promise<MandatoLideranca>;
+  updateMandatoPastor(id: number, mandato: Partial<InsertMandatoPastor> & { igreja_id: number }): Promise<MandatoPastor>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -191,6 +193,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMandatoPastor(id: number): Promise<void> {
     await db.delete(mandatos_pastores).where(eq(mandatos_pastores.id, id));
+  }
+  async updateMandatoLideranca(id: number, mandato: Partial<InsertMandatoLideranca> & { igreja_id: number }): Promise<MandatoLideranca> {
+    const [updatedMandato] = await db
+      .update(mandatos_liderancas)
+      .set({
+        ...mandato,
+        data_eleicao: mandato.data_eleicao ? new Date(mandato.data_eleicao) : undefined,
+        data_inicio: mandato.data_inicio ? new Date(mandato.data_inicio) : undefined,
+        data_fim: mandato.data_fim ? new Date(mandato.data_fim) : null,
+      })
+      .where(eq(mandatos_liderancas.id, id))
+      .returning();
+    return updatedMandato;
+  }
+
+  async updateMandatoPastor(id: number, mandato: Partial<InsertMandatoPastor> & { igreja_id: number }): Promise<MandatoPastor> {
+    const [updatedMandato] = await db
+      .update(mandatos_pastores)
+      .set({
+        ...mandato,
+        data_eleicao: mandato.data_eleicao ? new Date(mandato.data_eleicao) : undefined,
+        data_inicio: mandato.data_inicio ? new Date(mandato.data_inicio) : undefined,
+        data_fim: mandato.data_fim ? new Date(mandato.data_fim) : null,
+      })
+      .where(eq(mandatos_pastores.id, id))
+      .returning();
+    return updatedMandato;
   }
 }
 
