@@ -2,7 +2,7 @@ import { pgTable, text, serial, integer, boolean, date, timestamp } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Igreja (tenant) - permanece igual
+// Igreja (tenant)
 export const igrejas = pgTable("igrejas", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
@@ -11,7 +11,7 @@ export const igrejas = pgTable("igrejas", {
   presbitero: text("presbitero").notNull(),
 });
 
-// Users - permanece igual
+// Users
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -20,7 +20,19 @@ export const users = pgTable("users", {
   igreja_id: integer("igreja_id").references(() => igrejas.id),
 });
 
-// Membros - adicionando novos campos
+// Grupos/Sociedades
+export const grupos = pgTable("grupos", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  tipo: text("tipo", {
+    enum: ["UCP", "UPA", "UMP", "SAF", "UPH", "ESTATISTICA", "DIACONIA", "EVANGELIZACAO", "ENSINO", "COMUNICACAO", "outro"]
+  }).notNull(),
+  descricao: text("descricao"),
+  status: text("status", { enum: ["ativo", "inativo"] }).notNull().default("ativo"),
+  igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
+});
+
+// Membros
 export const membros = pgTable("membros", {
   id: serial("id").primaryKey(),
   numero_rol: integer("numero_rol").notNull(),
@@ -28,7 +40,7 @@ export const membros = pgTable("membros", {
   email: text("email"),
   telefone: text("telefone"),
   endereco: text("endereco"),
-  cpf: text("cpf"), // Removendo unique constraint
+  cpf: text("cpf"),
   rg: text("rg"),
   foto: text("foto"),
   data_nascimento: date("data_nascimento"),
@@ -52,11 +64,40 @@ export const membros = pgTable("membros", {
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
-// Pastores - ajustando campos
+// Membros-grupos
+export const membros_grupos = pgTable("membros_grupos", {
+  id: serial("id").primaryKey(),
+  membro_id: integer("membro_id").references(() => membros.id),
+  grupo_id: integer("grupo_id").references(() => grupos.id),
+  cargo: text("cargo", {
+    enum: [
+      "presidente",
+      "vice_presidente",
+      "secretario",
+      "segundo_secretario",
+      "tesoureiro",
+      "segundo_tesoureiro",
+      "conselheiro",
+      "membro"
+    ]
+  }).default("membro"),
+});
+
+// Lideranças
+export const liderancas = pgTable("liderancas", {
+  id: serial("id").primaryKey(),
+  membro_id: integer("membro_id").references(() => membros.id).notNull(),
+  cargo: text("cargo", {
+    enum: ["presbitero", "diacono"]
+  }).notNull(),
+  igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
+});
+
+// Pastores
 export const pastores = pgTable("pastores", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
-  cpf: text("cpf").notNull(), // Removendo unique constraint
+  cpf: text("cpf").notNull(),
   email: text("email"),
   telefone: text("telefone"),
   foto: text("foto"),
@@ -65,7 +106,7 @@ export const pastores = pgTable("pastores", {
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
-// Mandatos de pastores - nova tabela
+// Mandatos de pastores
 export const mandatos_pastores = pgTable("mandatos_pastores", {
   id: serial("id").primaryKey(),
   pastor_id: integer("pastor_id").references(() => pastores.id).notNull(),
@@ -81,17 +122,7 @@ export const mandatos_pastores = pgTable("mandatos_pastores", {
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
-// Lideranças - removidos campos de mandato
-export const liderancas = pgTable("liderancas", {
-  id: serial("id").primaryKey(),
-  membro_id: integer("membro_id").references(() => membros.id).notNull(),
-  cargo: text("cargo", {
-    enum: ["presbitero", "diacono"]
-  }).notNull(),
-  igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
-});
-
-// Mandatos de lideranças - nova tabela
+// Mandatos de lideranças
 export const mandatos_liderancas = pgTable("mandatos_liderancas", {
   id: serial("id").primaryKey(),
   lideranca_id: integer("lideranca_id").references(() => liderancas.id).notNull(),
@@ -130,117 +161,9 @@ export const insertGrupoSchema = createInsertSchema(grupos).omit({
     required_error: "Selecione o status do grupo",
     invalid_type_error: "Status inválido",
   }),
-  membros: z.array(z.object({
-    membro_id: z.number(),
-    cargo: z.enum([
-      "presidente",
-      "vice_presidente",
-      "secretario",
-      "segundo_secretario",
-      "tesoureiro",
-      "segundo_tesoureiro",
-      "conselheiro",
-      "membro"
-    ]).default("membro"),
-  })).default([]),
+  descricao: z.string().optional().nullable(),
 });
 
-// Schema para inserção de pastores
-export const insertPastorSchema = createInsertSchema(pastores).omit({
-  igreja_id: true,
-}).extend({
-  nome: z.string()
-    .min(3, "Nome deve ter pelo menos 3 caracteres")
-    .max(100, "Nome não pode ter mais de 100 caracteres")
-    .regex(/^[a-zA-ZÀ-ÿ\s]*$/, "Nome deve conter apenas letras"),
-  cpf: z.string()
-    .min(11, "CPF deve ter 11 dígitos")
-    .max(14, "CPF inválido")
-    .transform(cpf => cpf.replace(/\D/g, '')),
-  email: z.string()
-    .email("Email inválido")
-    .optional()
-    .nullable()
-    .transform(e => e === "" ? null : e),
-  telefone: z.string()
-    .optional()
-    .nullable()
-    .transform(t => t === "" ? null : t),
-  foto: z.any().optional().nullable(),
-  bio: z.string().max(1000, "Biografia não pode ter mais de 1000 caracteres").optional().nullable(),
-  ano_ordenacao: z.number().int().min(1900).max(new Date().getFullYear()),
-});
-
-// Schema para inserção de lideranças
-export const insertLiderancaSchema = createInsertSchema(liderancas).omit({
-  igreja_id: true,
-}).extend({
-  cargo: z.enum(["presbitero", "diacono"], {
-    required_error: "Selecione o cargo",
-    invalid_type_error: "Cargo inválido",
-  }),
-  status: z.enum(["ativo", "inativo", "afastado", "emerito"], {
-    required_error: "Selecione o status",
-    invalid_type_error: "Status inválido",
-  }),
-});
-
-// Schema para inserção de mandatos de pastores
-export const insertMandatoPastorSchema = createInsertSchema(mandatos_pastores).omit({
-  igreja_id: true,
-}).extend({
-  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
-  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
-  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
-  tipo_vinculo: z.enum(["eleito", "designado"], {
-    required_error: "Selecione o tipo de vínculo",
-    invalid_type_error: "Tipo de vínculo inválido",
-  }),
-  status: z.enum(["ativo", "finalizado"], {
-    required_error: "Selecione o status",
-    invalid_type_error: "Status inválido",
-  }),
-});
-
-// Schema para inserção de mandatos de lideranças
-export const insertMandatoLiderancaSchema = createInsertSchema(mandatos_liderancas).omit({
-  igreja_id: true,
-}).extend({
-  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
-  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
-  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
-  status: z.enum(["ativo", "inativo", "afastado", "emerito", "finalizado"], {
-    required_error: "Selecione o status",
-    invalid_type_error: "Status inválido",
-  }),
-});
-
-// Types
-export type Igreja = typeof igrejas.$inferSelect;
-export type InsertIgreja = z.infer<typeof insertIgrejaSchema>;
-
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-
-export type Membro = typeof membros.$inferSelect;
-export type InsertMembro = z.infer<typeof insertMembroSchema>;
-
-export type Grupo = typeof grupos.$inferSelect;
-export type InsertGrupo = z.infer<typeof insertGrupoSchema>;
-
-export type Pastor = typeof pastores.$inferSelect;
-export type InsertPastor = z.infer<typeof insertPastorSchema>;
-
-export type Lideranca = typeof liderancas.$inferSelect;
-export type InsertLideranca = z.infer<typeof insertLiderancaSchema>;
-
-export type MandatoPastor = typeof mandatos_pastores.$inferSelect;
-export type InsertMandatoPastor = z.infer<typeof insertMandatoPastorSchema>;
-
-export type MandatoLideranca = typeof mandatos_liderancas.$inferSelect;
-export type InsertMandatoLideranca = z.infer<typeof insertMandatoLiderancaSchema>;
-
-// Atualizando o schema de inserção de membros
 export const insertMembroSchema = createInsertSchema(membros).omit({
   igreja_id: true,
   data_admissao: true,
@@ -336,3 +259,95 @@ export const insertMembroSchema = createInsertSchema(membros).omit({
     .nullable()
     .transform(d => d === "" ? null : d),
 });
+
+export const insertPastorSchema = createInsertSchema(pastores).omit({
+  igreja_id: true,
+}).extend({
+  nome: z.string()
+    .min(3, "Nome deve ter pelo menos 3 caracteres")
+    .max(100, "Nome não pode ter mais de 100 caracteres")
+    .regex(/^[a-zA-ZÀ-ÿ\s]*$/, "Nome deve conter apenas letras"),
+  cpf: z.string()
+    .min(11, "CPF deve ter 11 dígitos")
+    .max(14, "CPF inválido")
+    .transform(cpf => cpf.replace(/\D/g, '')),
+  email: z.string()
+    .email("Email inválido")
+    .optional()
+    .nullable()
+    .transform(e => e === "" ? null : e),
+  telefone: z.string()
+    .optional()
+    .nullable()
+    .transform(t => t === "" ? null : t),
+  foto: z.any().optional().nullable(),
+  bio: z.string().max(1000, "Biografia não pode ter mais de 1000 caracteres").optional().nullable(),
+  ano_ordenacao: z.number().int().min(1900).max(new Date().getFullYear()),
+});
+
+export const insertLiderancaSchema = createInsertSchema(liderancas).omit({
+  igreja_id: true,
+}).extend({
+  cargo: z.enum(["presbitero", "diacono"], {
+    required_error: "Selecione o cargo",
+    invalid_type_error: "Cargo inválido",
+  }),
+  status: z.enum(["ativo", "inativo", "afastado", "emerito"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
+});
+
+export const insertMandatoPastorSchema = createInsertSchema(mandatos_pastores).omit({
+  igreja_id: true,
+}).extend({
+  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
+  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
+  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
+  tipo_vinculo: z.enum(["eleito", "designado"], {
+    required_error: "Selecione o tipo de vínculo",
+    invalid_type_error: "Tipo de vínculo inválido",
+  }),
+  status: z.enum(["ativo", "finalizado"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
+});
+
+export const insertMandatoLiderancaSchema = createInsertSchema(mandatos_liderancas).omit({
+  igreja_id: true,
+}).extend({
+  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
+  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
+  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
+  status: z.enum(["ativo", "inativo", "afastado", "emerito", "finalizado"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
+});
+
+
+// Types
+export type Igreja = typeof igrejas.$inferSelect;
+export type InsertIgreja = z.infer<typeof insertIgrejaSchema>;
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Membro = typeof membros.$inferSelect;
+export type InsertMembro = z.infer<typeof insertMembroSchema>;
+
+export type Grupo = typeof grupos.$inferSelect;
+export type InsertGrupo = z.infer<typeof insertGrupoSchema>;
+
+export type Pastor = typeof pastores.$inferSelect;
+export type InsertPastor = z.infer<typeof insertPastorSchema>;
+
+export type Lideranca = typeof liderancas.$inferSelect;
+export type InsertLideranca = z.infer<typeof insertLiderancaSchema>;
+
+export type MandatoPastor = typeof mandatos_pastores.$inferSelect;
+export type InsertMandatoPastor = z.infer<typeof insertMandatoPastorSchema>;
+
+export type MandatoLideranca = typeof mandatos_liderancas.$inferSelect;
+export type InsertMandatoLideranca = z.infer<typeof insertMandatoLiderancaSchema>;
