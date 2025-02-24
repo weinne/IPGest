@@ -33,6 +33,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import { useEffect } from "react";
 
 interface GerenciarMandatosPastorDialogProps {
   pastor: Pastor;
@@ -55,6 +56,34 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
       status: "ativo",
     },
   });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async (mandatoId: number) => {
+      const res = await apiRequest("PATCH", `/api/mandatos/pastores/${mandatoId}`, {
+        status: "inativo"
+      });
+      if (!res.ok) throw new Error("Erro ao atualizar status do mandato");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mandatos/pastores"] });
+    },
+    onError: (error: Error) => {
+      console.error("Erro ao atualizar status do mandato:", error);
+    },
+  });
+
+  // Check for expired mandates when component mounts or mandatos changes
+  useEffect(() => {
+    mandatos.forEach(mandato => {
+      if (mandato.status === "ativo" && mandato.data_fim) {
+        const endDate = new Date(mandato.data_fim);
+        if (endDate < new Date()) {
+          updateStatusMutation.mutate(mandato.id);
+        }
+      }
+    });
+  }, [mandatos, updateStatusMutation]);
 
   const mutation = useMutation({
     mutationFn: async (values: any) => {
