@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -72,7 +71,7 @@ export function NovoPastorDialog() {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
       const formData = new FormData();
-      
+
       // Formatação do CPF
       const cpf = data.cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 
@@ -365,20 +364,6 @@ export function NovoPastorDialog() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="data_inicio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Início</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
