@@ -5,7 +5,7 @@ import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { 
   Users, UserPlus, UsersRound, LogOut,
-  ChevronDown
+  ChevronDown, UserCog
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,6 +36,18 @@ export default function Navigation() {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
 
+  const isAdmin = user?.role === "administrador";
+
+  // Adiciona a rota de usuários apenas para administradores
+  const allRoutes = isAdmin ? [
+    ...routes,
+    {
+      path: "/usuarios",
+      label: "Usuários",
+      icon: UserCog
+    }
+  ] : routes;
+
   return (
     <nav className="border-b bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,7 +58,7 @@ export default function Navigation() {
             </Link>
 
             <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
-              {routes.map((route) => {
+              {allRoutes.map((route) => {
                 const Icon = route.icon;
                 return (
                   <Link 

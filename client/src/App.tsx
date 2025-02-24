@@ -9,6 +9,7 @@ import HomePage from "@/pages/home-page";
 import MembrosPage from "@/pages/membros";
 import GruposPage from "@/pages/grupos";
 import LiderancaPage from "@/pages/lideranca";
+import UsuariosPage from "@/pages/usuarios";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
       <ProtectedRoute path="/membros" component={MembrosPage} />
       <ProtectedRoute path="/grupos" component={GruposPage} />
       <ProtectedRoute path="/lideranca" component={LiderancaPage} />
+      <ProtectedRoute path="/usuarios" component={UsuariosPage} />
       <Route component={NotFound} />
     </Switch>
   );
