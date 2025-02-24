@@ -252,11 +252,20 @@ export default function LiderancaPage() {
   const pastoresComMandatos = React.useMemo(() => {
     return pastores.map((pastor: Pastor) => {
       const allMandatos = mandatosPastores.filter(m => m.pastor_id === pastor.id);
-      const activeMandate = allMandatos.find(m => m.status === "ativo");
+      const today = new Date();
+
+      // Find current mandate - either active with no end date or includes today's date
+      const currentMandate = allMandatos.find(m => {
+        if (m.status !== "ativo") return false;
+        if (!m.data_fim) return true;
+
+        const endDate = new Date(m.data_fim);
+        return endDate >= today;
+      });
 
       return {
         ...pastor,
-        mandato: activeMandate,
+        mandato: currentMandate,
         mandatos: allMandatos,
       };
     });
@@ -265,11 +274,20 @@ export default function LiderancaPage() {
   const liderancasComMandatos = React.useMemo(() => {
     return liderancas.map((lideranca: Lideranca) => {
       const allMandatos = mandatosLiderancas.filter(m => m.lideranca_id === lideranca.id);
-      const activeMandate = allMandatos.find(m => m.status === "ativo");
+      const today = new Date();
+
+      // Find current mandate - either active with no end date or includes today's date
+      const currentMandate = allMandatos.find(m => {
+        if (m.status !== "ativo") return false;
+        if (!m.data_fim) return true;
+
+        const endDate = new Date(m.data_fim);
+        return endDate >= today;
+      });
 
       return {
         ...lideranca,
-        mandato: activeMandate,
+        mandato: currentMandate,
         mandatos: allMandatos,
       };
     });

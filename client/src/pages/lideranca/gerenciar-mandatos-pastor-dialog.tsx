@@ -29,11 +29,12 @@ import { MandatoPastor, type Pastor } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
+import React from 'react';
 
 interface GerenciarMandatosPastorDialogProps {
   pastor: Pastor;
@@ -46,6 +47,7 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [editingMandato, setEditingMandato] = React.useState<MandatoPastor | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -56,6 +58,27 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
       status: "ativo",
     },
   });
+
+  // Reset form when editingMandato changes
+  React.useEffect(() => {
+    if (editingMandato) {
+      form.reset({
+        data_eleicao: editingMandato.data_eleicao.split('T')[0],
+        data_inicio: editingMandato.data_inicio.split('T')[0],
+        data_fim: editingMandato.data_fim ? editingMandato.data_fim.split('T')[0] : "",
+        tipo_vinculo: editingMandato.tipo_vinculo,
+        status: editingMandato.status,
+      });
+    } else {
+      form.reset({
+        data_eleicao: "",
+        data_inicio: "",
+        data_fim: "",
+        tipo_vinculo: "eleito",
+        status: "ativo",
+      });
+    }
+  }, [editingMandato, form]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async (mandatoId: number) => {
@@ -99,20 +122,25 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
         igreja_id: user.igreja_id,
       };
 
-      const res = await apiRequest("POST", "/api/mandatos/pastores", data);
+      const res = await apiRequest(
+        editingMandato ? "PATCH" : "POST",
+        editingMandato ? `/api/mandatos/pastores/${editingMandato.id}` : "/api/mandatos/pastores",
+        data
+      );
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatos/pastores"] });
       toast({
-        title: "Mandato adicionado com sucesso",
-        description: "O novo mandato foi registrado.",
+        title: editingMandato ? "Mandato atualizado com sucesso" : "Mandato adicionado com sucesso",
+        description: editingMandato ? "O mandato foi atualizado." : "O novo mandato foi registrado.",
       });
+      setEditingMandato(null);
       form.reset();
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro ao adicionar mandato",
+        title: editingMandato ? "Erro ao atualizar mandato" : "Erro ao adicionar mandato",
         description: error.message,
         variant: "destructive",
       });
@@ -141,11 +169,20 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
     },
   });
 
+  const checkMandatoStatus = (mandato: MandatoPastor): string => {
+    if (mandato.data_fim && new Date(mandato.data_fim) < new Date()) {
+      return "Inativo (Data de término expirada)";
+    }
+    return mandato.status;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Gerenciar Mandatos do Pastor</DialogTitle>
+          <DialogTitle>
+            {editingMandato ? "Editar Mandato" : "Gerenciar Mandatos do Pastor"}
+          </DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-[500px] pr-4">
           <div className="space-y-4">
@@ -158,10 +195,10 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
                     <FormItem>
                       <FormLabel>Data da Eleição/Designação</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
+                        <Input
+                          type="date"
                           {...field}
-                          value={field.value?.split('T')[0] || ''} 
+                          value={field.value?.split('T')[0] || ''}
                           onChange={(e) => {
                             const date = e.target.value;
                             field.onChange(date ? new Date(date).toISOString() : undefined);
@@ -180,10 +217,10 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
                     <FormItem>
                       <FormLabel>Data de Início</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
+                        <Input
+                          type="date"
                           {...field}
-                          value={field.value?.split('T')[0] || ''} 
+                          value={field.value?.split('T')[0] || ''}
                           onChange={(e) => {
                             const date = e.target.value;
                             field.onChange(date ? new Date(date).toISOString() : undefined);
@@ -202,10 +239,10 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
                     <FormItem>
                       <FormLabel>Data de Término (opcional)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
+                        <Input
+                          type="date"
                           {...field}
-                          value={field.value?.split('T')[0] || ''} 
+                          value={field.value?.split('T')[0] || ''}
                           onChange={(e) => {
                             const date = e.target.value;
                             field.onChange(date ? new Date(date).toISOString() : undefined);
@@ -263,8 +300,8 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
                   )}
                 />
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full"
                   disabled={mutation.isPending}
                 >
@@ -273,56 +310,79 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
                   ) : (
                     <Plus className="mr-2 h-4 w-4" />
                   )}
-                  Adicionar Mandato
+                  {editingMandato ? "Atualizar Mandato" : "Adicionar Mandato"}
                 </Button>
+                {editingMandato && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full mt-2"
+                    onClick={() => setEditingMandato(null)}
+                  >
+                    Cancelar Edição
+                  </Button>
+                )}
               </form>
             </Form>
 
             <div className="space-y-4 mt-8">
               <h3 className="text-lg font-semibold">Histórico de Mandatos</h3>
-              {mandatos.map((mandato) => (
-                <Card key={mandato.id}>
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        Eleição: {format(new Date(mandato.data_eleicao), "dd/MM/yyyy", { locale: ptBR })}
-                      </p>
-                      <p className="text-sm">
-                        Início: {format(new Date(mandato.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
-                      </p>
-                      <p className="text-sm">
-                        Término: {mandato.data_fim 
-                          ? format(new Date(mandato.data_fim), "dd/MM/yyyy", { locale: ptBR })
-                          : "-"
-                        }
-                      </p>
-                      <p className="text-sm">
-                        Tipo: {mandato.tipo_vinculo === 'eleito' ? 'Eleito' : 'Designado'}
-                      </p>
-                      <p className="text-sm">
-                        Status: {mandato.status}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive"
-                      onClick={() => {
-                        if (window.confirm("Tem certeza que deseja remover este mandato?")) {
-                          deleteMutation.mutate(mandato.id);
-                        }
-                      }}
-                      disabled={deleteMutation.isPending}
-                    >
-                      {deleteMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+              {mandatos.map((mandato) => {
+                const status = checkMandatoStatus(mandato);
+                return (
+                  <Card key={mandato.id}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">
+                          Eleição: {format(new Date(mandato.data_eleicao), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                        <p className="text-sm">
+                          Início: {format(new Date(mandato.data_inicio), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                        <p className="text-sm">
+                          Término: {mandato.data_fim
+                            ? format(new Date(mandato.data_fim), "dd/MM/yyyy", { locale: ptBR })
+                            : "-"
+                          }
+                        </p>
+                        <p className="text-sm">
+                          Tipo: {mandato.tipo_vinculo === 'eleito' ? 'Eleito' : 'Designado'}
+                        </p>
+                        <p className="text-sm">
+                          Status: {status}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditingMandato(mandato)}
+                          disabled={mutation.isPending}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => {
+                            if (window.confirm("Tem certeza que deseja remover este mandato?")) {
+                              deleteMutation.mutate(mandato.id);
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </ScrollArea>
