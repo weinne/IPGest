@@ -254,10 +254,10 @@ export function NovoPastorDialog() {
 
               <FormField
                 control={form.control}
-                name="data_eleicao"
+                name="data_inicio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data da Eleição</FormLabel>
+                    <FormLabel>Data de Início</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
@@ -273,13 +273,35 @@ export function NovoPastorDialog() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="data_fim"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Data de Término (opcional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="data_eleicao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data da Eleição</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
