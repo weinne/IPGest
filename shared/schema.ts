@@ -196,7 +196,9 @@ export const insertPastorSchema = createInsertSchema(pastores).omit({
     .max(100, "Nome não pode ter mais de 100 caracteres")
     .regex(/^[a-zA-ZÀ-ÿ\s]*$/, "Nome deve conter apenas letras"),
   cpf: z.string()
-    .regex(/^\d{3}\.\d{3}\.\d{3}\-\d{2}$/, "CPF inválido"),
+    .min(11, "CPF deve ter 11 dígitos")
+    .max(14, "CPF inválido")
+    .transform(cpf => cpf.replace(/\D/g, '')),
   email: z.string()
     .email("Email inválido")
     .optional()

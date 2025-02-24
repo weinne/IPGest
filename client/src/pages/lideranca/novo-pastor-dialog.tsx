@@ -61,7 +61,7 @@ export function NovoPastorDialog() {
       bio: "",
       tipo_vinculo: "efetivo",
       ano_ordenacao: currentYear,
-      data_inicio: new Date().toISOString().split('T')[0],
+      data_inicio: new Date().toISOString(),
     },
   });
 
