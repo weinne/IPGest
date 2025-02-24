@@ -71,18 +71,18 @@ export function NovaLiderancaDialog() {
 
       console.log("Dados do form:", values);
 
+      if (!values.data_eleicao) throw new Error("Data de eleição é obrigatória");
+      if (!values.data_inicio) throw new Error("Data de início é obrigatória");
+
       const data = {
         membro_id: values.membro_id,
         cargo: values.cargo,
         igreja_id: user.igreja_id,
-        data_eleicao: values.data_eleicao ? new Date(values.data_eleicao).toISOString() : undefined,
-        data_inicio: values.data_inicio ? new Date(values.data_inicio).toISOString() : undefined,
-        data_fim: values.data_fim ? new Date(values.data_fim).toISOString() : null,
+        data_eleicao: values.data_eleicao,
+        data_inicio: values.data_inicio,
+        data_fim: values.data_fim || null,
         status: values.status || 'ativo',
       };
-
-      if (!data.data_eleicao) throw new Error("Data de eleição é obrigatória");
-      if (!data.data_inicio) throw new Error("Data de início é obrigatória");
 
       console.log("Dados formatados:", data);
 
