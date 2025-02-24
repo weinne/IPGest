@@ -21,6 +21,22 @@ import React from 'react';
 import { GerenciarMandatosDialog } from "./gerenciar-mandatos-dialog";
 import { GerenciarMandatosPastorDialog } from "./gerenciar-mandatos-pastor-dialog";
 
+// Helper function to check if a mandate is expired
+const checkMandatoStatus = (mandato: MandatoLideranca | MandatoPastor | undefined) => {
+  if (!mandato) return undefined;
+
+  if (mandato.status !== "ativo") return mandato.status;
+
+  if (mandato.data_fim) {
+    const endDate = new Date(mandato.data_fim);
+    if (endDate < new Date()) {
+      return "inativo";
+    }
+  }
+
+  return mandato.status;
+};
+
 const liderancasColumns = [
   {
     accessorKey: "cargo",
@@ -38,7 +54,8 @@ const liderancasColumns = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }: { row: any }) => {
-      const status = row.getValue("status") as string;
+      const mandato = row.original.mandato as MandatoLideranca;
+      const status = checkMandatoStatus(mandato);
       const statusMap = {
         ativo: "Ativo",
         inativo: "Inativo",
@@ -133,6 +150,21 @@ const pastoresColumns = [
     },
   },
   {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }: { row: any }) => {
+      const mandato = row.original.mandato as MandatoPastor;
+      const status = checkMandatoStatus(mandato);
+      const statusMap = {
+        ativo: "Ativo",
+        inativo: "Inativo",
+        afastado: "Afastado",
+        emerito: "Emérito",
+      };
+      return statusMap[status as keyof typeof statusMap] || status;
+    },
+  },
+  {
     accessorKey: "ano_ordenacao",
     header: "Ano de Ordenação",
   },
@@ -220,15 +252,7 @@ export default function LiderancaPage() {
   const pastoresComMandatos = React.useMemo(() => {
     return pastores.map((pastor: Pastor) => {
       const allMandatos = mandatosPastores.filter(m => m.pastor_id === pastor.id);
-
-      // Find active mandate and check if it's expired
       const activeMandate = allMandatos.find(m => m.status === "ativo");
-      if (activeMandate?.data_fim) {
-        const endDate = new Date(activeMandate.data_fim);
-        if (endDate < new Date()) {
-          activeMandate.status = "inativo";
-        }
-      }
 
       return {
         ...pastor,
@@ -241,15 +265,7 @@ export default function LiderancaPage() {
   const liderancasComMandatos = React.useMemo(() => {
     return liderancas.map((lideranca: Lideranca) => {
       const allMandatos = mandatosLiderancas.filter(m => m.lideranca_id === lideranca.id);
-
-      // Find active mandate and check if it's expired
       const activeMandate = allMandatos.find(m => m.status === "ativo");
-      if (activeMandate?.data_fim) {
-        const endDate = new Date(activeMandate.data_fim);
-        if (endDate < new Date()) {
-          activeMandate.status = "inativo";
-        }
-      }
 
       return {
         ...lideranca,
