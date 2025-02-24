@@ -40,6 +40,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(grupos);
   });
 
+  app.post("/api/grupos", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const novoGrupo = await storage.createGrupo({
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      res.status(201).json(novoGrupo);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/grupos/:id/membros", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const membros = await storage.getGrupoMembros(parseInt(req.params.id));
+      res.json(membros);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   // Leadership routes
   app.get("/api/liderancas", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

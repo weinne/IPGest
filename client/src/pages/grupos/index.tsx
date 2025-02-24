@@ -3,8 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UsersRound, Pencil, Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { DataTable } from "@/components/ui/data-table";
 import { Grupo } from "@shared/schema";
 import {
@@ -14,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { NovoGrupoDialog } from "./novo-grupo-dialog";
 
 const columns = [
   {
@@ -23,7 +22,7 @@ const columns = [
   {
     accessorKey: "tipo",
     header: "Tipo",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const tipo = row.getValue("tipo") as string;
       const tipoMap = {
         UCP: "UCP",
@@ -31,6 +30,11 @@ const columns = [
         UMP: "UMP",
         SAF: "SAF",
         UPH: "UPH",
+        ESTATISTICA: "Departamento de Estatística",
+        DIACONIA: "Departamento de Ação Social",
+        EVANGELIZACAO: "Departamento de Evangelização",
+        ENSINO: "Departamento de Ensino",
+        COMUNICACAO: "Departamento de Comunicação",
         outro: "Outro",
       };
       return tipoMap[tipo as keyof typeof tipoMap] || tipo;
@@ -41,8 +45,16 @@ const columns = [
     header: "Descrição",
   },
   {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }: { row: any }) => {
+      const status = row.getValue("status") as string;
+      return status === "ativo" ? "Ativo" : "Inativo";
+    },
+  },
+  {
     id: "actions",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const grupo = row.original as Grupo;
 
       return (
@@ -85,10 +97,7 @@ export default function GruposPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Grupos e Sociedades
           </h1>
-          <Button>
-            <UsersRound className="mr-2 h-4 w-4" />
-            Novo Grupo
-          </Button>
+          <NovoGrupoDialog />
         </div>
 
         <Card>

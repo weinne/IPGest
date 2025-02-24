@@ -1,6 +1,6 @@
-import { users, igrejas, membros, grupos, liderancas, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type Lideranca } from "@shared/schema";
+import { users, igrejas, membros, grupos, membros_grupos, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -17,6 +17,9 @@ export interface IStorage {
   getLiderancas(igreja_id: number): Promise<Lideranca[]>;
   createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro>;
   sessionStore: session.Store;
+  createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo>;
+  addMembrosToGrupo(grupo_id: number, membros: { membro_id: number; cargo: string }[]): Promise<void>;
+  getGrupoMembros(grupo_id: number): Promise<Array<{ membro: Membro; cargo: string }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -85,6 +88,7 @@ export class DatabaseStorage implements IStorage {
 
     return user;
   }
+
   async createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro> {
     const [novoMembro] = await db.insert(membros).values({
       ...membro,
@@ -92,6 +96,43 @@ export class DatabaseStorage implements IStorage {
       data_nascimento: membro.data_nascimento ? new Date(membro.data_nascimento) : null,
     }).returning();
     return novoMembro;
+  }
+
+  async createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo> {
+    const { membros, ...grupoData } = grupo;
+    const [novoGrupo] = await db.insert(grupos).values(grupoData).returning();
+
+    if (membros && membros.length > 0) {
+      await this.addMembrosToGrupo(novoGrupo.id, membros);
+    }
+
+    return novoGrupo;
+  }
+
+  async addMembrosToGrupo(grupo_id: number, membros: { membro_id: number; cargo: string }[]): Promise<void> {
+    await db.insert(membros_grupos).values(
+      membros.map(m => ({
+        grupo_id,
+        membro_id: m.membro_id,
+        cargo: m.cargo,
+      }))
+    );
+  }
+
+  async getGrupoMembros(grupo_id: number): Promise<Array<{ membro: Membro; cargo: string }>> {
+    const result = await db
+      .select({
+        membro: membros,
+        cargo: membros_grupos.cargo,
+      })
+      .from(membros_grupos)
+      .innerJoin(membros, eq(membros.id, membros_grupos.membro_id))
+      .where(eq(membros_grupos.grupo_id, grupo_id));
+
+    return result.map(r => ({
+      membro: r.membro,
+      cargo: r.cargo,
+    }));
   }
 }
 

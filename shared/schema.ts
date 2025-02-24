@@ -39,15 +39,30 @@ export const membros = pgTable("membros", {
 export const grupos = pgTable("grupos", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
-  tipo: text("tipo", { enum: ["UCP", "UPA", "UMP", "SAF", "UPH", "outro"] }).notNull(),
+  tipo: text("tipo", {
+    enum: ["UCP", "UPA", "UMP", "SAF", "UPH", "ESTATISTICA", "DIACONIA", "EVANGELIZACAO", "ENSINO", "COMUNICACAO", "outro"]
+  }).notNull(),
   descricao: text("descricao"),
+  status: text("status", { enum: ["ativo", "inativo"] }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
-// Relacionamento membros-grupos
+// Relacionamento membros-grupos com cargo opcional
 export const membros_grupos = pgTable("membros_grupos", {
   membro_id: integer("membro_id").references(() => membros.id),
   grupo_id: integer("grupo_id").references(() => grupos.id),
+  cargo: text("cargo", {
+    enum: [
+      "presidente",
+      "vice_presidente",
+      "secretario",
+      "segundo_secretario",
+      "tesoureiro",
+      "segundo_tesoureiro",
+      "conselheiro",
+      "membro"
+    ]
+  }).default("membro"),
 });
 
 // Liderança
@@ -72,7 +87,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   igreja_presbitero: z.string().min(3),
 });
 
-export const insertMembroSchema = createInsertSchema(membros).omit({ 
+export const insertMembroSchema = createInsertSchema(membros).omit({
   igreja_id: true,
   data_admissao: true,
 }).extend({
@@ -121,6 +136,31 @@ export const insertMembroSchema = createInsertSchema(membros).omit({
 
 export const insertGrupoSchema = createInsertSchema(grupos).omit({
   igreja_id: true,
+}).extend({
+  nome: z.string()
+    .min(3, "Nome deve ter pelo menos 3 caracteres")
+    .max(100, "Nome não pode ter mais de 100 caracteres"),
+  tipo: z.enum(["UCP", "UPA", "UMP", "SAF", "UPH", "ESTATISTICA", "DIACONIA", "EVANGELIZACAO", "ENSINO", "COMUNICACAO", "outro"], {
+    required_error: "Selecione o tipo do grupo",
+    invalid_type_error: "Tipo inválido",
+  }),
+  status: z.enum(["ativo", "inativo"], {
+    required_error: "Selecione o status do grupo",
+    invalid_type_error: "Status inválido",
+  }),
+  membros: z.array(z.object({
+    membro_id: z.number(),
+    cargo: z.enum([
+      "presidente",
+      "vice_presidente",
+      "secretario",
+      "segundo_secretario",
+      "tesoureiro",
+      "segundo_tesoureiro",
+      "conselheiro",
+      "membro"
+    ]).default("membro"),
+  })).default([]),
 });
 
 export const insertLiderancaSchema = createInsertSchema(liderancas).omit({
