@@ -160,17 +160,10 @@ export function EditarMembroDialog({ membro, open, onOpenChange }: EditarMembroD
         <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
             <form id="edit-member-form" onSubmit={form.handleSubmit((data) => {
-              const formData = new FormData();
               const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
               const file = fileInput?.files?.[0];
-
-              if (file) {
-                formData.append('foto', file);
-              }
-
               mutation.mutate({ ...data, foto: file });
             })} className="space-y-6 py-4">
-              {/* Informações Básicas */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informações Básicas</h3>
                 <Separator />
@@ -185,26 +178,16 @@ export function EditarMembroDialog({ membro, open, onOpenChange }: EditarMembroD
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <FormField
-                    control={form.control}
-                    name="foto"
-                    render={({ field: { onChange, ...field } }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              handleImageChange(e);
-                              onChange(e.target.files?.[0]);
-                            }}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 </div>
 
                 <FormField
@@ -274,7 +257,6 @@ export function EditarMembroDialog({ membro, open, onOpenChange }: EditarMembroD
                 </div>
               </div>
 
-              {/* Contato */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Contato</h3>
                 <Separator />
@@ -322,7 +304,6 @@ export function EditarMembroDialog({ membro, open, onOpenChange }: EditarMembroD
                 />
               </div>
 
-              {/* Informações Pessoais */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informações Pessoais</h3>
                 <Separator />
@@ -415,7 +396,6 @@ export function EditarMembroDialog({ membro, open, onOpenChange }: EditarMembroD
                 )}
               </div>
 
-              {/* Informações Eclesiásticas */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Informações Eclesiásticas</h3>
                 <Separator />

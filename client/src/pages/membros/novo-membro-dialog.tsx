@@ -142,14 +142,8 @@ export function NovoMembroDialog() {
         <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
             <form id="new-member-form" onSubmit={form.handleSubmit((data) => {
-              const formData = new FormData();
               const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
               const file = fileInput?.files?.[0];
-
-              if (file) {
-                formData.append('foto', file);
-              }
-
               mutation.mutate({ ...data, foto: file });
             })} className="space-y-6 py-4">
 
@@ -167,26 +161,16 @@ export function NovoMembroDialog() {
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <FormField
-                    control={form.control}
-                    name="foto"
-                    render={({ field: { onChange, ...field } }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              handleImageChange(e);
-                              onChange(e.target.files?.[0]);
-                            }}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 </div>
 
                 <FormField
