@@ -54,19 +54,19 @@ export function NovaLiderancaDialog() {
     queryKey: ["/api/membros"],
   });
 
-  const form = useForm<InsertLideranca>({
-    resolver: zodResolver(insertLiderancaSchema),
+  const form = useForm({
     defaultValues: {
+      membro_id: undefined,
       cargo: "presbitero",
       status: "ativo",
-      data_eleicao: undefined,
-      data_inicio: undefined,
-      data_fim: undefined,
+      data_eleicao: "",
+      data_inicio: "",
+      data_fim: "",
     },
   });
 
   const mutation = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values) => {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
       console.log("Dados do form:", values);
@@ -74,10 +74,13 @@ export function NovaLiderancaDialog() {
       if (!values.data_eleicao) throw new Error("Data de eleição é obrigatória");
       if (!values.data_inicio) throw new Error("Data de início é obrigatória");
 
-      const data = {
+      const liderancaData = {
         membro_id: values.membro_id,
         cargo: values.cargo,
         igreja_id: user.igreja_id,
+      };
+
+      const mandatoData = {
         data_eleicao: values.data_eleicao,
         data_inicio: values.data_inicio,
         data_fim: values.data_fim || null,
