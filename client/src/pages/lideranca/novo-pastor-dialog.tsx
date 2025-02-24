@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,24 +60,23 @@ export function NovoPastorDialog() {
       telefone: "",
       bio: "",
       tipo_vinculo: "efetivo",
-      ano_ordenacao: new Date().getFullYear(),
-      foto: null,
+      ano_ordenacao: currentYear,
+      data_inicio: new Date().toISOString().split('T')[0],
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: InsertPastor) => {
-      console.log("Tentando cadastrar pastor:", data);
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
       const formData = new FormData();
-
-      // Formatação do CPF antes de enviar
+      
+      // Formatação do CPF
       const cpf = data.cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 
       // Adiciona todos os campos ao FormData
       Object.entries(data).forEach(([key, value]) => {
-        if (key === 'foto') return; // Pula o campo foto
+        if (key === 'foto') return;
         if (value !== null && value !== undefined) {
           formData.append(key, value.toString());
         }
@@ -88,32 +88,19 @@ export function NovoPastorDialog() {
         formData.append('foto', fotoInput.files[0]);
       }
 
-      // Adiciona campos necessários
       formData.append('igreja_id', user.igreja_id.toString());
-      formData.append('data_inicio', new Date().toISOString());
-      formData.append('cpf', cpf);
 
-      console.log("FormData preparado, enviando requisição...");
+      const res = await fetch('/api/pastores', {
+        method: 'POST',
+        body: formData,
+      });
 
-      try {
-        const res = await fetch('/api/pastores', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!res.ok) {
-          const error = await res.text();
-          console.error("Erro ao cadastrar pastor:", error);
-          throw new Error(error);
-        }
-
-        const responseData = await res.json();
-        console.log("Pastor cadastrado com sucesso:", responseData);
-        return responseData;
-      } catch (error) {
-        console.error("Erro na requisição:", error);
-        throw error;
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
       }
+
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pastores"] });
@@ -124,7 +111,6 @@ export function NovoPastorDialog() {
       form.reset();
     },
     onError: (error: Error) => {
-      console.error("Erro na mutation:", error);
       toast({
         title: "Erro ao cadastrar pastor",
         description: error.message,
@@ -132,11 +118,6 @@ export function NovoPastorDialog() {
       });
     },
   });
-
-  const onSubmit = (data: InsertPastor) => {
-    console.log("Formulário submetido com dados:", data);
-    mutation.mutate(data);
-  };
 
   return (
     <Dialog>
@@ -155,7 +136,7 @@ export function NovoPastorDialog() {
         </DialogHeader>
         <ScrollArea className="h-[500px] pr-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
               <FormField
                 control={form.control}
                 name="nome"
@@ -163,7 +144,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input placeholder="Nome completo" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -177,9 +158,17 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>CPF</FormLabel>
                     <FormControl>
-                      <Input
+                      <Input 
+                        placeholder="000.000.000-00" 
                         {...field}
-                        placeholder="000.000.000-00"
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '')
+                            .replace(/(\d{3})(?=\d)/g, '$1.')
+                            .replace(/(\d{3})(?=\d)/g, '$1.')
+                            .replace(/(\d{3})(?=\d)/g, '$1-')
+                            .substring(0, 14);
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -194,11 +183,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        value={field.value || ""}
-                      />
+                      <Input type="email" placeholder="email@exemplo.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -212,10 +197,16 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
                     <FormControl>
-                      <Input
+                      <Input 
+                        placeholder="(00) 00000-0000" 
                         {...field}
-                        placeholder="(00) 00000-0000"
-                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '')
+                            .replace(/(\d{2})(?=\d)/, '($1) ')
+                            .replace(/(\d{5})(?=\d)/, '$1-')
+                            .substring(0, 15);
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -226,20 +217,14 @@ export function NovoPastorDialog() {
               <FormField
                 control={form.control}
                 name="foto"
-                render={({ field: { value, onChange, ...field } }) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Foto</FormLabel>
                     <FormControl>
-                      <Input
-                        type="file"
+                      <Input 
+                        type="file" 
                         accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            onChange(file);
-                          }
-                        }}
-                        {...field}
+                        onChange={(e) => field.onChange(e.target.files?.[0])}
                       />
                     </FormControl>
                     <FormMessage />
@@ -254,10 +239,10 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Biografia</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <Textarea 
+                        placeholder="Breve biografia do pastor..."
+                        className="resize-none"
                         {...field}
-                        value={field.value || ""}
-                        className="h-20"
                       />
                     </FormControl>
                     <FormMessage />
@@ -271,7 +256,10 @@ export function NovoPastorDialog() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ano de Ordenação</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                    <Select 
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      defaultValue={field.value?.toString()}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o ano" />
@@ -304,7 +292,9 @@ export function NovoPastorDialog() {
                       </FormControl>
                       <SelectContent>
                         {Object.entries(tiposVinculo).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -313,15 +303,29 @@ export function NovoPastorDialog() {
                 )}
               />
 
-              <Button
-                type="submit"
+              <FormField
+                control={form.control}
+                name="data_inicio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Início</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button 
+                type="submit" 
                 className="w-full"
                 disabled={mutation.isPending}
               >
-                {mutation.isPending ? (
+                {mutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Cadastrar
+                )}
+                Cadastrar Pastor
               </Button>
             </form>
           </Form>
