@@ -59,6 +59,9 @@ export function NovaLiderancaDialog() {
     defaultValues: {
       cargo: "presbitero",
       status: "ativo",
+      data_eleicao: undefined,
+      data_inicio: undefined,
+      data_fim: undefined,
     },
   });
 
@@ -71,6 +74,9 @@ export function NovaLiderancaDialog() {
         membro_id: data.membro_id,
         cargo: data.cargo,
         igreja_id: user.igreja_id,
+        data_eleicao: data.data_eleicao, // Added date fields
+        data_inicio: data.data_inicio,
+        data_fim: data.data_fim,
       });
 
       if (!liderancaRes.ok) {
