@@ -2,6 +2,24 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
+import multer from "multer";
+import { join } from "path";
+import { mkdir } from "fs/promises";
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: async function (req, file, cb) {
+      const uploadDir = join(process.cwd(), "uploads");
+      await mkdir(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + '-' + file.originalname);
+    }
+  })
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -74,6 +92,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const liderancas = await storage.getLiderancas(req.user.igreja_id);
     res.json(liderancas);
+  });
+
+  app.post("/api/liderancas", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      console.log("Criando nova liderança:", req.body);
+      const novaLideranca = await storage.createLideranca({
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      res.status(201).json(novaLideranca);
+    } catch (error) {
+      console.error("Erro ao criar liderança:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  // Pastor routes
+  app.get("/api/pastores", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    const pastores = await storage.getPastores(req.user.igreja_id);
+    res.json(pastores);
+  });
+
+  app.post("/api/pastores", upload.single('foto'), async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      console.log("Criando novo pastor:", req.body);
+      const novoPastor = await storage.createPastor({
+        ...req.body,
+        foto: req.file ? `/uploads/${req.file.filename}` : null,
+        igreja_id: req.user.igreja_id,
+      });
+      res.status(201).json(novoPastor);
+    } catch (error) {
+      console.error("Erro ao criar pastor:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
   });
 
   // Create HTTP server
