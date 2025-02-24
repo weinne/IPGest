@@ -43,7 +43,15 @@ interface GerenciarMandatosDialogProps {
 }
 
 const checkMandatoStatus = (mandato: MandatoLideranca): string => {
-  // Add your logic to determine the correct mandate status here.  This function is not provided in the original code but is used in the edited code.  Replace this with your actual implementation.
+  if (mandato.status !== "ativo") return mandato.status;
+
+  if (mandato.data_fim) {
+    const endDate = new Date(mandato.data_fim);
+    if (endDate < new Date()) {
+      return "inativo";
+    }
+  }
+
   return mandato.status;
 };
 
@@ -98,7 +106,13 @@ export function GerenciarMandatosDialog({ lideranca, mandatos, open, onOpenChang
         editingMandato ? `/api/mandatos/liderancas/${editingMandato.id}` : "/api/mandatos/liderancas",
         data
       );
-      return res.json();
+
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
+
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatos/liderancas"] });

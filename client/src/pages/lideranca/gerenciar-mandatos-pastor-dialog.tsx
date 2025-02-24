@@ -33,7 +33,6 @@ import { Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
 import React from 'react';
 
 interface GerenciarMandatosPastorDialogProps {
@@ -42,6 +41,19 @@ interface GerenciarMandatosPastorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const checkMandatoStatus = (mandato: MandatoPastor): string => {
+  if (mandato.status !== "ativo") return mandato.status;
+
+  if (mandato.data_fim) {
+    const endDate = new Date(mandato.data_fim);
+    if (endDate < new Date()) {
+      return "inativo";
+    }
+  }
+
+  return mandato.status;
+};
 
 export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenChange }: GerenciarMandatosPastorDialogProps) {
   const { toast } = useToast();
@@ -59,7 +71,6 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
     },
   });
 
-  // Reset form when editingMandato changes
   React.useEffect(() => {
     if (editingMandato) {
       form.reset({
@@ -80,34 +91,6 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
     }
   }, [editingMandato, form]);
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async (mandatoId: number) => {
-      const res = await apiRequest("PATCH", `/api/mandatos/pastores/${mandatoId}`, {
-        status: "inativo"
-      });
-      if (!res.ok) throw new Error("Erro ao atualizar status do mandato");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/mandatos/pastores"] });
-    },
-    onError: (error: Error) => {
-      console.error("Erro ao atualizar status do mandato:", error);
-    },
-  });
-
-  // Check for expired mandates when component mounts or mandatos changes
-  useEffect(() => {
-    mandatos.forEach(mandato => {
-      if (mandato.status === "ativo" && mandato.data_fim) {
-        const endDate = new Date(mandato.data_fim);
-        if (endDate < new Date()) {
-          updateStatusMutation.mutate(mandato.id);
-        }
-      }
-    });
-  }, [mandatos, updateStatusMutation]);
-
   const mutation = useMutation({
     mutationFn: async (values: any) => {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
@@ -127,7 +110,13 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
         editingMandato ? `/api/mandatos/pastores/${editingMandato.id}` : "/api/mandatos/pastores",
         data
       );
-      return res.json();
+
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
+
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatos/pastores"] });
@@ -168,13 +157,6 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
       });
     },
   });
-
-  const checkMandatoStatus = (mandato: MandatoPastor): string => {
-    if (mandato.data_fim && new Date(mandato.data_fim) < new Date()) {
-      return "Inativo (Data de término expirada)";
-    }
-    return mandato.status;
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
