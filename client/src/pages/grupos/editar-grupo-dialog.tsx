@@ -89,11 +89,12 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
     queryKey: ["/api/membros"],
   });
 
-  const { data: grupoMembros = [] } = useQuery<GrupoMembro[]>({
+  const { data: grupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery<GrupoMembro[]>({
     queryKey: ["/api/grupos", grupo.id, "membros"],
     enabled: open,
   });
 
+  // Apenas configure o form quando todos os dados necessários estiverem carregados
   const form = useForm<InsertGrupo>({
     resolver: zodResolver(insertGrupoSchema),
     defaultValues: {
@@ -101,10 +102,10 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: grupoMembros.map(m => ({
+      membros: !isLoadingGrupoMembros ? grupoMembros.map(m => ({
         membro_id: m.membro.id,
         cargo: m.cargo,
-      })),
+      })) : [],
     },
   });
 
@@ -151,6 +152,19 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
       });
     },
   });
+
+  // Se ainda estiver carregando os dados, mostre um indicador de loading
+  if (isLoadingMembros || isLoadingGrupoMembros) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0 p-0">
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

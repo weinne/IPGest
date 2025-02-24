@@ -132,6 +132,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/grupos/:id/membros", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const membros = await storage.getGrupoMembros(parseInt(req.params.id));
+      res.json(membros);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   // Leadership routes
   app.get("/api/liderancas", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
