@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -27,11 +28,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { insertMembroSchema, type InsertMembro } from "@shared/schema";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Loader2, UserPlus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import cn from 'classnames';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function NovoMembroDialog() {
   const { toast } = useToast();
@@ -39,7 +39,7 @@ export function NovoMembroDialog() {
 
   const form = useForm<InsertMembro>({
     resolver: zodResolver(insertMembroSchema),
-    mode: "onChange", // Enable real-time validation
+    mode: "onChange",
     defaultValues: {
       nome: "",
       email: "",
@@ -89,178 +89,185 @@ export function NovoMembroDialog() {
           Novo Membro
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto">
         <DialogHeader>
           <DialogTitle>Cadastrar Novo Membro</DialogTitle>
+          <DialogDescription>
+            Preencha os dados do novo membro da igreja.
+          </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      value={field.value || ""} 
-                      className={cn(
-                        form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
-                        form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
-                      )}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="email" 
-                      {...field} 
-                      value={field.value || ""} 
-                      className={cn(
-                        form.formState.errors.email && "border-red-500 focus-visible:ring-red-500",
-                        form.formState.dirtyFields.email && !form.formState.errors.email && "border-green-500 focus-visible:ring-green-500"
-                      )}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="telefone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="tel" 
-                      {...field} 
-                      value={field.value || ""} 
-                      className={cn(
-                        form.formState.errors.telefone && "border-red-500 focus-visible:ring-red-500",
-                        form.formState.dirtyFields.telefone && !form.formState.errors.telefone && "border-green-500 focus-visible:ring-green-500"
-                      )}
-                      placeholder="(11) 98765-4321"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="endereco"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      value={field.value || ""} 
-                      className={cn(
-                        form.formState.errors.endereco && "border-red-500 focus-visible:ring-red-500",
-                        form.formState.dirtyFields.endereco && !form.formState.errors.endereco && "border-green-500 focus-visible:ring-green-500"
-                      )}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="data_nascimento"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data de Nascimento</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="date" 
-                      {...field} 
-                      value={field.value || ""} 
-                      className={cn(
-                        form.formState.errors.data_nascimento && "border-red-500 focus-visible:ring-red-500",
-                        form.formState.dirtyFields.data_nascimento && !form.formState.errors.data_nascimento && "border-green-500 focus-visible:ring-green-500"
-                      )}
-                      max={new Date().toISOString().split('T')[0]}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="tipo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className={cn(
-                        form.formState.errors.tipo && "border-red-500 focus-visible:ring-red-500",
-                        form.formState.dirtyFields.tipo && !form.formState.errors.tipo && "border-green-500 focus-visible:ring-green-500"
-                      )}>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="comungante">Comungante</SelectItem>
-                      <SelectItem value="nao_comungante">Não Comungante</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="tipo_admissao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Admissão</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className={cn(
-                        form.formState.errors.tipo_admissao && "border-red-500 focus-visible:ring-red-500",
-                        form.formState.dirtyFields.tipo_admissao && !form.formState.errors.tipo_admissao && "border-green-500 focus-visible:ring-green-500"
-                      )}>
-                        <SelectValue placeholder="Selecione o tipo de admissão" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="batismo">Batismo</SelectItem>
-                      <SelectItem value="profissao_fe">Profissão de Fé</SelectItem>
-                      <SelectItem value="transferencia">Transferência</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={mutation.isPending || !isValid || !isDirty}
-            >
-              {mutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Cadastrar
-            </Button>
-          </form>
-        </Form>
+        <ScrollArea className="h-full max-h-[calc(90vh-120px)] sm:max-h-none">
+          <div className="p-1">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="nome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          value={field.value || ""} 
+                          className={cn(
+                            form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          {...field} 
+                          value={field.value || ""} 
+                          className={cn(
+                            form.formState.errors.email && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.email && !form.formState.errors.email && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="telefone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="tel" 
+                          {...field} 
+                          value={field.value || ""} 
+                          className={cn(
+                            form.formState.errors.telefone && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.telefone && !form.formState.errors.telefone && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                          placeholder="(11) 98765-4321"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endereco"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Endereço</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          value={field.value || ""} 
+                          className={cn(
+                            form.formState.errors.endereco && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.endereco && !form.formState.errors.endereco && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="data_nascimento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data de Nascimento</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          {...field} 
+                          value={field.value || ""} 
+                          className={cn(
+                            form.formState.errors.data_nascimento && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.data_nascimento && !form.formState.errors.data_nascimento && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                          max={new Date().toISOString().split('T')[0]}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tipo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className={cn(
+                            form.formState.errors.tipo && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.tipo && !form.formState.errors.tipo && "border-green-500 focus-visible:ring-green-500"
+                          )}>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="comungante">Comungante</SelectItem>
+                          <SelectItem value="nao_comungante">Não Comungante</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tipo_admissao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Admissão</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className={cn(
+                            form.formState.errors.tipo_admissao && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.tipo_admissao && !form.formState.errors.tipo_admissao && "border-green-500 focus-visible:ring-green-500"
+                          )}>
+                            <SelectValue placeholder="Selecione o tipo de admissão" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="batismo">Batismo</SelectItem>
+                          <SelectItem value="profissao_fe">Profissão de Fé</SelectItem>
+                          <SelectItem value="transferencia">Transferência</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={mutation.isPending || !isValid || !isDirty}
+                >
+                  {mutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Cadastrar
+                </Button>
+              </form>
+            </Form>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
