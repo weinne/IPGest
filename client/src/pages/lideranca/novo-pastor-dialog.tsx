@@ -53,13 +53,19 @@ export function NovoPastorDialog() {
   const form = useForm<InsertPastor>({
     resolver: zodResolver(insertPastorSchema),
     defaultValues: {
+      nome: "",
+      cpf: "",
+      email: "",
+      telefone: "",
+      bio: "",
       tipo_vinculo: "efetivo",
-      ano_ordenacao: currentYear,
+      ano_ordenacao: new Date().getFullYear(),
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: InsertPastor) => {
+      console.log("Tentando cadastrar pastor:", data);
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
       const formData = new FormData();
@@ -85,6 +91,7 @@ export function NovoPastorDialog() {
       formData.append('data_inicio', new Date().toISOString());
       formData.append('cpf', cpf);
 
+      console.log("FormData preparado, enviando requisição...");
       const res = await fetch('/api/pastores', {
         method: 'POST',
         body: formData,
@@ -92,10 +99,13 @@ export function NovoPastorDialog() {
 
       if (!res.ok) {
         const error = await res.text();
+        console.error("Erro ao cadastrar pastor:", error);
         throw new Error(error);
       }
 
-      return res.json();
+      const responseData = await res.json();
+      console.log("Pastor cadastrado com sucesso:", responseData);
+      return responseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pastores"] });
@@ -106,6 +116,7 @@ export function NovoPastorDialog() {
       form.reset();
     },
     onError: (error: Error) => {
+      console.error("Erro na mutation:", error);
       toast({
         title: "Erro ao cadastrar pastor",
         description: error.message,

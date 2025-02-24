@@ -206,7 +206,7 @@ export const insertPastorSchema = createInsertSchema(pastores).omit({
     .optional()
     .nullable()
     .transform(t => t === "" ? null : t),
-  foto: z.instanceof(File).optional(),
+  foto: z.string().optional().nullable(),
   bio: z.string().max(1000, "Biografia não pode ter mais de 1000 caracteres").optional().nullable(),
   ano_ordenacao: z.number().int().min(1900).max(new Date().getFullYear()),
   tipo_vinculo: z.enum(["efetivo", "designado"], {
