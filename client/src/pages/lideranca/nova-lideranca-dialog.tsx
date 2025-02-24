@@ -74,9 +74,9 @@ export function NovaLiderancaDialog() {
         membro_id: data.membro_id,
         cargo: data.cargo,
         igreja_id: user.igreja_id,
-        data_eleicao: data.data_eleicao, // Added date fields
-        data_inicio: data.data_inicio,
-        data_fim: data.data_fim,
+        data_eleicao: data.data_eleicao ? new Date(data.data_eleicao).toISOString() : undefined,
+        data_inicio: data.data_inicio ? new Date(data.data_inicio).toISOString() : undefined,
+        data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : undefined,
       });
 
       if (!liderancaRes.ok) {
@@ -88,9 +88,9 @@ export function NovaLiderancaDialog() {
       // Depois criar o mandato
       const mandatoRes = await apiRequest("POST", "/api/mandatos/liderancas", {
         lideranca_id: lideranca.id,
-        data_eleicao: data.data_eleicao,
-        data_inicio: data.data_inicio,
-        data_fim: data.data_fim,
+        data_eleicao: data.data_eleicao ? new Date(data.data_eleicao).toISOString() : undefined,
+        data_inicio: data.data_inicio ? new Date(data.data_inicio).toISOString() : undefined,
+        data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : undefined,
         status: data.status,
         igreja_id: user.igreja_id,
       });
