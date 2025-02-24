@@ -67,6 +67,9 @@ export function NovaLiderancaDialog() {
 
       const res = await apiRequest("POST", "/api/liderancas", {
         ...data,
+        data_eleicao: new Date(data.data_eleicao).toISOString(),
+        data_inicio: new Date(data.data_inicio).toISOString(),
+        data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : null,
         igreja_id: user.igreja_id,
       });
       return res.json();
