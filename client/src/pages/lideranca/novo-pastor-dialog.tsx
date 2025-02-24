@@ -63,15 +63,27 @@ export function NovoPastorDialog() {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
       const formData = new FormData();
+
+      // Formatação do CPF antes de enviar
+      const cpf = data.cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+
+      // Adiciona todos os campos ao FormData, exceto a foto que é tratada separadamente
       Object.entries(data).forEach(([key, value]) => {
-        if (value instanceof File) {
-          formData.append(key, value);
-        } else if (value !== null && value !== undefined) {
+        if (key === 'foto') return; // Pula o campo foto
+        if (value !== null && value !== undefined) {
           formData.append(key, value.toString());
         }
       });
+
+      // Adiciona a foto se existir
+      if (data.foto instanceof File) {
+        formData.append('foto', data.foto);
+      }
+
+      // Adiciona campos necessários
       formData.append('igreja_id', user.igreja_id.toString());
       formData.append('data_inicio', new Date().toISOString());
+      formData.append('cpf', cpf);
 
       const res = await fetch('/api/pastores', {
         method: 'POST',
@@ -79,7 +91,8 @@ export function NovoPastorDialog() {
       });
 
       if (!res.ok) {
-        throw new Error(await res.text());
+        const error = await res.text();
+        throw new Error(error);
       }
 
       return res.json();
@@ -140,7 +153,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>CPF</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         {...field}
                         placeholder="000.000.000-00"
                       />
@@ -157,7 +170,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         {...field}
                         type="email"
                         value={field.value || ""}
@@ -175,7 +188,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         {...field}
                         placeholder="(00) 00000-0000"
                         value={field.value || ""}
@@ -193,7 +206,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Foto</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
@@ -217,7 +230,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Biografia</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         {...field}
                         value={field.value || ""}
                         className="h-20"
@@ -276,9 +289,9 @@ export function NovoPastorDialog() {
                 )}
               />
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={mutation.isPending}
               >
                 {mutation.isPending ? (

@@ -106,14 +106,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      console.log("Criando nova liderança:", req.body);
+      console.log("Dados recebidos para nova liderança:", req.body);
+      const dataEleicao = new Date(req.body.data_eleicao);
+      const dataInicio = new Date(req.body.data_inicio);
+      const dataFim = req.body.data_fim ? new Date(req.body.data_fim) : null;
+
+      // Validação das datas
+      if (isNaN(dataEleicao.getTime())) {
+        throw new Error("Data de eleição inválida");
+      }
+      if (isNaN(dataInicio.getTime())) {
+        throw new Error("Data de início inválida");
+      }
+      if (dataFim && isNaN(dataFim.getTime())) {
+        throw new Error("Data de fim inválida");
+      }
+
       const data = {
-        ...req.body,
+        membro_id: parseInt(req.body.membro_id),
+        cargo: req.body.cargo,
+        status: req.body.status,
+        data_eleicao: dataEleicao,
+        data_inicio: dataInicio,
+        data_fim: dataFim,
         igreja_id: req.user.igreja_id,
-        data_eleicao: new Date(req.body.data_eleicao),
-        data_inicio: new Date(req.body.data_inicio),
-        data_fim: req.body.data_fim ? new Date(req.body.data_fim) : null,
       };
+
       const novaLideranca = await storage.createLideranca(data);
       console.log("Liderança criada:", novaLideranca);
       res.status(201).json(novaLideranca);
@@ -144,15 +162,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      console.log("Criando novo pastor:", req.body);
-      console.log("Arquivo de foto:", req.file);
+      console.log("Dados recebidos:", req.body);
       const data = {
-        ...req.body,
+        nome: req.body.nome,
+        cpf: req.body.cpf,
+        email: req.body.email || null,
+        telefone: req.body.telefone || null,
         foto: req.file ? `/uploads/${req.file.filename}` : null,
-        igreja_id: req.user.igreja_id,
-        data_inicio: new Date(),
+        bio: req.body.bio || null,
         ano_ordenacao: parseInt(req.body.ano_ordenacao),
+        tipo_vinculo: req.body.tipo_vinculo,
+        data_inicio: new Date(req.body.data_inicio),
+        igreja_id: req.user.igreja_id,
       };
+
       const novoPastor = await storage.createPastor(data);
       console.log("Pastor criado:", novoPastor);
       res.status(201).json(novoPastor);
