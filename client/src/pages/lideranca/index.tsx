@@ -130,10 +130,7 @@ const liderancasColumns = [
             Novo Mandato
           </Button>
         </div>
-      );
-      const {handleSubmit} = useForm();
-      const onSubmit = (data: any) => {
-        console.log(data);
+      );e.log(data);
         //Here you should make the API call to add new mandate
       };
 
