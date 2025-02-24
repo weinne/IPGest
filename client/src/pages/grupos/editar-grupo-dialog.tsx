@@ -154,15 +154,15 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex flex-col max-h-[85vh] md:max-h-[90vh] gap-0">
-        <DialogHeader className="px-6 py-4">
+      <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Editar Grupo</DialogTitle>
           <DialogDescription>
             Atualize as informações do grupo ou sociedade interna.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
             <form id="edit-group-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4 py-4">
               <FormField
@@ -231,7 +231,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                   <FormItem>
                     <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         {...field}
                         value={field.value || ""}
                       />
@@ -360,7 +360,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
           </Form>
         </ScrollArea>
 
-        <div className="flex justify-between gap-2 px-6 py-4 border-t">
+        <div className="flex justify-between gap-2 px-6 py-4 border-t mt-auto">
           <Button
             type="button"
             variant="destructive"

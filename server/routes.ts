@@ -49,6 +49,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/membros/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const membroId = parseInt(req.params.id);
+      await storage.deleteMembro(membroId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+
   // Groups routes
   app.get("/api/grupos", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -73,13 +87,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/grupos/:id/membros", async (req, res) => {
+  app.delete("/api/grupos/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      const membros = await storage.getGrupoMembros(parseInt(req.params.id));
-      res.json(membros);
+      const grupoId = parseInt(req.params.id);
+      await storage.deleteGrupo(grupoId);
+      res.json({ success: true });
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }
@@ -228,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Deletando mandato de liderança:", mandatoId);
       await storage.deleteMandatoLideranca(mandatoId);
       console.log("Mandato de liderança deletado com sucesso");
-      res.sendStatus(200);
+      res.json({ success: true }); //Updated to return JSON
     } catch (error) {
       console.error("Erro ao deletar mandato de liderança:", error);
       res.status(400).json({ message: (error as Error).message });
@@ -278,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Deletando mandato de pastor:", mandatoId);
       await storage.deleteMandatoPastor(mandatoId);
       console.log("Mandato de pastor deletado com sucesso");
-      res.sendStatus(200);
+      res.json({ success: true }); //Updated to return JSON
     } catch (error) {
       console.error("Erro ao deletar mandato de pastor:", error);
       res.status(400).json({ message: (error as Error).message });
