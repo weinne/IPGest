@@ -15,6 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { NovoMembroDialog } from "./novo-membro-dialog";
+import { EditarMembroDialog } from "./editar-membro-dialog";
+import { useState } from "react";
 
 const columns = [
   {
@@ -54,26 +56,30 @@ const columns = [
     id: "actions",
     cell: ({ row }: { row: any }) => {
       const membro = row.original as Membro;
+      const [open, setOpen] = useState(false);
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              Visualizar
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menu</span>
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <EditarMembroDialog 
+            membro={membro} 
+            open={open} 
+            onOpenChange={setOpen}
+          />
+        </>
       );
     },
   },

@@ -31,6 +31,10 @@ export interface IStorage {
   deleteMandatoPastor(id: number): Promise<void>;
   updateMandatoLideranca(id: number, mandato: Partial<InsertMandatoLideranca> & { igreja_id: number }): Promise<MandatoLideranca>;
   updateMandatoPastor(id: number, mandato: Partial<InsertMandatoPastor> & { igreja_id: number }): Promise<MandatoPastor>;
+  deleteMembro(id: number): Promise<void>;
+  deleteGrupo(id: number): Promise<void>;
+  updateMembro(id: number, membro: Partial<InsertMembro> & { igreja_id: number }): Promise<Membro>;
+  updateGrupo(id: number, grupo: Partial<InsertGrupo> & { igreja_id: number }): Promise<Grupo>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -220,6 +224,47 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mandatos_pastores.id, id))
       .returning();
     return updatedMandato;
+  }
+  async deleteMembro(id: number): Promise<void> {
+    await db.delete(membros).where(eq(membros.id, id));
+  }
+
+  async deleteGrupo(id: number): Promise<void> {
+    // Delete related records first
+    await db.delete(membros_grupos).where(eq(membros_grupos.grupo_id, id));
+    await db.delete(grupos).where(eq(grupos.id, id));
+  }
+
+  async updateMembro(id: number, membro: Partial<InsertMembro> & { igreja_id: number }): Promise<Membro> {
+    const [updatedMembro] = await db
+      .update(membros)
+      .set({
+        ...membro,
+        data_nascimento: membro.data_nascimento ? new Date(membro.data_nascimento) : undefined,
+      })
+      .where(eq(membros.id, id))
+      .returning();
+    return updatedMembro;
+  }
+
+  async updateGrupo(id: number, grupo: Partial<InsertGrupo> & { igreja_id: number }): Promise<Grupo> {
+    const { membros: membrosData, ...grupoData } = grupo;
+    const [updatedGrupo] = await db
+      .update(grupos)
+      .set(grupoData)
+      .where(eq(grupos.id, id))
+      .returning();
+
+    if (membrosData) {
+      // Delete existing members
+      await db.delete(membros_grupos).where(eq(membros_grupos.grupo_id, id));
+      // Add new members
+      if (membrosData.length > 0) {
+        await this.addMembrosToGrupo(id, membrosData);
+      }
+    }
+
+    return updatedGrupo;
   }
 }
 
