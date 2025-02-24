@@ -23,6 +23,7 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   if (!stored || !stored.includes(".")) {
+    console.log("Invalid stored password format:", stored);
     return false;
   }
   const [hashed, salt] = stored.split(".");
@@ -46,12 +47,25 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
+      console.log("Tentando autenticar usuário:", username);
       const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
+      console.log("Usuário encontrado:", user);
+
+      if (!user) {
+        console.log("Usuário não encontrado");
         return done(null, false);
-      } else {
-        return done(null, user);
       }
+
+      const passwordMatch = await comparePasswords(password, user.password);
+      console.log("Senha corresponde:", passwordMatch);
+
+      if (!passwordMatch) {
+        console.log("Senha incorreta");
+        return done(null, false);
+      }
+
+      console.log("Autenticação bem-sucedida");
+      return done(null, user);
     }),
   );
 
