@@ -26,13 +26,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+} from "@/components/ui/form";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Input,
-} from "@/components/ui/form";
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 
 
