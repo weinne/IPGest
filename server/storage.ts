@@ -1,4 +1,4 @@
-import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor } from "@shared/schema";
+import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, mandatos_pastores, mandatos_liderancas, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor, type MandatoPastor, type InsertMandatoPastor, type MandatoLideranca, type InsertMandatoLideranca } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import session from "express-session";
@@ -16,9 +16,13 @@ export interface IStorage {
   getGrupos(igreja_id: number): Promise<Grupo[]>;
   getLiderancas(igreja_id: number): Promise<Lideranca[]>;
   getPastores(igreja_id: number): Promise<Pastor[]>;
+  getMandatosPastores(igreja_id: number): Promise<MandatoPastor[]>;
+  getMandatosLiderancas(igreja_id: number): Promise<MandatoLideranca[]>;
   createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro>;
   createLideranca(lideranca: InsertLideranca & { igreja_id: number }): Promise<Lideranca>;
   createPastor(pastor: InsertPastor & { igreja_id: number }): Promise<Pastor>;
+  createMandatoPastor(mandato: InsertMandatoPastor & { igreja_id: number }): Promise<MandatoPastor>;
+  createMandatoLideranca(mandato: InsertMandatoLideranca & { igreja_id: number }): Promise<MandatoLideranca>;
   sessionStore: session.Store;
   createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo>;
   addMembrosToGrupo(grupo_id: number, membros: { membro_id: number; cargo: string }[]): Promise<void>;
@@ -66,6 +70,14 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(pastores).where(eq(pastores.igreja_id, igreja_id));
   }
 
+  async getMandatosPastores(igreja_id: number): Promise<MandatoPastor[]> {
+    return await db.select().from(mandatos_pastores).where(eq(mandatos_pastores.igreja_id, igreja_id));
+  }
+
+  async getMandatosLiderancas(igreja_id: number): Promise<MandatoLideranca[]> {
+    return await db.select().from(mandatos_liderancas).where(eq(mandatos_liderancas.igreja_id, igreja_id));
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const {
       igreja_nome,
@@ -106,20 +118,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLideranca(lideranca: InsertLideranca & { igreja_id: number }): Promise<Lideranca> {
-    const [novaLideranca] = await db.insert(liderancas).values({
-      ...lideranca,
-      data_eleicao: new Date(),
-      data_inicio: new Date(),
-    }).returning();
+    const [novaLideranca] = await db.insert(liderancas).values(lideranca).returning();
     return novaLideranca;
   }
 
   async createPastor(pastor: InsertPastor & { igreja_id: number }): Promise<Pastor> {
-    const [novoPastor] = await db.insert(pastores).values({
-      ...pastor,
-      data_inicio: new Date(),
-    }).returning();
+    const [novoPastor] = await db.insert(pastores).values(pastor).returning();
     return novoPastor;
+  }
+
+  async createMandatoPastor(mandato: InsertMandatoPastor & { igreja_id: number }): Promise<MandatoPastor> {
+    const [novoMandato] = await db.insert(mandatos_pastores).values({
+      ...mandato,
+      data_eleicao: new Date(mandato.data_eleicao),
+      data_inicio: new Date(mandato.data_inicio),
+      data_fim: mandato.data_fim ? new Date(mandato.data_fim) : null,
+    }).returning();
+    return novoMandato;
+  }
+
+  async createMandatoLideranca(mandato: InsertMandatoLideranca & { igreja_id: number }): Promise<MandatoLideranca> {
+    const [novoMandato] = await db.insert(mandatos_liderancas).values({
+      ...mandato,
+      data_eleicao: new Date(mandato.data_eleicao),
+      data_inicio: new Date(mandato.data_inicio),
+      data_fim: mandato.data_fim ? new Date(mandato.data_fim) : null,
+    }).returning();
+    return novoMandato;
   }
 
   async createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo> {
