@@ -30,6 +30,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 import * as z from "zod";
+import { useAuth } from "@/hooks/use-auth";
 
 const formSchema = z.object({
   username: z.string()
@@ -52,6 +53,7 @@ interface NovoUsuarioDialogProps {
 export function NovoUsuarioDialog({ children, open, onOpenChange }: NovoUsuarioDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -64,7 +66,10 @@ export function NovoUsuarioDialog({ children, open, onOpenChange }: NovoUsuarioD
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const res = await apiRequest("POST", "/api/users", data);
+      const res = await apiRequest("POST", "/api/users", {
+        ...data,
+        igreja_id: user?.igreja_id,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -155,9 +160,9 @@ export function NovoUsuarioDialog({ children, open, onOpenChange }: NovoUsuarioD
         </div>
 
         <div className="flex justify-end px-6 py-4 border-t mt-auto">
-          <Button 
+          <Button
             form="new-user-form"
-            type="submit" 
+            type="submit"
             disabled={mutation.isPending}
           >
             {mutation.isPending ? (
