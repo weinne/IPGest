@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
@@ -31,6 +31,11 @@ const upload = multer({
     }
   })
 });
+
+// Add audit log helper
+function logAudit(req: Request, operacao: string, tipo: string, id: number) {
+  console.log(`AUDIT: usuário ${req.user?.username} (${req.user?.id}) realizou ${operacao} em ${tipo} #${id} às ${new Date().toISOString()}`);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -99,6 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const membroId = parseInt(req.params.id);
       await storage.deleteMembro(membroId);
+      logAudit(req, "EXCLUSÃO", "membro", membroId);
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
@@ -114,6 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         igreja_id: req.user.igreja_id,
       });
+      logAudit(req, "EDIÇÃO", "membro", membroId);
       res.json(membro);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
@@ -150,6 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const grupoId = parseInt(req.params.id);
       await storage.deleteGrupo(grupoId);
+      logAudit(req, "EXCLUSÃO", "grupo", grupoId);
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
@@ -165,6 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         igreja_id: req.user.igreja_id,
       });
+      logAudit(req, "EDIÇÃO", "grupo", grupoId);
       res.json(grupo);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
@@ -319,9 +328,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const mandatoId = parseInt(req.params.id);
-      console.log("Deletando mandato de liderança:", mandatoId);
       await storage.deleteMandatoLideranca(mandatoId);
-      console.log("Mandato de liderança deletado com sucesso");
+      logAudit(req, "EXCLUSÃO", "mandato de liderança", mandatoId);
       res.json({ success: true });
     } catch (error) {
       console.error("Erro ao deletar mandato de liderança:", error);
@@ -329,39 +337,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add PATCH endpoints for mandate updates
   app.patch("/api/mandatos/liderancas/:id", isAdmin, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
       const mandatoId = parseInt(req.params.id);
-      console.log("Atualizando mandato de liderança:", mandatoId, "dados:", req.body);
       const mandato = await storage.updateMandatoLideranca(mandatoId, {
         ...req.body,
         igreja_id: req.user.igreja_id,
       });
-      console.log("Mandato de liderança atualizado com sucesso:", mandato);
+      logAudit(req, "EDIÇÃO", "mandato de liderança", mandatoId);
       res.json(mandato);
     } catch (error) {
       console.error("Erro ao atualizar mandato de liderança:", error);
-      res.status(400).json({ message: (error as Error).message });
-    }
-  });
-
-  app.patch("/api/mandatos/pastores/:id", isAdmin, async (req, res) => {
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-
-    try {
-      const mandatoId = parseInt(req.params.id);
-      console.log("Atualizando mandato de pastor:", mandatoId, "dados:", req.body);
-      const mandato = await storage.updateMandatoPastor(mandatoId, {
-        ...req.body,
-        igreja_id: req.user.igreja_id,
-      });
-      console.log("Mandato de pastor atualizado com sucesso:", mandato);
-      res.json(mandato);
-    } catch (error) {
-      console.error("Erro ao atualizar mandato de pastor:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
@@ -404,12 +392,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const mandatoId = parseInt(req.params.id);
-      console.log("Deletando mandato de pastor:", mandatoId);
       await storage.deleteMandatoPastor(mandatoId);
-      console.log("Mandato de pastor deletado com sucesso");
+      logAudit(req, "EXCLUSÃO", "mandato de pastor", mandatoId);
       res.json({ success: true });
     } catch (error) {
       console.error("Erro ao deletar mandato de pastor:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.patch("/api/mandatos/pastores/:id", isAdmin, async (req, res) => {
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const mandatoId = parseInt(req.params.id);
+      const mandato = await storage.updateMandatoPastor(mandatoId, {
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      logAudit(req, "EDIÇÃO", "mandato de pastor", mandatoId);
+      res.json(mandato);
+    } catch (error) {
+      console.error("Erro ao atualizar mandato de pastor:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
