@@ -17,28 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 import { NovaLiderancaDialog } from "./nova-lideranca-dialog";
 import { NovoPastorDialog } from "./novo-pastor-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
 import React from 'react';
 import { GerenciarMandatosDialog } from "./gerenciar-mandatos-dialog";
-
+import { GerenciarMandatosPastorDialog } from "./gerenciar-mandatos-pastor-dialog";
 
 const liderancasColumns = [
   {
@@ -91,28 +72,9 @@ const liderancasColumns = [
     cell: ({ row }: { row: any }) => {
       const mandatos = row.original.mandatos as MandatoLideranca[];
       return (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              Ver Histórico ({mandatos.length})
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Histórico de Mandatos</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              {mandatos.map((mandato) => (
-                <div key={mandato.id} className="border p-4 rounded-lg">
-                  <p>Status: {mandato.status}</p>
-                  <p>Eleição: {format(new Date(mandato.data_eleicao), "dd/MM/yyyy")}</p>
-                  <p>Início: {format(new Date(mandato.data_inicio), "dd/MM/yyyy")}</p>
-                  <p>Término: {mandato.data_fim ? format(new Date(mandato.data_fim), "dd/MM/yyyy") : "-"}</p>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="text-center">
+          {mandatos.length} mandato{mandatos.length === 1 ? '' : 's'}
+        </div>
       );
     },
   },
@@ -196,26 +158,41 @@ const pastoresColumns = [
     id: "actions",
     cell: ({ row }: { row: any }) => {
       const pastor = row.original as Pastor;
+      const mandatos = row.original.mandatos as MandatoPastor[];
+      const [mandatosDialogOpen, setMandatosDialogOpen] = React.useState(false);
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              Visualizar
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setMandatosDialogOpen(true)}>
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Gerir Mandatos
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizar
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <GerenciarMandatosPastorDialog
+            pastor={pastor}
+            mandatos={mandatos}
+            open={mandatosDialogOpen}
+            onOpenChange={setMandatosDialogOpen}
+          />
+        </div>
       );
     },
   },
@@ -240,24 +217,47 @@ export default function LiderancaPage() {
     queryKey: ["/api/mandatos/pastores"],
   });
 
-  // Combinar lideranças com seus mandatos ativos
-  const liderancasComMandatos = liderancas.map(lideranca => ({
-    ...lideranca,
-    mandato: mandatosLiderancas.find(
-      m => m.lideranca_id === lideranca.id && m.status === "ativo"
-    ),
-    mandatos: mandatosLiderancas.filter(
-      m => m.lideranca_id === lideranca.id
-    ),
-  }));
+  const pastoresComMandatos = React.useMemo(() => {
+    return pastores.map((pastor: Pastor) => {
+      const allMandatos = mandatosPastores.filter(m => m.pastor_id === pastor.id);
 
-  // Combinar pastores com seus mandatos ativos
-  const pastoresComMandatos = pastores.map(pastor => ({
-    ...pastor,
-    mandato: mandatosPastores.find(
-      m => m.pastor_id === pastor.id && m.status === "ativo"
-    ),
-  }));
+      // Find active mandate and check if it's expired
+      const activeMandate = allMandatos.find(m => m.status === "ativo");
+      if (activeMandate?.data_fim) {
+        const endDate = new Date(activeMandate.data_fim);
+        if (endDate < new Date()) {
+          activeMandate.status = "inativo";
+        }
+      }
+
+      return {
+        ...pastor,
+        mandato: activeMandate,
+        mandatos: allMandatos,
+      };
+    });
+  }, [pastores, mandatosPastores]);
+
+  const liderancasComMandatos = React.useMemo(() => {
+    return liderancas.map((lideranca: Lideranca) => {
+      const allMandatos = mandatosLiderancas.filter(m => m.lideranca_id === lideranca.id);
+
+      // Find active mandate and check if it's expired
+      const activeMandate = allMandatos.find(m => m.status === "ativo");
+      if (activeMandate?.data_fim) {
+        const endDate = new Date(activeMandate.data_fim);
+        if (endDate < new Date()) {
+          activeMandate.status = "inativo";
+        }
+      }
+
+      return {
+        ...lideranca,
+        mandato: activeMandate,
+        mandatos: allMandatos,
+      };
+    });
+  }, [liderancas, mandatosLiderancas]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -289,9 +289,9 @@ export default function LiderancaPage() {
                 {isLoadingLiderancas || isLoadingMandatosLiderancas ? (
                   <div className="text-center py-4">Carregando...</div>
                 ) : (
-                  <DataTable 
-                    columns={liderancasColumns} 
-                    data={liderancasComMandatos} 
+                  <DataTable
+                    columns={liderancasColumns}
+                    data={liderancasComMandatos}
                     searchColumn="cargo"
                   />
                 )}
@@ -308,9 +308,9 @@ export default function LiderancaPage() {
                 {isLoadingPastores || isLoadingMandatosPastores ? (
                   <div className="text-center py-4">Carregando...</div>
                 ) : (
-                  <DataTable 
-                    columns={pastoresColumns} 
-                    data={pastoresComMandatos} 
+                  <DataTable
+                    columns={pastoresColumns}
+                    data={pastoresComMandatos}
                     searchColumn="nome"
                   />
                 )}
