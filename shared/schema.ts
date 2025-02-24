@@ -2,7 +2,7 @@ import { pgTable, text, serial, integer, boolean, date, timestamp } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Igreja (tenant)
+// Igreja (tenant) - permanece igual
 export const igrejas = pgTable("igrejas", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
@@ -11,7 +11,7 @@ export const igrejas = pgTable("igrejas", {
   presbitero: text("presbitero").notNull(),
 });
 
-// Usuário do sistema
+// Users - permanece igual
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -20,7 +20,7 @@ export const users = pgTable("users", {
   igreja_id: integer("igreja_id").references(() => igrejas.id),
 });
 
-// Membro da igreja
+// Membros - permanece igual
 export const membros = pgTable("membros", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
@@ -35,7 +35,7 @@ export const membros = pgTable("membros", {
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
-// Grupos/Sociedades
+// Grupos/Sociedades - permanece igual
 export const grupos = pgTable("grupos", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
@@ -47,7 +47,7 @@ export const grupos = pgTable("grupos", {
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
-// Relacionamento membros-grupos com cargo opcional
+// Membros-grupos - permanece igual
 export const membros_grupos = pgTable("membros_grupos", {
   membro_id: integer("membro_id").references(() => membros.id),
   grupo_id: integer("grupo_id").references(() => grupos.id),
@@ -65,7 +65,7 @@ export const membros_grupos = pgTable("membros_grupos", {
   }).default("membro"),
 });
 
-// Pastores (não são membros, dados cadastrados diretamente)
+// Pastores - removidos campos de mandato
 export const pastores = pgTable("pastores", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
@@ -75,26 +75,44 @@ export const pastores = pgTable("pastores", {
   foto: text("foto"),
   bio: text("bio"),
   ano_ordenacao: integer("ano_ordenacao").notNull(),
+  igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
+});
+
+// Mandatos de pastores - nova tabela
+export const mandatos_pastores = pgTable("mandatos_pastores", {
+  id: serial("id").primaryKey(),
+  pastor_id: integer("pastor_id").references(() => pastores.id).notNull(),
+  data_eleicao: timestamp("data_eleicao").notNull(),
   data_inicio: timestamp("data_inicio").notNull(),
   data_fim: timestamp("data_fim"),
   tipo_vinculo: text("tipo_vinculo", {
     enum: ["eleito", "designado"]
   }).notNull(),
+  status: text("status", { 
+    enum: ["ativo", "finalizado"]
+  }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
-// Liderança (Presbíteros e Diáconos)
+// Lideranças - removidos campos de mandato
 export const liderancas = pgTable("liderancas", {
   id: serial("id").primaryKey(),
-  membro_id: integer("membro_id").references(() => membros.id),
+  membro_id: integer("membro_id").references(() => membros.id).notNull(),
   cargo: text("cargo", {
     enum: ["presbitero", "diacono"]
   }).notNull(),
+  igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
+});
+
+// Mandatos de lideranças - nova tabela
+export const mandatos_liderancas = pgTable("mandatos_liderancas", {
+  id: serial("id").primaryKey(),
+  lideranca_id: integer("lideranca_id").references(() => liderancas.id).notNull(),
   data_eleicao: timestamp("data_eleicao").notNull(),
   data_inicio: timestamp("data_inicio").notNull(),
   data_fim: timestamp("data_fim"),
   status: text("status", {
-    enum: ["ativo", "inativo", "afastado", "emerito"]
+    enum: ["ativo", "inativo", "afastado", "emerito", "finalizado"]
   }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
@@ -211,13 +229,6 @@ export const insertPastorSchema = createInsertSchema(pastores).omit({
   foto: z.any().optional().nullable(),
   bio: z.string().max(1000, "Biografia não pode ter mais de 1000 caracteres").optional().nullable(),
   ano_ordenacao: z.number().int().min(1900).max(new Date().getFullYear()),
-  tipo_vinculo: z.enum(["eleito", "designado"], {
-    required_error: "Selecione o tipo de vínculo",
-    invalid_type_error: "Tipo de vínculo inválido",
-  }),
-  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
-  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
-  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
 });
 
 // Schema para inserção de lideranças
@@ -232,9 +243,36 @@ export const insertLiderancaSchema = createInsertSchema(liderancas).omit({
     required_error: "Selecione o status",
     invalid_type_error: "Status inválido",
   }),
+});
+
+// Schema para inserção de mandatos de pastores
+export const insertMandatoPastorSchema = createInsertSchema(mandatos_pastores).omit({
+  igreja_id: true,
+}).extend({
   data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
   data_inicio: z.string().transform((date) => new Date(date).toISOString()),
   data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
+  tipo_vinculo: z.enum(["eleito", "designado"], {
+    required_error: "Selecione o tipo de vínculo",
+    invalid_type_error: "Tipo de vínculo inválido",
+  }),
+  status: z.enum(["ativo", "finalizado"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
+});
+
+// Schema para inserção de mandatos de lideranças
+export const insertMandatoLiderancaSchema = createInsertSchema(mandatos_liderancas).omit({
+  igreja_id: true,
+}).extend({
+  data_eleicao: z.string().transform((date) => new Date(date).toISOString()),
+  data_inicio: z.string().transform((date) => new Date(date).toISOString()),
+  data_fim: z.string().nullable().optional().transform((date) => date ? new Date(date).toISOString() : null),
+  status: z.enum(["ativo", "inativo", "afastado", "emerito", "finalizado"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
 });
 
 // Types
@@ -255,3 +293,9 @@ export type InsertPastor = z.infer<typeof insertPastorSchema>;
 
 export type Lideranca = typeof liderancas.$inferSelect;
 export type InsertLideranca = z.infer<typeof insertLiderancaSchema>;
+
+export type MandatoPastor = typeof mandatos_pastores.$inferSelect;
+export type InsertMandatoPastor = z.infer<typeof insertMandatoPastorSchema>;
+
+export type MandatoLideranca = typeof mandatos_liderancas.$inferSelect;
+export type InsertMandatoLideranca = z.infer<typeof insertMandatoLiderancaSchema>;
