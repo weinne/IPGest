@@ -65,13 +65,37 @@ export const membros_grupos = pgTable("membros_grupos", {
   }).default("membro"),
 });
 
-// Liderança
+// Pastores (não são membros, dados cadastrados diretamente)
+export const pastores = pgTable("pastores", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  cpf: text("cpf").notNull().unique(),
+  email: text("email"),
+  telefone: text("telefone"),
+  foto_url: text("foto_url"),
+  bio: text("bio"),
+  ano_ordenacao: integer("ano_ordenacao").notNull(),
+  data_inicio: timestamp("data_inicio").notNull(),
+  data_fim: timestamp("data_fim"),
+  tipo_vinculo: text("tipo_vinculo", { 
+    enum: ["efetivo", "designado"] 
+  }).notNull(),
+  igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
+});
+
+// Liderança (Presbíteros e Diáconos)
 export const liderancas = pgTable("liderancas", {
   id: serial("id").primaryKey(),
   membro_id: integer("membro_id").references(() => membros.id),
-  cargo: text("cargo", { enum: ["pastor", "presbitero", "diacono"] }).notNull(),
+  cargo: text("cargo", { 
+    enum: ["presbitero", "diacono"] 
+  }).notNull(),
+  data_eleicao: timestamp("data_eleicao").notNull(),
   data_inicio: timestamp("data_inicio").notNull(),
   data_fim: timestamp("data_fim"),
+  status: text("status", { 
+    enum: ["ativo", "inativo", "afastado", "emerito"] 
+  }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
@@ -163,8 +187,47 @@ export const insertGrupoSchema = createInsertSchema(grupos).omit({
   })).default([]),
 });
 
+// Schema para inserção de pastores
+export const insertPastorSchema = createInsertSchema(pastores).omit({
+  igreja_id: true,
+}).extend({
+  nome: z.string()
+    .min(3, "Nome deve ter pelo menos 3 caracteres")
+    .max(100, "Nome não pode ter mais de 100 caracteres")
+    .regex(/^[a-zA-ZÀ-ÿ\s]*$/, "Nome deve conter apenas letras"),
+  cpf: z.string()
+    .regex(/^\d{3}\.\d{3}\.\d{3}\-\d{2}$/, "CPF inválido"),
+  email: z.string()
+    .email("Email inválido")
+    .optional()
+    .nullable()
+    .transform(e => e === "" ? null : e),
+  telefone: z.string()
+    .regex(/^\(?[1-9]{2}\)? ?(?:[2-8]|9[1-9])[0-9]{3}\-?[0-9]{4}$/, "Telefone inválido")
+    .optional()
+    .nullable()
+    .transform(t => t === "" ? null : t),
+  foto_url: z.string().url("URL inválida").optional().nullable(),
+  bio: z.string().max(1000, "Biografia não pode ter mais de 1000 caracteres").optional().nullable(),
+  ano_ordenacao: z.number().int().min(1900).max(new Date().getFullYear()),
+  tipo_vinculo: z.enum(["efetivo", "designado"], {
+    required_error: "Selecione o tipo de vínculo",
+    invalid_type_error: "Tipo de vínculo inválido",
+  }),
+});
+
+// Schema para inserção de lideranças
 export const insertLiderancaSchema = createInsertSchema(liderancas).omit({
   igreja_id: true,
+}).extend({
+  cargo: z.enum(["presbitero", "diacono"], {
+    required_error: "Selecione o cargo",
+    invalid_type_error: "Cargo inválido",
+  }),
+  status: z.enum(["ativo", "inativo", "afastado", "emerito"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
 });
 
 // Types
@@ -179,6 +242,9 @@ export type InsertMembro = z.infer<typeof insertMembroSchema>;
 
 export type Grupo = typeof grupos.$inferSelect;
 export type InsertGrupo = z.infer<typeof insertGrupoSchema>;
+
+export type Pastor = typeof pastores.$inferSelect;
+export type InsertPastor = z.infer<typeof insertPastorSchema>;
 
 export type Lideranca = typeof liderancas.$inferSelect;
 export type InsertLideranca = z.infer<typeof insertLiderancaSchema>;
