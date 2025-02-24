@@ -222,8 +222,11 @@ export function NovaLiderancaDialog() {
                       <Input 
                         type="date" 
                         {...field}
-                        value={field.value || ''} 
-                        onChange={(e) => field.onChange(e.target.value)}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -241,8 +244,11 @@ export function NovaLiderancaDialog() {
                       <Input 
                         type="date" 
                         {...field}
-                        value={field.value || ''} 
-                        onChange={(e) => field.onChange(e.target.value)}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
