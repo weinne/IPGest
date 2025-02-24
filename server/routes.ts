@@ -185,6 +185,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mandatos de lideranças
+  app.get("/api/mandatos/liderancas", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      console.log("Buscando mandatos de lideranças para igreja:", req.user.igreja_id);
+      const mandatos = await storage.getMandatosLiderancas(req.user.igreja_id);
+      console.log("Mandatos de lideranças encontrados:", mandatos);
+      res.json(mandatos);
+    } catch (error) {
+      console.error("Erro ao buscar mandatos de lideranças:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/mandatos/liderancas", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      console.log("Dados recebidos para novo mandato de liderança:", req.body);
+      const novoMandato = await storage.createMandatoLideranca({
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      console.log("Mandato de liderança criado:", novoMandato);
+      res.status(201).json(novoMandato);
+    } catch (error) {
+      console.error("Erro ao criar mandato de liderança:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  // Mandatos de pastores
+  app.get("/api/mandatos/pastores", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      console.log("Buscando mandatos de pastores para igreja:", req.user.igreja_id);
+      const mandatos = await storage.getMandatosPastores(req.user.igreja_id);
+      console.log("Mandatos de pastores encontrados:", mandatos);
+      res.json(mandatos);
+    } catch (error) {
+      console.error("Erro ao buscar mandatos de pastores:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/mandatos/pastores", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      console.log("Dados recebidos para novo mandato de pastor:", req.body);
+      const novoMandato = await storage.createMandatoPastor({
+        ...req.body,
+        igreja_id: req.user.igreja_id,
+      });
+      console.log("Mandato de pastor criado:", novoMandato);
+      res.status(201).json(novoMandato);
+    } catch (error) {
+      console.error("Erro ao criar mandato de pastor:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
 

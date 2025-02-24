@@ -5,7 +5,7 @@ import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Lideranca, Pastor } from "@shared/schema";
+import { Lideranca, MandatoLideranca, Pastor, MandatoPastor } from "@shared/schema";
 import { Pencil, Eye } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,19 +46,21 @@ const liderancasColumns = [
     },
   },
   {
-    accessorKey: "data_inicio",
+    accessorKey: "mandato.data_inicio",
     header: "Data de Início",
     cell: ({ row }: { row: any }) => {
-      const date = row.getValue("data_inicio") as string;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+      const mandato = row.original.mandato as MandatoLideranca;
+      if (!mandato?.data_inicio) return "-";
+      return format(new Date(mandato.data_inicio), "dd/MM/yyyy", { locale: ptBR });
     },
   },
   {
-    accessorKey: "data_fim",
+    accessorKey: "mandato.data_fim",
     header: "Data de Término",
     cell: ({ row }: { row: any }) => {
-      const date = row.getValue("data_fim") as string;
-      return date ? format(new Date(date), "dd/MM/yyyy", { locale: ptBR }) : "-";
+      const mandato = row.original.mandato as MandatoLideranca;
+      if (!mandato?.data_fim) return "-";
+      return format(new Date(mandato.data_fim), "dd/MM/yyyy", { locale: ptBR });
     },
   },
   {
@@ -96,15 +98,16 @@ const pastoresColumns = [
     header: "Nome",
   },
   {
-    accessorKey: "tipo_vinculo",
+    accessorKey: "mandato.tipo_vinculo",
     header: "Tipo de Vínculo",
     cell: ({ row }: { row: any }) => {
-      const tipo = row.getValue("tipo_vinculo") as string;
+      const mandato = row.original.mandato as MandatoPastor;
+      if (!mandato?.tipo_vinculo) return "-";
       const tipoMap = {
-        efetivo: "Efetivo",
+        eleito: "Eleito",
         designado: "Designado",
       };
-      return tipoMap[tipo as keyof typeof tipoMap] || tipo;
+      return tipoMap[mandato.tipo_vinculo as keyof typeof tipoMap] || mandato.tipo_vinculo;
     },
   },
   {
@@ -112,19 +115,21 @@ const pastoresColumns = [
     header: "Ano de Ordenação",
   },
   {
-    accessorKey: "data_inicio",
+    accessorKey: "mandato.data_inicio",
     header: "Data de Início",
     cell: ({ row }: { row: any }) => {
-      const date = row.getValue("data_inicio") as string;
-      return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+      const mandato = row.original.mandato as MandatoPastor;
+      if (!mandato?.data_inicio) return "-";
+      return format(new Date(mandato.data_inicio), "dd/MM/yyyy", { locale: ptBR });
     },
   },
   {
-    accessorKey: "data_fim",
+    accessorKey: "mandato.data_fim",
     header: "Data de Término",
     cell: ({ row }: { row: any }) => {
-      const date = row.getValue("data_fim") as string;
-      return date ? format(new Date(date), "dd/MM/yyyy", { locale: ptBR }) : "-";
+      const mandato = row.original.mandato as MandatoPastor;
+      if (!mandato?.data_fim) return "-";
+      return format(new Date(mandato.data_fim), "dd/MM/yyyy", { locale: ptBR });
     },
   },
   {
@@ -163,9 +168,33 @@ export default function LiderancaPage() {
     queryKey: ["/api/liderancas"],
   });
 
+  const { data: mandatosLiderancas = [], isLoading: isLoadingMandatosLiderancas } = useQuery<MandatoLideranca[]>({
+    queryKey: ["/api/mandatos/liderancas"],
+  });
+
   const { data: pastores = [], isLoading: isLoadingPastores } = useQuery<Pastor[]>({
     queryKey: ["/api/pastores"],
   });
+
+  const { data: mandatosPastores = [], isLoading: isLoadingMandatosPastores } = useQuery<MandatoPastor[]>({
+    queryKey: ["/api/mandatos/pastores"],
+  });
+
+  // Combinar lideranças com seus mandatos ativos
+  const liderancasComMandatos = liderancas.map(lideranca => ({
+    ...lideranca,
+    mandato: mandatosLiderancas.find(
+      m => m.lideranca_id === lideranca.id && m.status === "ativo"
+    ),
+  }));
+
+  // Combinar pastores com seus mandatos ativos
+  const pastoresComMandatos = pastores.map(pastor => ({
+    ...pastor,
+    mandato: mandatosPastores.find(
+      m => m.pastor_id === pastor.id && m.status === "ativo"
+    ),
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -194,12 +223,12 @@ export default function LiderancaPage() {
                 <CardTitle>Lista de Presbíteros e Diáconos</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoadingLiderancas ? (
+                {isLoadingLiderancas || isLoadingMandatosLiderancas ? (
                   <div className="text-center py-4">Carregando...</div>
                 ) : (
                   <DataTable 
                     columns={liderancasColumns} 
-                    data={liderancas} 
+                    data={liderancasComMandatos} 
                     searchColumn="cargo"
                   />
                 )}
@@ -213,12 +242,12 @@ export default function LiderancaPage() {
                 <CardTitle>Lista de Pastores</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoadingPastores ? (
+                {isLoadingPastores || isLoadingMandatosPastores ? (
                   <div className="text-center py-4">Carregando...</div>
                 ) : (
                   <DataTable 
                     columns={pastoresColumns} 
-                    data={pastores} 
+                    data={pastoresComMandatos} 
                     searchColumn="nome"
                   />
                 )}
