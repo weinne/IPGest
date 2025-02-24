@@ -96,7 +96,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: grupoMembros.map(m => ({
+      membros: grupoMembros.map((m: any) => ({
         membro_id: m.membro.id,
         cargo: m.cargo as keyof typeof cargosGrupo,
       })),
@@ -149,14 +149,14 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto">
+      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-[95vh]">
         <DialogHeader>
           <DialogTitle>Editar Grupo</DialogTitle>
           <DialogDescription>
             Atualize as informações do grupo ou sociedade interna.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-full max-h-[calc(90vh-120px)] sm:max-h-none">
+        <ScrollArea className="h-full max-h-[calc(90vh-120px)] sm:max-h-[calc(95vh-120px)]">
           <div className="p-1">
             <Form {...form}>
               <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
@@ -274,7 +274,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                                         onSelect={() => {
                                           if (!isSelected) {
                                             const current = field.value || [];
-                                            form.setValue("membros", [...current, { membro_id: membro.id, cargo: "membro" }], {
+                                            form.setValue("membros", [...current, { membro_id: membro.id, cargo: "membro" as keyof typeof cargosGrupo }], {
                                               shouldValidate: true,
                                             });
                                           }
