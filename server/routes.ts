@@ -6,6 +6,16 @@ import multer from "multer";
 import { join } from "path";
 import { mkdir } from "fs/promises";
 import { canWrite, isAdmin } from "./middleware";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -38,7 +48,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.createUser({
         username: req.body.username,
-        password: req.body.password,
+        password: await hashPassword(req.body.password),
         role: req.body.role || "comum",
         igreja_id: req.user.igreja_id
       });
