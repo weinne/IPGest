@@ -109,7 +109,7 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values({
         ...userData,
-        role: "admin",
+        role: "administrador", // Primeiro usuário sempre será administrador
         igreja_id: igreja.id,
       })
       .returning();

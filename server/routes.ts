@@ -26,6 +26,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
 
+  // User management routes
+  app.post("/api/users", isAdmin, async (req, res) => {
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Nome de usuário já existe" });
+      }
+
+      const user = await storage.createUser({
+        username: req.body.username,
+        password: req.body.password,
+        role: req.body.role || "comum",
+        igreja_id: req.user.igreja_id
+      });
+
+      res.status(201).json(user);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/users", isAdmin, async (req, res) => {
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const users = await storage.getUsersByIgreja(req.user.igreja_id);
+      res.json(users);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   // Members routes
   app.get("/api/membros", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -366,40 +400,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Erro ao deletar mandato de pastor:", error);
-      res.status(400).json({ message: (error as Error).message });
-    }
-  });
-
-  // User management routes
-  app.post("/api/users", isAdmin, async (req, res) => {
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-
-    try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Nome de usuário já existe" });
-      }
-
-      const user = await storage.createUser({
-        username: req.body.username,
-        password: req.body.password,
-        role: req.body.role || "comum",
-        igreja_id: req.user.igreja_id
-      });
-
-      res.status(201).json(user);
-    } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
-    }
-  });
-
-  app.get("/api/users", isAdmin, async (req, res) => {
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-
-    try {
-      const users = await storage.getUsersByIgreja(req.user.igreja_id);
-      res.json(users);
-    } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }
   });

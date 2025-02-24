@@ -64,15 +64,19 @@ export function setupAuth(app: Express) {
       return res.status(400).send("Username already exists");
     }
 
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-    });
+    try {
+      const user = await storage.createUser({
+        ...req.body,
+        password: await hashPassword(req.body.password),
+      });
 
-    req.login(user, (err) => {
-      if (err) return next(err);
-      res.status(201).json(user);
-    });
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
