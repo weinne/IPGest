@@ -1,8 +1,8 @@
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UsersRound, Pencil, Eye } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { UsersRound, Pencil, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { Grupo } from "@shared/schema";
 import {
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { NovoGrupoDialog } from "./novo-grupo-dialog";
 import { EditarGrupoDialog } from "./editar-grupo-dialog";
 import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 const columns = [
   {
@@ -59,6 +60,29 @@ const columns = [
     cell: ({ row }: { row: any }) => {
       const grupo = row.original as Grupo;
       const [open, setOpen] = useState(false);
+      const queryClient = useQueryClient();
+      const { toast } = useToast();
+
+      const deleteMutation = useMutation({
+        mutationFn: async () => {
+          const res = await apiRequest("DELETE", `/api/grupos/${grupo.id}`);
+          return res.json();
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["/api/grupos"] });
+          toast({
+            title: "Grupo excluído",
+            description: "O grupo foi excluído com sucesso.",
+          });
+        },
+        onError: (error: Error) => {
+          toast({
+            title: "Erro ao excluir grupo",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      });
 
       return (
         <>
@@ -74,11 +98,22 @@ const columns = [
                 <Pencil className="mr-2 h-4 w-4" />
                 Editar
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (confirm("Tem certeza que deseja excluir este grupo?")) {
+                    deleteMutation.mutate();
+                  }
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <EditarGrupoDialog 
-            grupo={grupo} 
-            open={open} 
+          <EditarGrupoDialog
+            grupo={grupo}
+            open={open}
             onOpenChange={setOpen}
           />
         </>
@@ -114,9 +149,9 @@ export default function GruposPage() {
             {isLoading ? (
               <div className="text-center py-4">Carregando...</div>
             ) : (
-              <DataTable 
-                columns={columns} 
-                data={grupos} 
+              <DataTable
+                columns={columns}
+                data={grupos}
                 searchColumn="nome"
               />
             )}

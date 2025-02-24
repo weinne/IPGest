@@ -1,11 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Membro } from "@shared/schema";
-import { Pencil, Eye } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { NovoMembroDialog } from "./novo-membro-dialog";
 import { EditarMembroDialog } from "./editar-membro-dialog";
 import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 const columns = [
   {
@@ -57,6 +58,29 @@ const columns = [
     cell: ({ row }: { row: any }) => {
       const membro = row.original as Membro;
       const [open, setOpen] = useState(false);
+      const queryClient = useQueryClient();
+      const { toast } = useToast();
+
+      const deleteMutation = useMutation({
+        mutationFn: async () => {
+          const res = await apiRequest("DELETE", `/api/membros/${membro.id}`);
+          return res.json();
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["/api/membros"] });
+          toast({
+            title: "Membro excluído",
+            description: "O membro foi excluído com sucesso.",
+          });
+        },
+        onError: (error: Error) => {
+          toast({
+            title: "Erro ao excluir membro",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      });
 
       return (
         <>
@@ -72,11 +96,22 @@ const columns = [
                 <Pencil className="mr-2 h-4 w-4" />
                 Editar
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (confirm("Tem certeza que deseja excluir este membro?")) {
+                    deleteMutation.mutate();
+                  }
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <EditarMembroDialog 
-            membro={membro} 
-            open={open} 
+          <EditarMembroDialog
+            membro={membro}
+            open={open}
             onOpenChange={setOpen}
           />
         </>
@@ -112,9 +147,9 @@ export default function MembrosPage() {
             {isLoading ? (
               <div className="text-center py-4">Carregando...</div>
             ) : (
-              <DataTable 
-                columns={columns} 
-                data={membros} 
+              <DataTable
+                columns={columns}
+                data={membros}
                 searchColumn="nome"
               />
             )}

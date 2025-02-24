@@ -124,235 +124,236 @@ export function NovoGrupoDialog() {
           Novo Grupo
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto">
-        <DialogHeader>
+      <DialogContent className="flex flex-col max-h-[85vh] md:max-h-[90vh] gap-0">
+        <DialogHeader className="px-6 py-4">
           <DialogTitle>Cadastrar Novo Grupo</DialogTitle>
           <DialogDescription>
             Preencha os dados do novo grupo ou sociedade interna.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-full max-h-[calc(90vh-120px)] sm:max-h-none">
-          <div className="p-1">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="nome"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome</FormLabel>
+        <ScrollArea className="flex-1 px-6">
+          <Form {...form}>
+            <form id="new-group-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4 py-4">
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field}
+                        className={cn(
+                          form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tipo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input 
-                          {...field}
-                          className={cn(
-                            form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
-                          )}
-                        />
+                        <SelectTrigger className={cn(
+                          form.formState.errors.tipo && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.tipo && !form.formState.errors.tipo && "border-green-500 focus-visible:ring-green-500"
+                        )}>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        {Object.entries(tiposGrupo).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="tipo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={cn(
-                            form.formState.errors.tipo && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.tipo && !form.formState.errors.tipo && "border-green-500 focus-visible:ring-green-500"
-                          )}>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(tiposGrupo).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={cn(
-                            form.formState.errors.status && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.status && !form.formState.errors.status && "border-green-500 focus-visible:ring-green-500"
-                          )}>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="ativo">Ativo</SelectItem>
-                          <SelectItem value="inativo">Inativo</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="descricao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input 
-                          {...field}
-                          value={field.value || ""}
-                          className={cn(
-                            form.formState.errors.descricao && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.descricao && !form.formState.errors.descricao && "border-green-500 focus-visible:ring-green-500"
-                          )}
-                        />
+                        <SelectTrigger className={cn(
+                          form.formState.errors.status && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.status && !form.formState.errors.status && "border-green-500 focus-visible:ring-green-500"
+                        )}>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="ativo">Ativo</SelectItem>
+                        <SelectItem value="inativo">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="membros"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Membros</FormLabel>
-                      <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value?.length && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.length
-                                ? `${field.value.length} membro${field.value.length === 1 ? "" : "s"} selecionado${field.value.length === 1 ? "" : "s"}`
-                                : "Selecione os membros"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0" side="top">
-                            <Command>
-                              <CommandInput placeholder="Procurar membro..." />
-                              <CommandEmpty>Nenhum membro encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                <ScrollArea className="h-[200px]">
-                                  {membros.map((membro) => {
-                                    const isSelected = field.value?.some(
-                                      (item) => item.membro_id === membro.id
-                                    );
-                                    return (
-                                      <CommandItem
-                                        key={membro.id}
-                                        onSelect={() => {
-                                          if (!isSelected) {
-                                            const current = field.value || [];
-                                            form.setValue("membros", [...current, { membro_id: membro.id, cargo: "membro" }], {
-                                              shouldValidate: true,
-                                            });
-                                          }
-                                        }}
-                                        className="flex items-center justify-between py-2"
-                                      >
-                                        <div className="flex items-center">
-                                          <CheckIcon
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              isSelected ? "opacity-100" : "opacity-0"
-                                            )}
-                                          />
-                                          <span>{membro.nome}</span>
+              <FormField
+                control={form.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field}
+                        value={field.value || ""}
+                        className={cn(
+                          form.formState.errors.descricao && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.descricao && !form.formState.errors.descricao && "border-green-500 focus-visible:ring-green-500"
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="membros"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Membros</FormLabel>
+                    <FormControl>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value?.length && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value?.length
+                              ? `${field.value.length} membro${field.value.length === 1 ? "" : "s"} selecionado${field.value.length === 1 ? "" : "s"}`
+                              : "Selecione os membros"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" side="top">
+                          <Command>
+                            <CommandInput placeholder="Procurar membro..." />
+                            <CommandEmpty>Nenhum membro encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              <ScrollArea className="h-[200px]">
+                                {membros.map((membro) => {
+                                  const isSelected = field.value?.some(
+                                    (item) => item.membro_id === membro.id
+                                  );
+                                  return (
+                                    <CommandItem
+                                      key={membro.id}
+                                      onSelect={() => {
+                                        if (!isSelected) {
+                                          const current = field.value || [];
+                                          form.setValue("membros", [...current, { membro_id: membro.id, cargo: "membro" as keyof typeof cargosGrupo }], {
+                                            shouldValidate: true,
+                                          });
+                                        }
+                                      }}
+                                      className="flex items-center justify-between py-2"
+                                    >
+                                      <div className="flex items-center">
+                                        <CheckIcon
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            isSelected ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <span>{membro.nome}</span>
+                                      </div>
+                                      {isSelected && (
+                                        <div className="flex items-center gap-2">
+                                          <Select
+                                            defaultValue="membro"
+                                            onValueChange={(cargo) => {
+                                              const current = field.value || [];
+                                              const newValue = current.map((item) =>
+                                                item.membro_id === membro.id
+                                                  ? { ...item, cargo: cargo as keyof typeof cargosGrupo }
+                                                  : item
+                                              );
+                                              form.setValue("membros", newValue, {
+                                                shouldValidate: true,
+                                              });
+                                            }}
+                                          >
+                                            <SelectTrigger className="h-8 w-[130px]">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {Object.entries(cargosGrupo).map(([value, label]) => (
+                                                <SelectItem key={value} value={value}>
+                                                  {label}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 px-2"
+                                            onClick={() => {
+                                              const current = field.value || [];
+                                              form.setValue(
+                                                "membros",
+                                                current.filter((item) => item.membro_id !== membro.id),
+                                                { shouldValidate: true }
+                                              );
+                                            }}
+                                          >
+                                            ×
+                                          </Button>
                                         </div>
-                                        {isSelected && (
-                                          <div className="flex items-center gap-2">
-                                            <Select
-                                              defaultValue="membro"
-                                              onValueChange={(cargo) => {
-                                                const current = field.value || [];
-                                                const newValue = current.map((item) =>
-                                                  item.membro_id === membro.id
-                                                    ? { ...item, cargo }
-                                                    : item
-                                                );
-                                                form.setValue("membros", newValue, {
-                                                  shouldValidate: true,
-                                                });
-                                              }}
-                                            >
-                                              <SelectTrigger className="h-8 w-[130px]">
-                                                <SelectValue />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {Object.entries(cargosGrupo).map(([value, label]) => (
-                                                  <SelectItem key={value} value={value}>
-                                                    {label}
-                                                  </SelectItem>
-                                                ))}
-                                              </SelectContent>
-                                            </Select>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-8 px-2"
-                                              onClick={() => {
-                                                const current = field.value || [];
-                                                form.setValue(
-                                                  "membros",
-                                                  current.filter((item) => item.membro_id !== membro.id),
-                                                  { shouldValidate: true }
-                                                );
-                                              }}
-                                            >
-                                              ×
-                                            </Button>
-                                          </div>
-                                        )}
-                                      </CommandItem>
-                                    );
-                                  })}
-                                </ScrollArea>
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={mutation.isPending || !isValid || !isDirty}
-                >
-                  {mutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Cadastrar
-                </Button>
-              </form>
-            </Form>
-          </div>
+                                      )}
+                                    </CommandItem>
+                                  );
+                                })}
+                              </ScrollArea>
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </ScrollArea>
+
+        <div className="flex justify-end px-6 py-4 border-t">
+          <Button 
+            form="new-group-form"
+            type="submit" 
+            className="w-full" 
+            disabled={mutation.isPending || !isValid || !isDirty}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Cadastrar
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

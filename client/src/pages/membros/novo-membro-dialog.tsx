@@ -89,185 +89,188 @@ export function NovoMembroDialog() {
           Novo Membro
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto">
-        <DialogHeader>
+      <DialogContent className="flex flex-col max-h-[85vh] md:max-h-[90vh] gap-0">
+        <DialogHeader className="px-6 py-4">
           <DialogTitle>Cadastrar Novo Membro</DialogTitle>
           <DialogDescription>
             Preencha os dados do novo membro da igreja.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-full max-h-[calc(90vh-120px)] sm:max-h-none">
-          <div className="p-1">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="nome"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome</FormLabel>
+
+        <ScrollArea className="flex-1 px-6">
+          <Form {...form}>
+            <form id="new-member-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4 py-4">
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        value={field.value || ""} 
+                        className={cn(
+                          form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        {...field} 
+                        value={field.value || ""} 
+                        className={cn(
+                          form.formState.errors.email && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.email && !form.formState.errors.email && "border-green-500 focus-visible:ring-green-500"
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="telefone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel" 
+                        {...field} 
+                        value={field.value || ""} 
+                        className={cn(
+                          form.formState.errors.telefone && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.telefone && !form.formState.errors.telefone && "border-green-500 focus-visible:ring-green-500"
+                        )}
+                        placeholder="(11) 98765-4321"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="endereco"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endereço</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        value={field.value || ""} 
+                        className={cn(
+                          form.formState.errors.endereco && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.endereco && !form.formState.errors.endereco && "border-green-500 focus-visible:ring-green-500"
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="data_nascimento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        {...field} 
+                        value={field.value || ""} 
+                        className={cn(
+                          form.formState.errors.data_nascimento && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.data_nascimento && !form.formState.errors.data_nascimento && "border-green-500 focus-visible:ring-green-500"
+                        )}
+                        max={new Date().toISOString().split('T')[0]}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tipo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          value={field.value || ""} 
-                          className={cn(
-                            form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
-                          )}
-                        />
+                        <SelectTrigger className={cn(
+                          form.formState.errors.tipo && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.tipo && !form.formState.errors.tipo && "border-green-500 focus-visible:ring-green-500"
+                        )}>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <SelectContent>
+                        <SelectItem value="comungante">Comungante</SelectItem>
+                        <SelectItem value="nao_comungante">Não Comungante</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tipo_admissao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Admissão</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          {...field} 
-                          value={field.value || ""} 
-                          className={cn(
-                            form.formState.errors.email && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.email && !form.formState.errors.email && "border-green-500 focus-visible:ring-green-500"
-                          )}
-                        />
+                        <SelectTrigger className={cn(
+                          form.formState.errors.tipo_admissao && "border-red-500 focus-visible:ring-red-500",
+                          form.formState.dirtyFields.tipo_admissao && !form.formState.errors.tipo_admissao && "border-green-500 focus-visible:ring-green-500"
+                        )}>
+                          <SelectValue placeholder="Selecione o tipo de admissão" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="telefone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="tel" 
-                          {...field} 
-                          value={field.value || ""} 
-                          className={cn(
-                            form.formState.errors.telefone && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.telefone && !form.formState.errors.telefone && "border-green-500 focus-visible:ring-green-500"
-                          )}
-                          placeholder="(11) 98765-4321"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="endereco"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Endereço</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          value={field.value || ""} 
-                          className={cn(
-                            form.formState.errors.endereco && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.endereco && !form.formState.errors.endereco && "border-green-500 focus-visible:ring-green-500"
-                          )}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="data_nascimento"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data de Nascimento</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="date" 
-                          {...field} 
-                          value={field.value || ""} 
-                          className={cn(
-                            form.formState.errors.data_nascimento && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.data_nascimento && !form.formState.errors.data_nascimento && "border-green-500 focus-visible:ring-green-500"
-                          )}
-                          max={new Date().toISOString().split('T')[0]}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tipo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={cn(
-                            form.formState.errors.tipo && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.tipo && !form.formState.errors.tipo && "border-green-500 focus-visible:ring-green-500"
-                          )}>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="comungante">Comungante</SelectItem>
-                          <SelectItem value="nao_comungante">Não Comungante</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tipo_admissao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Admissão</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={cn(
-                            form.formState.errors.tipo_admissao && "border-red-500 focus-visible:ring-red-500",
-                            form.formState.dirtyFields.tipo_admissao && !form.formState.errors.tipo_admissao && "border-green-500 focus-visible:ring-green-500"
-                          )}>
-                            <SelectValue placeholder="Selecione o tipo de admissão" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="batismo">Batismo</SelectItem>
-                          <SelectItem value="profissao_fe">Profissão de Fé</SelectItem>
-                          <SelectItem value="transferencia">Transferência</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={mutation.isPending || !isValid || !isDirty}
-                >
-                  {mutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Cadastrar
-                </Button>
-              </form>
-            </Form>
-          </div>
+                      <SelectContent>
+                        <SelectItem value="batismo">Batismo</SelectItem>
+                        <SelectItem value="profissao_fe">Profissão de Fé</SelectItem>
+                        <SelectItem value="transferencia">Transferência</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </ScrollArea>
+
+        <div className="flex justify-end px-6 py-4 border-t">
+          <Button 
+            form="new-member-form"
+            type="submit" 
+            className="w-full" 
+            disabled={mutation.isPending || !isValid || !isDirty}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Cadastrar
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
