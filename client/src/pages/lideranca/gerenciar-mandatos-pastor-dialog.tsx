@@ -139,8 +139,11 @@ export function GerenciarMandatosPastorDialog({ pastor, mandatos, open, onOpenCh
   const deleteMutation = useMutation({
     mutationFn: async (mandatoId: number) => {
       const res = await apiRequest("DELETE", `/api/mandatos/pastores/${mandatoId}`);
-      if (!res.ok) throw new Error("Erro ao remover mandato");
-      return res.json();
+      if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error);
+      }
+      return true; // We don't need to parse response for DELETE
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mandatos/pastores"] });
