@@ -107,10 +107,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log("Criando nova liderança:", req.body);
-      const novaLideranca = await storage.createLideranca({
+      const data = {
         ...req.body,
         igreja_id: req.user.igreja_id,
-      });
+        data_eleicao: new Date(req.body.data_eleicao),
+        data_inicio: new Date(req.body.data_inicio),
+        data_fim: req.body.data_fim ? new Date(req.body.data_fim) : null,
+      };
+      const novaLideranca = await storage.createLideranca(data);
       console.log("Liderança criada:", novaLideranca);
       res.status(201).json(novaLideranca);
     } catch (error) {
@@ -142,11 +146,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Criando novo pastor:", req.body);
       console.log("Arquivo de foto:", req.file);
-      const novoPastor = await storage.createPastor({
+      const data = {
         ...req.body,
         foto: req.file ? `/uploads/${req.file.filename}` : null,
         igreja_id: req.user.igreja_id,
-      });
+        data_inicio: new Date(),
+        ano_ordenacao: parseInt(req.body.ano_ordenacao),
+      };
+      const novoPastor = await storage.createPastor(data);
       console.log("Pastor criado:", novoPastor);
       res.status(201).json(novoPastor);
     } catch (error) {
