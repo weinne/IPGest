@@ -55,14 +55,11 @@ export function NovaLiderancaDialog() {
 
   const form = useForm<InsertLideranca>({
     resolver: zodResolver(insertLiderancaSchema),
-    mode: "onChange",
     defaultValues: {
       cargo: "presbitero",
       status: "ativo",
     },
   });
-
-  const { isValid, isDirty } = form.formState;
 
   const mutation = useMutation({
     mutationFn: async (data: InsertLideranca) => {
@@ -112,10 +109,7 @@ export function NovaLiderancaDialog() {
                     <FormLabel>Membro</FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                       <FormControl>
-                        <SelectTrigger className={cn(
-                          form.formState.errors.membro_id && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.membro_id && !form.formState.errors.membro_id && "border-green-500 focus-visible:ring-green-500"
-                        )}>
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecione o membro" />
                         </SelectTrigger>
                       </FormControl>
@@ -140,10 +134,7 @@ export function NovaLiderancaDialog() {
                     <FormLabel>Cargo</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className={cn(
-                          form.formState.errors.cargo && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.cargo && !form.formState.errors.cargo && "border-green-500 focus-visible:ring-green-500"
-                        )}>
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecione o cargo" />
                         </SelectTrigger>
                       </FormControl>
@@ -166,10 +157,7 @@ export function NovaLiderancaDialog() {
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className={cn(
-                          form.formState.errors.status && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.status && !form.formState.errors.status && "border-green-500 focus-visible:ring-green-500"
-                        )}>
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
                       </FormControl>
@@ -187,7 +175,7 @@ export function NovaLiderancaDialog() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={mutation.isPending || !isValid || !isDirty}
+                disabled={mutation.isPending}
               >
                 {mutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

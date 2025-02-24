@@ -51,18 +51,32 @@ export function NovoPastorDialog() {
 
   const form = useForm<InsertPastor>({
     resolver: zodResolver(insertPastorSchema),
-    mode: "onChange",
     defaultValues: {
       tipo_vinculo: "efetivo",
       ano_ordenacao: currentYear,
     },
   });
 
-  const { isValid, isDirty } = form.formState;
-
   const mutation = useMutation({
     mutationFn: async (data: InsertPastor) => {
-      const res = await apiRequest("POST", "/api/pastores", data);
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else if (value !== null && value !== undefined) {
+          formData.append(key, value.toString());
+        }
+      });
+
+      const res = await fetch('/api/pastores', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
       return res.json();
     },
     onSuccess: () => {
@@ -107,13 +121,7 @@ export function NovoPastorDialog() {
                   <FormItem>
                     <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input 
-                        {...field}
-                        className={cn(
-                          form.formState.errors.nome && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.nome && !form.formState.errors.nome && "border-green-500 focus-visible:ring-green-500"
-                        )}
-                      />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -130,10 +138,6 @@ export function NovoPastorDialog() {
                       <Input 
                         {...field}
                         placeholder="000.000.000-00"
-                        className={cn(
-                          form.formState.errors.cpf && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.cpf && !form.formState.errors.cpf && "border-green-500 focus-visible:ring-green-500"
-                        )}
                       />
                     </FormControl>
                     <FormMessage />
@@ -152,10 +156,6 @@ export function NovoPastorDialog() {
                         {...field}
                         type="email"
                         value={field.value || ""}
-                        className={cn(
-                          form.formState.errors.email && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.email && !form.formState.errors.email && "border-green-500 focus-visible:ring-green-500"
-                        )}
                       />
                     </FormControl>
                     <FormMessage />
@@ -174,10 +174,6 @@ export function NovoPastorDialog() {
                         {...field}
                         placeholder="(00) 00000-0000"
                         value={field.value || ""}
-                        className={cn(
-                          form.formState.errors.telefone && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.telefone && !form.formState.errors.telefone && "border-green-500 focus-visible:ring-green-500"
-                        )}
                       />
                     </FormControl>
                     <FormMessage />
@@ -187,19 +183,21 @@ export function NovoPastorDialog() {
 
               <FormField
                 control={form.control}
-                name="foto_url"
-                render={({ field }) => (
+                name="foto"
+                render={({ field: { value, onChange, ...field } }) => (
                   <FormItem>
-                    <FormLabel>URL da Foto</FormLabel>
+                    <FormLabel>Foto</FormLabel>
                     <FormControl>
                       <Input 
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            onChange(file);
+                          }
+                        }}
                         {...field}
-                        type="url"
-                        value={field.value || ""}
-                        className={cn(
-                          form.formState.errors.foto_url && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.foto_url && !form.formState.errors.foto_url && "border-green-500 focus-visible:ring-green-500"
-                        )}
                       />
                     </FormControl>
                     <FormMessage />
@@ -217,11 +215,7 @@ export function NovoPastorDialog() {
                       <Textarea 
                         {...field}
                         value={field.value || ""}
-                        className={cn(
-                          "h-20",
-                          form.formState.errors.bio && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.bio && !form.formState.errors.bio && "border-green-500 focus-visible:ring-green-500"
-                        )}
+                        className="h-20"
                       />
                     </FormControl>
                     <FormMessage />
@@ -237,10 +231,7 @@ export function NovoPastorDialog() {
                     <FormLabel>Ano de Ordenação</FormLabel>
                     <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                       <FormControl>
-                        <SelectTrigger className={cn(
-                          form.formState.errors.ano_ordenacao && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.ano_ordenacao && !form.formState.errors.ano_ordenacao && "border-green-500 focus-visible:ring-green-500"
-                        )}>
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecione o ano" />
                         </SelectTrigger>
                       </FormControl>
@@ -265,10 +256,7 @@ export function NovoPastorDialog() {
                     <FormLabel>Tipo de Vínculo</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className={cn(
-                          form.formState.errors.tipo_vinculo && "border-red-500 focus-visible:ring-red-500",
-                          form.formState.dirtyFields.tipo_vinculo && !form.formState.errors.tipo_vinculo && "border-green-500 focus-visible:ring-green-500"
-                        )}>
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecione o tipo de vínculo" />
                         </SelectTrigger>
                       </FormControl>
@@ -286,7 +274,7 @@ export function NovoPastorDialog() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={mutation.isPending || !isValid || !isDirty}
+                disabled={mutation.isPending}
               >
                 {mutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
