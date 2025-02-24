@@ -90,8 +90,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
-    const liderancas = await storage.getLiderancas(req.user.igreja_id);
-    res.json(liderancas);
+    try {
+      console.log("Buscando lideranças para igreja:", req.user.igreja_id);
+      const liderancas = await storage.getLiderancas(req.user.igreja_id);
+      console.log("Lideranças encontradas:", liderancas);
+      res.json(liderancas);
+    } catch (error) {
+      console.error("Erro ao buscar lideranças:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
   });
 
   app.post("/api/liderancas", async (req, res) => {
@@ -104,6 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         igreja_id: req.user.igreja_id,
       });
+      console.log("Liderança criada:", novaLideranca);
       res.status(201).json(novaLideranca);
     } catch (error) {
       console.error("Erro ao criar liderança:", error);
@@ -116,8 +124,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
-    const pastores = await storage.getPastores(req.user.igreja_id);
-    res.json(pastores);
+    try {
+      console.log("Buscando pastores para igreja:", req.user.igreja_id);
+      const pastores = await storage.getPastores(req.user.igreja_id);
+      console.log("Pastores encontrados:", pastores);
+      res.json(pastores);
+    } catch (error) {
+      console.error("Erro ao buscar pastores:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
   });
 
   app.post("/api/pastores", upload.single('foto'), async (req, res) => {
@@ -126,11 +141,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log("Criando novo pastor:", req.body);
+      console.log("Arquivo de foto:", req.file);
       const novoPastor = await storage.createPastor({
         ...req.body,
         foto: req.file ? `/uploads/${req.file.filename}` : null,
         igreja_id: req.user.igreja_id,
       });
+      console.log("Pastor criado:", novoPastor);
       res.status(201).json(novoPastor);
     } catch (error) {
       console.error("Erro ao criar pastor:", error);
