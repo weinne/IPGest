@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input"; // Added import for Input component
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -57,9 +57,6 @@ export function NovaLiderancaDialog() {
   const form = useForm<InsertLideranca>({
     resolver: zodResolver(insertLiderancaSchema),
     defaultValues: {
-      data_eleicao: new Date().toISOString(),
-      data_inicio: new Date().toISOString(),
-      data_fim: undefined,
       cargo: "presbitero",
       status: "ativo",
     },
@@ -69,17 +66,38 @@ export function NovaLiderancaDialog() {
     mutationFn: async (data: InsertLideranca) => {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
-      const res = await apiRequest("POST", "/api/liderancas", {
-        ...data,
-        data_eleicao: new Date(data.data_eleicao).toISOString(),
-        data_inicio: new Date(data.data_inicio).toISOString(),
-        data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : null,
+      // Primeiro criar a liderança
+      const liderancaRes = await apiRequest("POST", "/api/liderancas", {
+        membro_id: data.membro_id,
+        cargo: data.cargo,
         igreja_id: user.igreja_id,
       });
-      return res.json();
+
+      if (!liderancaRes.ok) {
+        throw new Error("Erro ao criar liderança");
+      }
+
+      const lideranca = await liderancaRes.json();
+
+      // Depois criar o mandato
+      const mandatoRes = await apiRequest("POST", "/api/mandatos/liderancas", {
+        lideranca_id: lideranca.id,
+        data_eleicao: data.data_eleicao,
+        data_inicio: data.data_inicio,
+        data_fim: data.data_fim,
+        status: data.status,
+        igreja_id: user.igreja_id,
+      });
+
+      if (!mandatoRes.ok) {
+        throw new Error("Erro ao criar mandato");
+      }
+
+      return mandatoRes.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/liderancas"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/mandatos/liderancas"] });
       toast({
         title: "Liderança cadastrada com sucesso",
         description: "O novo líder foi cadastrado.",
@@ -151,8 +169,9 @@ export function NovaLiderancaDialog() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="presbitero">Presbítero</SelectItem>
-                        <SelectItem value="diacono">Diácono</SelectItem>
+                        {Object.entries(cargos).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -233,53 +252,6 @@ export function NovaLiderancaDialog() {
                   <FormItem>
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="ativo">Ativo</SelectItem>
-                        <SelectItem value="inativo">Inativo</SelectItem>
-                        <SelectItem value="afastado">Afastado</SelectItem>
-                        <SelectItem value="emerito">Emérito</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="cargo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cargo</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o cargo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(cargos).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o status" />
