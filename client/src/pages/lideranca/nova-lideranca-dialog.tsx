@@ -77,6 +77,7 @@ export function NovaLiderancaDialog() {
         data_eleicao: data.data_eleicao ? new Date(data.data_eleicao).toISOString() : undefined,
         data_inicio: data.data_inicio ? new Date(data.data_inicio).toISOString() : undefined,
         data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : undefined,
+        status: data.status, // Added status field
       });
 
       if (!liderancaRes.ok) {
