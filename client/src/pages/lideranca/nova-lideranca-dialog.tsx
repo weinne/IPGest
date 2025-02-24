@@ -220,11 +220,6 @@ export function NovaLiderancaDialog() {
                     <FormMessage />
                   </FormItem>
                 )}
-              />ectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
               />
 
               <FormField
