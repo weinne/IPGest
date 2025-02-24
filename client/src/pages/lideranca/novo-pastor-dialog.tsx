@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -72,7 +71,7 @@ export function NovoPastorDialog() {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
       const formData = new FormData();
-      
+
       // Formatação do CPF
       const cpf = data.cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 
@@ -129,7 +128,7 @@ export function NovoPastorDialog() {
           Novo Pastor
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto pb-20"> {/* Adjusted class name */}
         <DialogHeader>
           <DialogTitle>Cadastrar Novo Pastor</DialogTitle>
           <DialogDescription>
@@ -254,26 +253,17 @@ export function NovoPastorDialog() {
 
               <FormField
                 control={form.control}
-                name="data_eleicao"
+                name="data_inicio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data da Eleição</FormLabel>
+                    <FormLabel>Data de Início</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field}
-                        value={field.value?.split('T')[0] || ''} 
-                        onChange={(e) => {
-                          const date = e.target.value;
-                          field.onChange(date ? new Date(date).toISOString() : undefined);
-                        }}
-                      />
+                      <Input type="date" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
               <FormField
                 control={form.control}
                 name="data_fim"
@@ -350,12 +340,20 @@ export function NovoPastorDialog() {
 
               <FormField
                 control={form.control}
-                name="data_inicio"
+                name="data_eleicao"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data de Início</FormLabel>
+                    <FormLabel>Data da Eleição</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value?.split('T')[0] || ''} 
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          field.onChange(date ? new Date(date).toISOString() : undefined);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

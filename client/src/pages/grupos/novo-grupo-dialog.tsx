@@ -124,7 +124,7 @@ export function NovoGrupoDialog() {
           Novo Grupo
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto">
+      <DialogContent className="sm:max-w-[425px] h-[90vh] sm:h-auto pb-20">
         <DialogHeader>
           <DialogTitle>Cadastrar Novo Grupo</DialogTitle>
           <DialogDescription>
