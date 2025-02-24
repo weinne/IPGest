@@ -60,6 +60,7 @@ export function NovoPastorDialog() {
       bio: "",
       tipo_vinculo: "efetivo",
       ano_ordenacao: new Date().getFullYear(),
+      foto: null,
     },
   });
 
@@ -73,7 +74,7 @@ export function NovoPastorDialog() {
       // Formatação do CPF antes de enviar
       const cpf = data.cpf.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 
-      // Adiciona todos os campos ao FormData, exceto a foto que é tratada separadamente
+      // Adiciona todos os campos ao FormData
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'foto') return; // Pula o campo foto
         if (value !== null && value !== undefined) {
@@ -82,8 +83,9 @@ export function NovoPastorDialog() {
       });
 
       // Adiciona a foto se existir
-      if (data.foto instanceof File) {
-        formData.append('foto', data.foto);
+      const fotoInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fotoInput?.files?.length) {
+        formData.append('foto', fotoInput.files[0]);
       }
 
       // Adiciona campos necessários
@@ -92,20 +94,26 @@ export function NovoPastorDialog() {
       formData.append('cpf', cpf);
 
       console.log("FormData preparado, enviando requisição...");
-      const res = await fetch('/api/pastores', {
-        method: 'POST',
-        body: formData,
-      });
 
-      if (!res.ok) {
-        const error = await res.text();
-        console.error("Erro ao cadastrar pastor:", error);
-        throw new Error(error);
+      try {
+        const res = await fetch('/api/pastores', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const error = await res.text();
+          console.error("Erro ao cadastrar pastor:", error);
+          throw new Error(error);
+        }
+
+        const responseData = await res.json();
+        console.log("Pastor cadastrado com sucesso:", responseData);
+        return responseData;
+      } catch (error) {
+        console.error("Erro na requisição:", error);
+        throw error;
       }
-
-      const responseData = await res.json();
-      console.log("Pastor cadastrado com sucesso:", responseData);
-      return responseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pastores"] });
@@ -125,6 +133,11 @@ export function NovoPastorDialog() {
     },
   });
 
+  const onSubmit = (data: InsertPastor) => {
+    console.log("Formulário submetido com dados:", data);
+    mutation.mutate(data);
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -142,7 +155,7 @@ export function NovoPastorDialog() {
         </DialogHeader>
         <ScrollArea className="h-[500px] pr-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="nome"
