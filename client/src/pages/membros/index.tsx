@@ -18,8 +18,28 @@ import { NovoMembroDialog } from "./novo-membro-dialog";
 import { EditarMembroDialog } from "./editar-membro-dialog";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { UserCircle } from "lucide-react";
 
 const columns = [
+  {
+    accessorKey: "foto",
+    header: "",
+    cell: ({ row }: { row: any }) => {
+      const foto = row.getValue("foto") as string | null;
+      return (
+        <Avatar className="h-10 w-10">
+          {foto ? (
+            <AvatarImage src={`/uploads/${foto}`} alt="Foto do membro" />
+          ) : (
+            <AvatarFallback>
+              <UserCircle className="h-6 w-6" />
+            </AvatarFallback>
+          )}
+        </Avatar>
+      );
+    },
+  },
   {
     accessorKey: "nome",
     header: "Nome",
