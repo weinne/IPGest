@@ -65,16 +65,6 @@ export function NovaLiderancaDialog() {
     },
   });
 
-  const form = useForm<InsertLideranca>({
-    resolver: zodResolver(insertLiderancaSchema),
-    defaultValues: {
-      status: "ativo",
-      data_eleicao: undefined,
-      data_inicio: undefined,
-      data_fim: undefined,
-    },
-  });
-
   const mutation = useMutation({
     mutationFn: async (data: InsertLideranca) => {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
