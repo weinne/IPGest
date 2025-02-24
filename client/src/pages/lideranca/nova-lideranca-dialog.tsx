@@ -70,15 +70,19 @@ export function NovaLiderancaDialog() {
       if (!user?.igreja_id) throw new Error("Igreja não encontrada");
 
       // Primeiro criar a liderança
-      const liderancaRes = await apiRequest("POST", "/api/liderancas", {
+      const formData = {
         membro_id: data.membro_id,
         cargo: data.cargo,
         igreja_id: user.igreja_id,
-        data_eleicao: data.data_eleicao ? new Date(data.data_eleicao).toISOString() : undefined,
-        data_inicio: data.data_inicio ? new Date(data.data_inicio).toISOString() : undefined,
-        data_fim: data.data_fim ? new Date(data.data_fim).toISOString() : undefined,
-        status: data.status, // Added status field
-      });
+        data_eleicao: data.data_eleicao,
+        data_inicio: data.data_inicio,
+        data_fim: data.data_fim,
+        status: data.status,
+      };
+
+      console.log("Enviando dados:", formData);
+      
+      const liderancaRes = await apiRequest("POST", "/api/liderancas", formData);
 
       if (!liderancaRes.ok) {
         throw new Error("Erro ao criar liderança");
