@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   // User management routes
-  app.post("/api/users", isAdmin, async (req, res) => {
+  app.post("/api/users", async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
