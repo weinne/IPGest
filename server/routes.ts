@@ -8,6 +8,7 @@ import { mkdir } from "fs/promises";
 import { canWrite, isAdmin } from "./middleware";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import express from "express";
 
 const scryptAsync = promisify(scrypt);
 
@@ -18,16 +19,17 @@ async function hashPassword(password: string) {
 }
 
 // Configure multer for file uploads
+const uploadDir = join(process.cwd(), "uploads");
 const upload = multer({
   storage: multer.diskStorage({
     destination: async function (req, file, cb) {
-      const uploadDir = join(process.cwd(), "uploads");
       await mkdir(uploadDir, { recursive: true });
       cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + '-' + file.originalname);
+      const ext = file.originalname.split('.').pop();
+      cb(null, `${uniqueSuffix}.${ext}`);
     }
   })
 });
@@ -40,6 +42,9 @@ function logAudit(req: Request, operacao: string, tipo: string, id: number) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(uploadDir));
 
   // User management routes
   app.post("/api/users", async (req, res) => {
