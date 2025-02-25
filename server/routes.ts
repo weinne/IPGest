@@ -754,14 +754,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
+      console.log("Received form data:", req.body);
+      
       const updateData: Record<string, any> = {};
       
       // Adiciona campos do formulário
       const fields = ['nome', 'cnpj', 'cep', 'endereco', 'numero', 'complemento', 'bairro', 'website', 'telefone', 'email', 'data_fundacao', 'cidade', 'estado'];
       
       for (const field of fields) {
-        if (req.body[field]) {
-          updateData[field] = req.body[field];
+        // Aceita qualquer valor, incluindo string vazia
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field] || null;
         }
       }
 
@@ -769,6 +772,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.file) {
         updateData.logo_url = req.file.filename;
       }
+
+      console.log("Update data:", updateData);
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "Nenhum dado válido para atualizar" });
