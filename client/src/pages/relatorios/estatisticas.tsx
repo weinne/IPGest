@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { FileDown, Loader2, Printer } from "lucide-react";
+import { FileDown, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useIgrejaContext } from "@/hooks/use-igreja-context";
 
 type Filters = {
   data_inicio?: string;
@@ -48,6 +49,7 @@ export default function EstatisticasReport() {
   const form = useForm<Filters>();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const { igreja, isLoading: isLoadingIgreja } = useIgrejaContext();
 
   const { data: estatisticas, isLoading } = useQuery<Estatisticas>({
     queryKey: ["/api/reports/estatisticas", filters],
@@ -65,7 +67,6 @@ export default function EstatisticasReport() {
 
     try {
       setIsExporting(true);
-
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const content = contentRef.current;
@@ -80,11 +81,8 @@ export default function EstatisticasReport() {
       const contentWidth = canvas.width;
       const contentHeight = canvas.height;
 
-      // A4 dimensions in points (pt)
       const pageWidth = 595.28;
       const pageHeight = 841.89;
-
-      // Calculate scaling to fit width
       const scale = pageWidth / contentWidth;
       const scaledHeight = contentHeight * scale;
 
@@ -116,10 +114,6 @@ export default function EstatisticasReport() {
     } finally {
       setIsExporting(false);
     }
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   return (
@@ -175,9 +169,14 @@ export default function EstatisticasReport() {
       </Card>
 
       <div ref={contentRef}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Estatísticas</CardTitle>
+        <Card className="print:shadow-none">
+          <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">
+                {igreja?.nome}
+              </p>
+              <CardTitle>Relatório de Estatísticas</CardTitle>
+            </div>
             <Button 
               onClick={handleExportPDF}
               disabled={isExporting}
@@ -191,13 +190,13 @@ export default function EstatisticasReport() {
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoading || isLoadingIgreja ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : estatisticas ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 break-inside-avoid-page">
+                <Card className="break-inside-avoid">
                   <CardHeader>
                     <CardTitle>Admissões</CardTitle>
                   </CardHeader>
@@ -218,8 +217,7 @@ export default function EstatisticasReport() {
                     </dl>
                   </CardContent>
                 </Card>
-
-                <Card>
+                <Card className="break-inside-avoid">
                   <CardHeader>
                     <CardTitle>Membros</CardTitle>
                   </CardHeader>
@@ -236,8 +234,7 @@ export default function EstatisticasReport() {
                     </dl>
                   </CardContent>
                 </Card>
-
-                <Card>
+                <Card className="break-inside-avoid">
                   <CardHeader>
                     <CardTitle>Distribuição por Sexo</CardTitle>
                   </CardHeader>
@@ -254,8 +251,7 @@ export default function EstatisticasReport() {
                     </dl>
                   </CardContent>
                 </Card>
-
-                <Card>
+                <Card className="break-inside-avoid">
                   <CardHeader>
                     <CardTitle>Liderança</CardTitle>
                   </CardHeader>
@@ -276,8 +272,7 @@ export default function EstatisticasReport() {
                     </dl>
                   </CardContent>
                 </Card>
-
-                <Card>
+                <Card className="break-inside-avoid">
                   <CardHeader>
                     <CardTitle>Sociedades Internas</CardTitle>
                   </CardHeader>
@@ -308,12 +303,6 @@ export default function EstatisticasReport() {
             ) : null}
           </CardContent>
         </Card>
-      </div>
-      <div className="flex justify-end print:hidden">
-        <Button onClick={handlePrint}>
-          <Printer className="h-4 w-4 mr-2" />
-          Imprimir
-        </Button>
       </div>
     </div>
   );

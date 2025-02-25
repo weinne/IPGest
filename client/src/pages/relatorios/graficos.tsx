@@ -6,8 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, 
 import { useRef, useState } from "react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+import { useIgrejaContext } from "@/hooks/use-igreja-context";
 
 type GraficosData = {
   crescimento_mensal: Array<{ mes: string; total: number }>;
@@ -33,11 +32,14 @@ type GraficosData = {
   };
 };
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
 export function RelatorioGraficos() {
   const { data: graficos, isLoading } = useQuery<GraficosData>({
     queryKey: ["/api/reports/graficos"],
   });
 
+  const { igreja, isLoading: isLoadingIgreja } = useIgrejaContext();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -46,8 +48,6 @@ export function RelatorioGraficos() {
 
     try {
       setIsExporting(true);
-
-      // Wait for charts to be fully rendered
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const content = contentRef.current;
@@ -58,7 +58,6 @@ export function RelatorioGraficos() {
         allowTaint: true,
         backgroundColor: '#ffffff',
         onclone: (doc) => {
-          // Ensure tooltips are hidden in PDF
           const tooltips = doc.getElementsByClassName('recharts-tooltip-wrapper');
           Array.from(tooltips).forEach((tooltip: Element) => {
             (tooltip as HTMLElement).style.display = 'none';
@@ -68,19 +67,14 @@ export function RelatorioGraficos() {
 
       const contentWidth = canvas.width;
       const contentHeight = canvas.height;
-
-      // A4 dimensions in points (pt)
       const pageWidth = 595.28;
       const pageHeight = 841.89;
-
-      // Calculate scaling to fit width
       const scale = pageWidth / contentWidth;
       const scaledHeight = contentHeight * scale;
 
       const pdf = new jsPDF('p', 'pt', 'a4');
       let position = 0;
 
-      // Add pages as needed
       while (position < scaledHeight) {
         if (position > 0) {
           pdf.addPage();
@@ -117,31 +111,35 @@ export function RelatorioGraficos() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Análise Gráfica</CardTitle>
-          <Button 
-            onClick={handleExportPDF} 
-            disabled={isExporting}
-          >
-            {isExporting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <FileDown className="h-4 w-4 mr-2" />
-            )}
-            {isExporting ? 'Exportando...' : 'Exportar PDF'}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div ref={contentRef} className="bg-white p-6 rounded-lg">
-            {isLoading ? (
+      <div ref={contentRef}>
+        <Card className="print:shadow-none">
+          <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">
+                {igreja?.nome}
+              </p>
+              <CardTitle>Relatório Gráfico</CardTitle>
+            </div>
+            <Button 
+              onClick={handleExportPDF} 
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4 mr-2" />
+              )}
+              {isExporting ? 'Exportando...' : 'Exportar PDF'}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {isLoading || isLoadingIgreja ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : graficos ? (
               <div className="space-y-12">
-                {/* Gráfico de Crescimento Mensal */}
-                <div>
+                <div className="break-inside-avoid-page">
                   <h3 className="text-lg font-medium mb-4">Crescimento Mensal</h3>
                   <div className="w-full h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -160,9 +158,7 @@ export function RelatorioGraficos() {
                   </div>
                 </div>
 
-                {/* Gráficos em Pizza */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {/* Distribuição por Tipo */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 break-inside-avoid-page">
                   <div>
                     <h3 className="text-lg font-medium mb-4">Distribuição por Tipo</h3>
                     <div className="w-full aspect-square">
@@ -191,7 +187,6 @@ export function RelatorioGraficos() {
                     </div>
                   </div>
 
-                  {/* Distribuição por Idade */}
                   <div>
                     <h3 className="text-lg font-medium mb-4">Distribuição por Idade</h3>
                     <div className="w-full aspect-square">
@@ -221,7 +216,6 @@ export function RelatorioGraficos() {
                     </div>
                   </div>
 
-                  {/* Distribuição por Modo de Admissão */}
                   <div>
                     <h3 className="text-lg font-medium mb-4">Distribuição por Modo de Admissão</h3>
                     <div className="w-full aspect-square">
@@ -254,8 +248,7 @@ export function RelatorioGraficos() {
                   </div>
                 </div>
 
-                {/* Distribuição por Sociedade Interna */}
-                <div>
+                <div className="break-inside-avoid-page">
                   <h3 className="text-lg font-medium mb-4">Distribuição por Sociedade Interna</h3>
                   <div className="w-full h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -275,9 +268,9 @@ export function RelatorioGraficos() {
                 </div>
               </div>
             ) : null}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -47,6 +47,12 @@
     margin-bottom: 2cm;
   }
 
+  .break-inside-avoid-page {
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 2cm;
+  }
+
   /* Adjust spacing for print */
   .print\:space-y-12 > * + * {
     margin-top: 3rem !important;
@@ -108,5 +114,24 @@
 
   .recharts-bar-rectangle {
     fill-opacity: 1 !important;
+  }
+
+  /* Timeline specific styles */
+  .w-0\.5 {
+    width: 2px !important;
+    background-color: #e5e7eb !important;
+  }
+
+  /* Card and table styles */
+  .border {
+    border-color: #e5e7eb !important;
+  }
+
+  table {
+    page-break-inside: avoid !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
   }
 }
