@@ -24,6 +24,7 @@
     min-height: 100vh;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
   /* Hide navigation and other UI elements when printing */
@@ -51,7 +52,7 @@
     margin-top: 3rem !important;
   }
 
-  /* Ensure charts are properly sized on print */
+  /* Chart container styles */
   .recharts-wrapper {
     width: 100% !important;
     height: 100% !important;
@@ -65,34 +66,47 @@
   }
 
   /* Make text darker for better print contrast */
-  text, .recharts-text {
+  text, 
+  .recharts-text,
+  .recharts-label {
     fill: #000 !important;
     color: #000 !important;
   }
 
-  /* Adjust grid layout for print */
+  /* Grid layout adjustments */
   .print\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 2rem !important;
   }
 
-  /* Better spacing for pie charts */
+  /* Chart sizing */
   .aspect-square {
     height: 300px !important;
     width: 300px !important;
     margin: 0 auto !important;
   }
 
-  /* Ensure charts don't overflow */
   .w-full.h-\[400px\] {
     height: 350px !important;
     max-width: 100% !important;
     overflow: hidden !important;
   }
 
-  /* Force show background colors and charts */
+  /* Force colors in print */
   .printing * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Ensure all chart elements are visible */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line,
+  .recharts-cartesian-axis-line {
+    stroke: #000 !important;
+  }
+
+  .recharts-bar-rectangle {
+    fill-opacity: 1 !important;
   }
 }

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Printer, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -36,15 +36,52 @@ export function RelatorioGraficos() {
     queryKey: ["/api/reports/graficos"],
   });
 
-  const [isPrinting, setIsPrinting] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
-    setIsPrinting(true);
-    // Give time for the state to update and charts to rerender
-    setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
-    }, 100);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    // Get the styles from the current document
+    const styles = Array.from(document.styleSheets)
+      .map(styleSheet => {
+        try {
+          return Array.from(styleSheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('\n');
+        } catch {
+          return '';
+        }
+      })
+      .join('\n');
+
+    // Get the content
+    const content = contentRef.current?.innerHTML || '';
+
+    // Create the print document
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Relatório Gráfico</title>
+          <style>${styles}</style>
+        </head>
+        <body class="printing">
+          <div class="max-w-7xl mx-auto px-4 py-8">
+            ${content}
+          </div>
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }> = []) => {
@@ -54,174 +91,162 @@ export function RelatorioGraficos() {
     }));
   };
 
-  // Add print event listeners
-  useEffect(() => {
-    const beforePrint = () => setIsPrinting(true);
-    const afterPrint = () => setIsPrinting(false);
-
-    window.addEventListener('beforeprint', beforePrint);
-    window.addEventListener('afterprint', afterPrint);
-
-    return () => {
-      window.removeEventListener('beforeprint', beforePrint);
-      window.removeEventListener('afterprint', afterPrint);
-    };
-  }, []);
-
   return (
-    <div className={`space-y-6 print:space-y-12 ${isPrinting ? 'printing' : ''}`}>
-      <Card className="print:shadow-none">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Análise Gráfica</CardTitle>
-          <Button onClick={handlePrint} className="print:hidden">
-            <Printer className="h-4 w-4 mr-2" />
-            Imprimir
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : graficos ? (
-            <div className="space-y-12">
-              {/* Gráfico de Crescimento Mensal */}
-              <div className="print:break-inside-avoid">
-                <h3 className="text-lg font-medium mb-4">Crescimento Mensal</h3>
-                <div className="w-full h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={formatarDataGrafico(graficos.crescimento_mensal)}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="mes" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="total" fill="#8884d8" name="Novos Membros" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+    <div className="space-y-6 print:space-y-12">
+      <div ref={contentRef}>
+        <Card className="print:shadow-none">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Análise Gráfica</CardTitle>
+            <Button onClick={handlePrint} className="print:hidden">
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimir
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-
-              {/* Gráficos em Pizza */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 print:grid-cols-3">
-                {/* Distribuição por Tipo */}
+            ) : graficos ? (
+              <div className="space-y-12">
+                {/* Gráfico de Crescimento Mensal */}
                 <div className="print:break-inside-avoid">
-                  <h3 className="text-lg font-medium mb-4">Distribuição por Tipo</h3>
-                  <div className="w-full aspect-square">
+                  <h3 className="text-lg font-medium mb-4">Crescimento Mensal</h3>
+                  <div className="w-full h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={[
-                            { name: 'Comungantes', value: graficos.distribuicao_tipos?.comungantes || 0 },
-                            { name: 'Não Comungantes', value: graficos.distribuicao_tipos?.nao_comungantes || 0 }
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                          outerRadius="80%"
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {[0, 1].map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
+                      <BarChart
+                        data={formatarDataGrafico(graficos.crescimento_mensal)}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="mes" />
+                        <YAxis />
                         <Tooltip />
-                      </PieChart>
+                        <Legend />
+                        <Bar dataKey="total" fill="#8884d8" name="Novos Membros" />
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Distribuição por Idade */}
-                <div className="print:break-inside-avoid">
-                  <h3 className="text-lg font-medium mb-4">Distribuição por Idade</h3>
-                  <div className="w-full aspect-square">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={[
-                            { name: 'Jovens (<30)', value: graficos.distribuicao_idade?.jovens || 0 },
-                            { name: 'Adultos (30-59)', value: graficos.distribuicao_idade?.adultos || 0 },
-                            { name: 'Idosos (60+)', value: graficos.distribuicao_idade?.idosos || 0 }
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                          outerRadius="80%"
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {[0, 1, 2].map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
+                {/* Gráficos em Pizza */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 print:grid-cols-3">
+                  {/* Distribuição por Tipo */}
+                  <div className="print:break-inside-avoid">
+                    <h3 className="text-lg font-medium mb-4">Distribuição por Tipo</h3>
+                    <div className="w-full aspect-square">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Comungantes', value: graficos.distribuicao_tipos?.comungantes || 0 },
+                              { name: 'Não Comungantes', value: graficos.distribuicao_tipos?.nao_comungantes || 0 }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            outerRadius="80%"
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {[0, 1].map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Distribuição por Idade */}
+                  <div className="print:break-inside-avoid">
+                    <h3 className="text-lg font-medium mb-4">Distribuição por Idade</h3>
+                    <div className="w-full aspect-square">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Jovens (<30)', value: graficos.distribuicao_idade?.jovens || 0 },
+                              { name: 'Adultos (30-59)', value: graficos.distribuicao_idade?.adultos || 0 },
+                              { name: 'Idosos (60+)', value: graficos.distribuicao_idade?.idosos || 0 }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            outerRadius="80%"
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {[0, 1, 2].map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Distribuição por Modo de Admissão */}
+                  <div className="print:break-inside-avoid">
+                    <h3 className="text-lg font-medium mb-4">Distribuição por Modo de Admissão</h3>
+                    <div className="w-full aspect-square">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Batismo', value: graficos.distribuicao_admissao?.batismo || 0 },
+                              { name: 'Profissão de Fé', value: graficos.distribuicao_admissao?.profissao_fe || 0 },
+                              { name: 'Transferência', value: graficos.distribuicao_admissao?.transferencia || 0 },
+                              { name: 'Reconciliação', value: graficos.distribuicao_admissao?.reconciliacao || 0 },
+                              { name: 'Jurisdição', value: graficos.distribuicao_admissao?.jurisdicao || 0 }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            outerRadius="80%"
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {[0, 1, 2, 3, 4].map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
 
-                {/* Distribuição por Modo de Admissão */}
+                {/* Distribuição por Sociedade Interna */}
                 <div className="print:break-inside-avoid">
-                  <h3 className="text-lg font-medium mb-4">Distribuição por Modo de Admissão</h3>
-                  <div className="w-full aspect-square">
+                  <h3 className="text-lg font-medium mb-4">Distribuição por Sociedade Interna</h3>
+                  <div className="w-full h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={[
-                            { name: 'Batismo', value: graficos.distribuicao_admissao?.batismo || 0 },
-                            { name: 'Profissão de Fé', value: graficos.distribuicao_admissao?.profissao_fe || 0 },
-                            { name: 'Transferência', value: graficos.distribuicao_admissao?.transferencia || 0 },
-                            { name: 'Reconciliação', value: graficos.distribuicao_admissao?.reconciliacao || 0 },
-                            { name: 'Jurisdição', value: graficos.distribuicao_admissao?.jurisdicao || 0 }
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                          outerRadius="80%"
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {[0, 1, 2, 3, 4].map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
+                      <BarChart
+                        data={graficos.distribuicao_sociedades || []}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="sociedade" />
+                        <YAxis />
                         <Tooltip />
-                      </PieChart>
+                        <Legend />
+                        <Bar dataKey="total" fill="#82ca9d" name="Número de Membros" />
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
               </div>
-
-              {/* Distribuição por Sociedade Interna */}
-              <div className="print:break-inside-avoid">
-                <h3 className="text-lg font-medium mb-4">Distribuição por Sociedade Interna</h3>
-                <div className="w-full h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={graficos.distribuicao_sociedades || []}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="sociedade" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="total" fill="#82ca9d" name="Número de Membros" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
