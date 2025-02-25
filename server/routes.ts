@@ -757,8 +757,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Igreja update request:", {
         body: req.body,
         igreja_id: req.user.igreja_id,
-        file: req.file
+        file: req.file,
+        headers: req.headers['content-type']
       });
+
+      // Debug para ver o FormData
+      if (req.body instanceof FormData) {
+        console.log("FormData entries:");
+        for (const [key, value] of req.body.entries()) {
+          console.log(key, ':', value);
+        }
+      }
 
       // Inicia com campos obrigatórios
       const updateData = {};
