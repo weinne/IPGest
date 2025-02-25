@@ -94,9 +94,11 @@ export default function ConfiguracoesPage() {
 
   const updateIgrejaMutation = useMutation({
     mutationFn: async (values: IgrejaFormValues) => {
-      console.log("Submitting igreja update:", values);
+      console.log("Mutation: sending igreja update with values:", values);
       const res = await apiRequest("POST", "/api/user/igreja", values);
-      return res.json();
+      const data = await res.json();
+      console.log("Mutation: received response:", data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/igreja"] });
@@ -106,6 +108,7 @@ export default function ConfiguracoesPage() {
       });
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Erro ao atualizar configurações",
         description: error.message,
