@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -62,7 +62,7 @@ export function RelatorioMembros() {
   const [filters, setFilters] = useState<Filters>({});
   const form = useForm<Filters>();
 
-  const { data: membros, isLoading } = useQuery({
+  const { data: membros, isLoading } = useQuery<Membro[]>({
     queryKey: ["/api/reports/membros", filters],
     queryFn: () => {
       const params = new URLSearchParams();

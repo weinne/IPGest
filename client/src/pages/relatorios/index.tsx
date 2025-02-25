@@ -1,6 +1,5 @@
 import Navigation from "@/components/layout/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
 import { RelatorioMembros } from "./membros";
 import { RelatorioEstatisticas } from "./estatisticas";
 import { RelatorioOcorrencias } from "./ocorrencias";
