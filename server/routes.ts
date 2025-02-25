@@ -762,11 +762,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fields = ['nome', 'cnpj', 'cep', 'endereco', 'numero', 'complemento', 'bairro', 'website', 'telefone', 'email', 'data_fundacao', 'cidade', 'estado'];
       
       for (const field of fields) {
-        // Aceita qualquer valor, incluindo string vazia
         if (req.body[field] !== undefined) {
-          updateData[field] = req.body[field] || null;
+          // Mantém string vazia e null como estão
+          updateData[field] = req.body[field];
         }
       }
+
+      console.log("Update data:", updateData);
 
       // Adiciona logo se existir
       if (req.file) {

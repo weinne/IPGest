@@ -140,10 +140,14 @@ export default function ConfiguracoesPage() {
 
       // First add all the form values
       Object.entries(values).forEach(([key, value]) => {
-        if (key !== 'logo') {
+        if (key !== 'logo' && value !== undefined) {
           formData.append(key, value === null ? '' : String(value));
         }
       });
+      console.log("FormData entries:");
+      for (const [key, value] of formData.entries()) {
+        console.log(key, ':', value);
+      };
 
       // Then add the file if it exists
       if (values.logo) {
