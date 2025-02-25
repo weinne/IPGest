@@ -3,10 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { 
-  Users, UserPlus, UsersRound, LogOut,
-  ChevronDown, UserCog
-} from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
+import { allRoutes } from "@/lib/routes";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,39 +12,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const routes = [
-  {
-    path: "/membros",
-    label: "Membros",
-    icon: Users
-  },
-  {
-    path: "/grupos",
-    label: "Grupos",
-    icon: UsersRound
-  },
-  {
-    path: "/lideranca",
-    label: "Liderança",
-    icon: UserPlus
-  }
-];
-
 export default function Navigation() {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
 
   const isAdmin = user?.role === "administrador";
 
-  // Adiciona a rota de usuários apenas para administradores
-  const allRoutes = isAdmin ? [
-    ...routes,
+  // Only add the users management route for admins
+  const routes = isAdmin ? [
+    ...allRoutes,
     {
       path: "/usuarios",
       label: "Usuários",
       icon: UserCog
     }
-  ] : routes;
+  ] : allRoutes;
 
   return (
     <nav className="border-b bg-white">
@@ -58,7 +38,7 @@ export default function Navigation() {
             </Link>
 
             <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
-              {allRoutes.map((route) => {
+              {routes.map((route) => {
                 const Icon = route.icon;
                 return (
                   <Link 
