@@ -723,8 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         distribuicao_idade: distribuicaoIdade,
         distribuicao_admissao: distribuicaoAdmissao
       });
-    } catch (error) {
-      console.error("Error in /api/reports/graficos:", error);
+    } catch (error) {      console.error("Error in /api/reports/graficos:", error);
       res.status(500).json({ message: (error as Error).message });
     }
   });
@@ -754,8 +753,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      console.log("Dados recebidos:", req.body);
-      console.log("Arquivo recebido:", req.file); //Added Log
+      console.log("Dados recebidos para nova igreja:", req.body);
+      console.log("Arquivo recebido:", req.file);
 
       const updateData: Record<string, any> = {};
 
@@ -764,17 +763,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const field of fields) {
         // Inclui o campo mesmo se for string vazia
-        updateData[field] = req.body[field] ?? null;
+        updateData[field] = req.body[field] ?? ''; //Accept empty strings
       }
-
-      console.log("Update data:", updateData);
 
       // Adiciona logo se existir
       if (req.file) {
         updateData.logo_url = req.file.filename;
       }
 
-      console.log("Update data after file check:", updateData); //Added Log
+      console.log("Update data after file check:", updateData); 
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "Nenhum dado válido para atualizar" });
