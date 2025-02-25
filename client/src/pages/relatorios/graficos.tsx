@@ -1,0 +1,137 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Printer, Loader2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+export function RelatorioGraficos() {
+  const { data: graficos, isLoading } = useQuery({
+    queryKey: ["/api/reports/graficos"],
+    queryFn: () => fetch("/api/reports/graficos").then(res => res.json()),
+  });
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }>) => {
+    return crescimentoMensal.map(item => ({
+      mes: new Date(item.mes).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+      total: item.total
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Crescimento Mensal</CardTitle>
+          <Button onClick={handlePrint} className="print:hidden">
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimir
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : graficos ? (
+            <div className="space-y-8">
+              {/* Gráfico de Crescimento Mensal */}
+              <div className="w-full h-[400px]">
+                <BarChart
+                  width={800}
+                  height={400}
+                  data={formatarDataGrafico(graficos.crescimento_mensal)}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="total" fill="#8884d8" name="Novos Membros" />
+                </BarChart>
+              </div>
+
+              {/* Gráficos em Pizza */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Distribuição por Tipo */}
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Distribuição por Tipo</h3>
+                  <PieChart width={400} height={400}>
+                    <Pie
+                      data={[
+                        { name: 'Comungantes', value: graficos.distribuicao_tipos.comungantes },
+                        { name: 'Não Comungantes', value: graficos.distribuicao_tipos.nao_comungantes }
+                      ]}
+                      cx={200}
+                      cy={200}
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={160}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {[0, 1].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </div>
+
+                {/* Distribuição por Idade */}
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Distribuição por Idade</h3>
+                  <PieChart width={400} height={400}>
+                    <Pie
+                      data={[
+                        { name: 'Jovens', value: graficos.distribuicao_idade.jovens },
+                        { name: 'Adultos', value: graficos.distribuicao_idade.adultos },
+                        { name: 'Idosos', value: graficos.distribuicao_idade.idosos }
+                      ]}
+                      cx={200}
+                      cy={200}
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={160}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {[0, 1, 2].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </div>
+              </div>
+
+              {/* Distribuição por Sociedade Interna */}
+              <div>
+                <h3 className="text-lg font-medium mb-4">Distribuição por Sociedade Interna</h3>
+                <BarChart
+                  width={800}
+                  height={400}
+                  data={graficos.distribuicao_sociedades}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="sociedade" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="total" fill="#82ca9d" name="Número de Membros" />
+                </BarChart>
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -9,6 +9,7 @@ import { canWrite, isAdmin } from "./middleware";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import express from "express";
+import { and, eq, gte, lte, sql } from "drizzle-orm"; // Added import for drizzle-orm
 
 const scryptAsync = promisify(scrypt);
 
@@ -427,6 +428,304 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao atualizar mandato de pastor:", error);
       res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  // Reports routes
+  app.get("/api/reports/membros", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const filters = req.query;
+      let query = db
+        .select()
+        .from(membros)
+        .where(eq(membros.igreja_id, req.user.igreja_id));
+
+      // Apply filters
+      if (filters.tipo) {
+        query = query.where(eq(membros.tipo, filters.tipo as string));
+      }
+      if (filters.sexo) {
+        query = query.where(eq(membros.sexo, filters.sexo as string));
+      }
+      if (filters.status) {
+        query = query.where(eq(membros.status, filters.status as string));
+      }
+      if (filters.data_admissao_inicio && filters.data_admissao_fim) {
+        query = query.where(
+          and(
+            gte(membros.data_admissao, new Date(filters.data_admissao_inicio as string)),
+            lte(membros.data_admissao, new Date(filters.data_admissao_fim as string))
+          )
+        );
+      }
+
+      const result = await query;
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/reports/estatisticas", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const { data_inicio, data_fim } = req.query;
+      const igreja_id = req.user.igreja_id;
+
+      // Estatísticas gerais
+      const [admissoesPorTipo] = await db
+        .select({
+          batismo: sql<number>`COUNT(CASE WHEN tipo_admissao = 'batismo' THEN 1 END)`,
+          profissao_fe: sql<number>`COUNT(CASE WHEN tipo_admissao = 'profissao_fe' THEN 1 END)`,
+          transferencia: sql<number>`COUNT(CASE WHEN tipo_admissao = 'transferencia' THEN 1 END)`
+        })
+        .from(membros)
+        .where(
+          and(
+            eq(membros.igreja_id, igreja_id),
+            data_inicio ? gte(membros.data_admissao, new Date(data_inicio as string)) : undefined,
+            data_fim ? lte(membros.data_admissao, new Date(data_fim as string)) : undefined
+          )
+        );
+
+      const [membrosPorTipo] = await db
+        .select({
+          comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' THEN 1 END)`,
+          nao_comungantes: sql<number>`COUNT(CASE WHEN tipo = 'nao_comungante' THEN 1 END)`
+        })
+        .from(membros)
+        .where(
+          and(
+            eq(membros.igreja_id, igreja_id),
+            eq(membros.status, 'ativo')
+          )
+        );
+
+      const [membrosPorSexo] = await db
+        .select({
+          masculino: sql<number>`COUNT(CASE WHEN sexo = 'masculino' THEN 1 END)`,
+          feminino: sql<number>`COUNT(CASE WHEN sexo = 'feminino' THEN 1 END)`
+        })
+        .from(membros)
+        .where(
+          and(
+            eq(membros.igreja_id, igreja_id),
+            eq(membros.status, 'ativo')
+          )
+        );
+
+      const sociedadesInternas = await db
+        .select({
+          id: grupos.id,
+          nome: grupos.nome,
+          tipo: grupos.tipo,
+          membros_count: sql<number>`COUNT(membros_grupos.membro_id)`
+        })
+        .from(grupos)
+        .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
+        .where(eq(grupos.igreja_id, igreja_id))
+        .groupBy(grupos.id, grupos.nome, grupos.tipo);
+
+      const [liderancasCount] = await db
+        .select({
+          pastores: sql<number>`COUNT(DISTINCT pastores.id)`,
+          presbiteros: sql<number>`COUNT(DISTINCT CASE WHEN liderancas.cargo = 'presbitero' THEN liderancas.id END)`,
+          diaconos: sql<number>`COUNT(DISTINCT CASE WHEN liderancas.cargo = 'diacono' THEN liderancas.id END)`
+        })
+        .from(liderancas)
+        .leftJoin(pastores, eq(pastores.igreja_id, igreja_id))
+        .where(eq(liderancas.igreja_id, igreja_id));
+
+      res.json({
+        admissoes: admissoesPorTipo,
+        membros: {
+          por_tipo: membrosPorTipo,
+          por_sexo: membrosPorSexo
+        },
+        sociedades: sociedadesInternas,
+        lideranca: liderancasCount
+      });
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/reports/ocorrencias", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const { data_inicio, data_fim } = req.query;
+      const igreja_id = req.user.igreja_id;
+
+      // Admissões e exclusões de membros
+      const membrosOcorrencias = await db
+        .select({
+          tipo: sql<string>`'membro'`,
+          acao: sql<string>`CASE 
+            WHEN data_exclusao IS NOT NULL THEN 'exclusao'
+            ELSE 'admissao'
+          END`,
+          data: sql<Date>`COALESCE(data_exclusao, data_admissao)`,
+          descricao: sql<string>`CONCAT(nome, ' - ', 
+            CASE 
+              WHEN data_exclusao IS NOT NULL THEN CONCAT('Excluído por ', motivo_exclusao)
+              ELSE CONCAT('Admitido por ', tipo_admissao)
+            END
+          )`
+        })
+        .from(membros)
+        .where(
+          and(
+            eq(membros.igreja_id, igreja_id),
+            data_inicio ? gte(membros.data_admissao, new Date(data_inicio as string)) : undefined,
+            data_fim ? lte(membros.data_admissao, new Date(data_fim as string)) : undefined
+          )
+        );
+
+      // Mandatos de lideranças
+      const liderancasOcorrencias = await db
+        .select({
+          tipo: sql<string>`'lideranca'`,
+          acao: sql<string>`CASE 
+            WHEN data_fim IS NOT NULL THEN 'fim_mandato'
+            ELSE 'inicio_mandato'
+          END`,
+          data: sql<Date>`COALESCE(data_fim, data_inicio)`,
+          descricao: sql<string>`CONCAT(
+            CASE 
+              WHEN data_fim IS NOT NULL THEN 'Fim do mandato de '
+              ELSE 'Início do mandato de '
+            END,
+            liderancas.cargo
+          )`
+        })
+        .from(mandatos_liderancas)
+        .innerJoin(liderancas, eq(mandatos_liderancas.lideranca_id, liderancas.id))
+        .where(
+          and(
+            eq(mandatos_liderancas.igreja_id, igreja_id),
+            data_inicio ? gte(mandatos_liderancas.data_inicio, new Date(data_inicio as string)) : undefined,
+            data_fim ? lte(mandatos_liderancas.data_fim, new Date(data_fim as string)) : undefined
+          )
+        );
+
+      // Mandatos de pastores
+      const pastoresOcorrencias = await db
+        .select({
+          tipo: sql<string>`'pastor'`,
+          acao: sql<string>`CASE 
+            WHEN data_fim IS NOT NULL THEN 'fim_mandato'
+            ELSE 'inicio_mandato'
+          END`,
+          data: sql<Date>`COALESCE(data_fim, data_inicio)`,
+          descricao: sql<string>`CONCAT(
+            pastores.nome,
+            CASE 
+              WHEN data_fim IS NOT NULL THEN ' - Fim do mandato'
+              ELSE ' - Início do mandato'
+            END
+          )`
+        })
+        .from(mandatos_pastores)
+        .innerJoin(pastores, eq(mandatos_pastores.pastor_id, pastores.id))
+        .where(
+          and(
+            eq(mandatos_pastores.igreja_id, igreja_id),
+            data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
+            data_fim ? lte(mandatos_pastores.data_fim, new Date(data_fim as string)) : undefined
+          )
+        );
+
+      // Combine and sort all occurrences
+      const ocorrencias = [
+        ...membrosOcorrencias,
+        ...liderancasOcorrencias,
+        ...pastoresOcorrencias
+      ].sort((a, b) => b.data.getTime() - a.data.getTime());
+
+      res.json(ocorrencias);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/reports/graficos", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const igreja_id = req.user.igreja_id;
+
+      // Crescimento mensal de membros (últimos 12 meses)
+      const crescimentoMensal = await db
+        .select({
+          mes: sql<string>`DATE_TRUNC('month', data_admissao)::date`,
+          total: sql<number>`COUNT(*)`
+        })
+        .from(membros)
+        .where(
+          and(
+            eq(membros.igreja_id, igreja_id),
+            gte(membros.data_admissao, sql`NOW() - INTERVAL '1 year'`)
+          )
+        )
+        .groupBy(sql`DATE_TRUNC('month', data_admissao)`)
+        .orderBy(sql`DATE_TRUNC('month', data_admissao)`);
+
+      // Distribuição atual de membros por tipo
+      const [distribuicaoTipos] = await db
+        .select({
+          comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' THEN 1 END)`,
+          nao_comungantes: sql<number>`COUNT(CASE WHEN tipo = 'nao_comungante' THEN 1 END)`
+        })
+        .from(membros)
+        .where(
+          and(
+            eq(membros.igreja_id, igreja_id),
+            eq(membros.status, 'ativo')
+          )
+        );
+
+      // Distribuição por sociedade interna
+      const distribuicaoSociedades = await db
+        .select({
+          sociedade: grupos.nome,
+          total: sql<number>`COUNT(membros_grupos.membro_id)`
+        })
+        .from(grupos)
+        .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
+        .where(eq(grupos.igreja_id, igreja_id))
+        .groupBy(grupos.id, grupos.nome);
+
+      // Distribuição por faixa etária
+      const [distribuicaoIdade] = await db
+        .select({
+          jovens: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) < 30 THEN 1 END)`,
+          adultos: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) BETWEEN 30 AND 59 THEN 1 END)`,
+          idosos: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) >= 60 THEN 1 END)`
+        })
+        .from(membros)
+        .where(
+          and(
+            eq(membros.igreja_id, igreja_id),
+            eq(membros.status, 'ativo')
+          )
+        );
+
+      res.json({
+        crescimento_mensal: crescimentoMensal,
+        distribuicao_tipos: distribuicaoTipos,
+        distribuicao_sociedades: distribuicaoSociedades,
+        distribuicao_idade: distribuicaoIdade
+      });
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 

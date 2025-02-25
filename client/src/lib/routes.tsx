@@ -1,3 +1,5 @@
+import { Home, Users, Boxes, UserCog, FileText } from "lucide-react";
+
 export const allRoutes = [
   {
     path: "/dashboard",
@@ -20,8 +22,8 @@ export const allRoutes = [
     icon: UserCog,
   },
   {
-    path: "/usuarios",
-    label: "Usuários",
-    icon: Users,
+    path: "/relatorios",
+    label: "Relatórios",
+    icon: FileText,
   },
 ];

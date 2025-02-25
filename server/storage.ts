@@ -1,9 +1,10 @@
 import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, mandatos_pastores, mandatos_liderancas, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor, type MandatoPastor, type InsertMandatoPastor, type MandatoLideranca, type InsertMandatoLideranca } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import { sql } from 'drizzle-orm/sql';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -36,6 +37,77 @@ export interface IStorage {
   updateMembro(id: number, membro: Partial<InsertMembro> & { igreja_id: number }): Promise<Membro>;
   updateGrupo(id: number, grupo: Partial<InsertGrupo> & { igreja_id: number }): Promise<Grupo>;
   getUsersByIgreja(igreja_id: number): Promise<User[]>;
+
+  // Reports methods
+  getMembrosWithFilters(igreja_id: number, filters: {
+    tipo?: string;
+    sexo?: string;
+    status?: string;
+    data_admissao_inicio?: Date;
+    data_admissao_fim?: Date;
+  }): Promise<Membro[]>;
+
+  getEstatisticas(igreja_id: number, periodo?: {
+    inicio: Date;
+    fim: Date;
+  }): Promise<{
+    admissoes: {
+      batismo: number;
+      profissao_fe: number;
+      transferencia: number;
+    };
+    membros: {
+      por_tipo: {
+        comungantes: number;
+        nao_comungantes: number;
+      };
+      por_sexo: {
+        masculino: number;
+        feminino: number;
+      };
+    };
+    sociedades: Array<{
+      id: number;
+      nome: string;
+      tipo: string;
+      membros_count: number;
+    }>;
+    lideranca: {
+      pastores: number;
+      presbiteros: number;
+      diaconos: number;
+    };
+  }>;
+
+  getOcorrencias(igreja_id: number, periodo?: {
+    inicio: Date;
+    fim: Date;
+  }): Promise<Array<{
+    tipo: string;
+    acao: string;
+    data: Date;
+    descricao: string;
+  }>>;
+
+  getGraficosData(igreja_id: number): Promise<{
+    crescimento_mensal: Array<{
+      mes: Date;
+      total: number;
+    }>;
+    distribuicao_tipos: {
+      comungantes: number;
+      nao_comungantes: number;
+    };
+    distribuicao_sociedades: Array<{
+      sociedade: string;
+      total: number;
+    }>;
+    distribuicao_idade: {
+      jovens: number;
+      adultos: number;
+      idosos: number;
+    };
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -290,6 +362,312 @@ export class DatabaseStorage implements IStorage {
   }
   async getUsersByIgreja(igreja_id: number): Promise<User[]> {
     return await db.select().from(users).where(eq(users.igreja_id, igreja_id));
+  }
+
+  async getMembrosWithFilters(igreja_id: number, filters: {
+    tipo?: string;
+    sexo?: string;
+    status?: string;
+    data_admissao_inicio?: Date;
+    data_admissao_fim?: Date;
+  }): Promise<Membro[]> {
+    let query = db
+      .select()
+      .from(membros)
+      .where(eq(membros.igreja_id, igreja_id));
+
+    if (filters.tipo) {
+      query = query.where(eq(membros.tipo, filters.tipo));
+    }
+    if (filters.sexo) {
+      query = query.where(eq(membros.sexo, filters.sexo));
+    }
+    if (filters.status) {
+      query = query.where(eq(membros.status, filters.status));
+    }
+    if (filters.data_admissao_inicio && filters.data_admissao_fim) {
+      query = query.where(
+        and(
+          gte(membros.data_admissao, filters.data_admissao_inicio),
+          lte(membros.data_admissao, filters.data_admissao_fim)
+        )
+      );
+    }
+
+    return await query;
+  }
+
+  async getEstatisticas(igreja_id: number, periodo?: {
+    inicio: Date;
+    fim: Date;
+  }): Promise<{
+    admissoes: {
+      batismo: number;
+      profissao_fe: number;
+      transferencia: number;
+    };
+    membros: {
+      por_tipo: {
+        comungantes: number;
+        nao_comungantes: number;
+      };
+      por_sexo: {
+        masculino: number;
+        feminino: number;
+      };
+    };
+    sociedades: Array<{
+      id: number;
+      nome: string;
+      tipo: string;
+      membros_count: number;
+    }>;
+    lideranca: {
+      pastores: number;
+      presbiteros: number;
+      diaconos: number;
+    };
+  }> {
+    const [admissoesPorTipo] = await db
+      .select({
+        batismo: sql<number>`COUNT(CASE WHEN tipo_admissao = 'batismo' THEN 1 END)`,
+        profissao_fe: sql<number>`COUNT(CASE WHEN tipo_admissao = 'profissao_fe' THEN 1 END)`,
+        transferencia: sql<number>`COUNT(CASE WHEN tipo_admissao = 'transferencia' THEN 1 END)`
+      })
+      .from(membros)
+      .where(
+        and(
+          eq(membros.igreja_id, igreja_id),
+          periodo?.inicio ? gte(membros.data_admissao, periodo.inicio) : undefined,
+          periodo?.fim ? lte(membros.data_admissao, periodo.fim) : undefined
+        )
+      );
+
+    const [membrosPorTipo] = await db
+      .select({
+        comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' THEN 1 END)`,
+        nao_comungantes: sql<number>`COUNT(CASE WHEN tipo = 'nao_comungante' THEN 1 END)`
+      })
+      .from(membros)
+      .where(
+        and(
+          eq(membros.igreja_id, igreja_id),
+          eq(membros.status, 'ativo')
+        )
+      );
+
+    const [membrosPorSexo] = await db
+      .select({
+        masculino: sql<number>`COUNT(CASE WHEN sexo = 'masculino' THEN 1 END)`,
+        feminino: sql<number>`COUNT(CASE WHEN sexo = 'feminino' THEN 1 END)`
+      })
+      .from(membros)
+      .where(
+        and(
+          eq(membros.igreja_id, igreja_id),
+          eq(membros.status, 'ativo')
+        )
+      );
+
+    const sociedadesInternas = await db
+      .select({
+        id: grupos.id,
+        nome: grupos.nome,
+        tipo: grupos.tipo,
+        membros_count: sql<number>`COUNT(membros_grupos.membro_id)`
+      })
+      .from(grupos)
+      .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
+      .where(eq(grupos.igreja_id, igreja_id))
+      .groupBy(grupos.id, grupos.nome, grupos.tipo);
+
+    const [liderancasCount] = await db
+      .select({
+        pastores: sql<number>`COUNT(DISTINCT pastores.id)`,
+        presbiteros: sql<number>`COUNT(DISTINCT CASE WHEN liderancas.cargo = 'presbitero' THEN liderancas.id END)`,
+        diaconos: sql<number>`COUNT(DISTINCT CASE WHEN liderancas.cargo = 'diacono' THEN liderancas.id END)`
+      })
+      .from(liderancas)
+      .leftJoin(pastores, eq(pastores.igreja_id, igreja_id))
+      .where(eq(liderancas.igreja_id, igreja_id));
+
+    return {
+      admissoes: admissoesPorTipo,
+      membros: {
+        por_tipo: membrosPorTipo,
+        por_sexo: membrosPorSexo
+      },
+      sociedades: sociedadesInternas,
+      lideranca: liderancasCount
+    };
+  }
+
+  async getOcorrencias(igreja_id: number, periodo?: {
+    inicio: Date;
+    fim: Date;
+  }): Promise<Array<{
+    tipo: string;
+    acao: string;
+    data: Date;
+    descricao: string;
+  }>> {
+    const membrosOcorrencias = await db
+      .select({
+        tipo: sql<string>`'membro'`,
+        acao: sql<string>`CASE 
+          WHEN data_exclusao IS NOT NULL THEN 'exclusao'
+          ELSE 'admissao'
+        END`,
+        data: sql<Date>`COALESCE(data_exclusao, data_admissao)`,
+        descricao: sql<string>`CONCAT(nome, ' - ', 
+          CASE 
+            WHEN data_exclusao IS NOT NULL THEN CONCAT('Excluído por ', motivo_exclusao)
+            ELSE CONCAT('Admitido por ', tipo_admissao)
+          END
+        )`
+      })
+      .from(membros)
+      .where(
+        and(
+          eq(membros.igreja_id, igreja_id),
+          periodo?.inicio ? gte(membros.data_admissao, periodo.inicio) : undefined,
+          periodo?.fim ? lte(membros.data_admissao, periodo.fim) : undefined
+        )
+      );
+
+    const liderancasOcorrencias = await db
+      .select({
+        tipo: sql<string>`'lideranca'`,
+        acao: sql<string>`CASE 
+          WHEN data_fim IS NOT NULL THEN 'fim_mandato'
+          ELSE 'inicio_mandato'
+        END`,
+        data: sql<Date>`COALESCE(data_fim, data_inicio)`,
+        descricao: sql<string>`CONCAT(
+          CASE 
+            WHEN data_fim IS NOT NULL THEN 'Fim do mandato de '
+            ELSE 'Início do mandato de '
+          END,
+          liderancas.cargo
+        )`
+      })
+      .from(mandatos_liderancas)
+      .innerJoin(liderancas, eq(mandatos_liderancas.lideranca_id, liderancas.id))
+      .where(
+        and(
+          eq(mandatos_liderancas.igreja_id, igreja_id),
+          periodo?.inicio ? gte(mandatos_liderancas.data_inicio, periodo.inicio) : undefined,
+          periodo?.fim ? lte(mandatos_liderancas.data_fim, periodo.fim) : undefined
+        )
+      );
+
+    const pastoresOcorrencias = await db
+      .select({
+        tipo: sql<string>`'pastor'`,
+        acao: sql<string>`CASE 
+          WHEN data_fim IS NOT NULL THEN 'fim_mandato'
+          ELSE 'inicio_mandato'
+        END`,
+        data: sql<Date>`COALESCE(data_fim, data_inicio)`,
+        descricao: sql<string>`CONCAT(
+          pastores.nome,
+          CASE 
+            WHEN data_fim IS NOT NULL THEN ' - Fim do mandato'
+            ELSE ' - Início do mandato'
+          END
+        )`
+      })
+      .from(mandatos_pastores)
+      .innerJoin(pastores, eq(mandatos_pastores.pastor_id, pastores.id))
+      .where(
+        and(
+          eq(mandatos_pastores.igreja_id, igreja_id),
+          periodo?.inicio ? gte(mandatos_pastores.data_inicio, periodo.inicio) : undefined,
+          periodo?.fim ? lte(mandatos_pastores.data_fim, periodo.fim) : undefined
+        )
+      );
+
+    return [...membrosOcorrencias, ...liderancasOcorrencias, ...pastoresOcorrencias]
+      .sort((a, b) => b.data.getTime() - a.data.getTime());
+  }
+
+  async getGraficosData(igreja_id: number): Promise<{
+    crescimento_mensal: Array<{
+      mes: Date;
+      total: number;
+    }>;
+    distribuicao_tipos: {
+      comungantes: number;
+      nao_comungantes: number;
+    };
+    distribuicao_sociedades: Array<{
+      sociedade: string;
+      total: number;
+    }>;
+    distribuicao_idade: {
+      jovens: number;
+      adultos: number;
+      idosos: number;
+    };
+  }> {
+    const crescimentoMensal = await db
+      .select({
+        mes: sql<Date>`DATE_TRUNC('month', data_admissao)::date`,
+        total: sql<number>`COUNT(*)`
+      })
+      .from(membros)
+      .where(
+        and(
+          eq(membros.igreja_id, igreja_id),
+          gte(membros.data_admissao, sql`NOW() - INTERVAL '1 year'`)
+        )
+      )
+      .groupBy(sql`DATE_TRUNC('month', data_admissao)`)
+      .orderBy(sql`DATE_TRUNC('month', data_admissao)`);
+
+    const [distribuicaoTipos] = await db
+      .select({
+        comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' THEN 1 END)`,
+        nao_comungantes: sql<number>`COUNT(CASE WHEN tipo = 'nao_comungante' THEN 1 END)`
+      })
+      .from(membros)
+      .where(
+        and(
+          eq(membros.igreja_id, igreja_id),
+          eq(membros.status, 'ativo')
+        )
+      );
+
+    const distribuicaoSociedades = await db
+      .select({
+        sociedade: grupos.nome,
+        total: sql<number>`COUNT(membros_grupos.membro_id)`
+      })
+      .from(grupos)
+      .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
+      .where(eq(grupos.igreja_id, igreja_id))
+      .groupBy(grupos.id, grupos.nome);
+
+    const [distribuicaoIdade] = await db
+      .select({
+        jovens: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) < 30 THEN 1 END)`,
+        adultos: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) BETWEEN 30 AND 59 THEN 1 END)`,
+        idosos: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) >= 60 THEN 1 END)`
+      })
+      .from(membros)
+      .where(
+        and(
+          eq(membros.igreja_id, igreja_id),
+          eq(membros.status, 'ativo')
+        )
+      );
+
+    return {
+      crescimento_mensal,
+      distribuicao_tipos: distribuicaoTipos,
+      distribuicao_sociedades,
+      distribuicao_idade: distribuicaoIdade
+    };
   }
 }
 
