@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 type GraficosData = {
   crescimento_mensal: Array<{ mes: string; total: number }>;
@@ -21,6 +21,13 @@ type GraficosData = {
     sociedade: string;
     total: number;
   }>;
+  distribuicao_admissao: {
+    batismo: number;
+    profissao_fe: number;
+    transferencia: number;
+    reconciliacao: number;
+    jurisdicao: number;
+  };
 };
 
 export function RelatorioGraficos() {
@@ -32,7 +39,6 @@ export function RelatorioGraficos() {
     window.print();
   };
 
-  // Add default empty array for safety
   const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }> = []) => {
     return crescimentoMensal.map(item => ({
       mes: new Date(item.mes).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
@@ -96,7 +102,7 @@ export function RelatorioGraficos() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {[0, 1].map((entry, index) => (
+                      {[0, 1].map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -110,9 +116,9 @@ export function RelatorioGraficos() {
                   <PieChart width={400} height={400}>
                     <Pie
                       data={[
-                        { name: 'Jovens', value: graficos.distribuicao_idade?.jovens || 0 },
-                        { name: 'Adultos', value: graficos.distribuicao_idade?.adultos || 0 },
-                        { name: 'Idosos', value: graficos.distribuicao_idade?.idosos || 0 }
+                        { name: 'Jovens (<30)', value: graficos.distribuicao_idade?.jovens || 0 },
+                        { name: 'Adultos (30-59)', value: graficos.distribuicao_idade?.adultos || 0 },
+                        { name: 'Idosos (60+)', value: graficos.distribuicao_idade?.idosos || 0 }
                       ]}
                       cx={200}
                       cy={200}
@@ -122,7 +128,35 @@ export function RelatorioGraficos() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {[0, 1, 2].map((entry, index) => (
+                      {[0, 1, 2].map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </div>
+
+                {/* Distribuição por Modo de Admissão */}
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Distribuição por Modo de Admissão</h3>
+                  <PieChart width={400} height={400}>
+                    <Pie
+                      data={[
+                        { name: 'Batismo', value: graficos.distribuicao_admissao?.batismo || 0 },
+                        { name: 'Profissão de Fé', value: graficos.distribuicao_admissao?.profissao_fe || 0 },
+                        { name: 'Transferência', value: graficos.distribuicao_admissao?.transferencia || 0 },
+                        { name: 'Reconciliação', value: graficos.distribuicao_admissao?.reconciliacao || 0 },
+                        { name: 'Jurisdição', value: graficos.distribuicao_admissao?.jurisdicao || 0 }
+                      ]}
+                      cx={200}
+                      cy={200}
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={160}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {[0, 1, 2, 3, 4].map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
