@@ -755,6 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log("Dados recebidos:", req.body);
+      console.log("Arquivo recebido:", req.file); //Added Log
 
       const updateData: Record<string, any> = {};
 
@@ -773,7 +774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.logo_url = req.file.filename;
       }
 
-      console.log("Update data:", updateData);
+      console.log("Update data after file check:", updateData); //Added Log
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "Nenhum dado válido para atualizar" });
