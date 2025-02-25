@@ -171,7 +171,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>Nome da Igreja</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} disabled />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
