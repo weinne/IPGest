@@ -760,25 +760,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         file: req.file
       });
 
-      // Filtra campos vazios
-      const updateData = Object.fromEntries(
-        Object.entries({
-          nome: req.body.nome,
-          cnpj: req.body.cnpj,
-          cep: req.body.cep,
-          endereco: req.body.endereco,
-          numero: req.body.numero,
-          complemento: req.body.complemento,
-          bairro: req.body.bairro,
-          website: req.body.website,
-          telefone: req.body.telefone,
-          email: req.body.email,
-          logo_url: req.file ? req.file.filename : undefined,
-          data_fundacao: req.body.data_fundacao || undefined,
-          cidade: req.body.cidade,
-          estado: req.body.estado
-        }).filter(([_, v]) => v !== undefined)
-      );
+      const updateData = {
+        ...(req.body.nome && { nome: req.body.nome }),
+        ...(req.body.cnpj && { cnpj: req.body.cnpj }),
+        ...(req.body.cep && { cep: req.body.cep }),
+        ...(req.body.endereco && { endereco: req.body.endereco }),
+        ...(req.body.numero && { numero: req.body.numero }),
+        ...(req.body.complemento && { complemento: req.body.complemento }),
+        ...(req.body.bairro && { bairro: req.body.bairro }),
+        ...(req.body.website && { website: req.body.website }),
+        ...(req.body.telefone && { telefone: req.body.telefone }),
+        ...(req.body.email && { email: req.body.email }),
+        ...(req.file && { logo_url: req.file.filename }),
+        ...(req.body.data_fundacao && { data_fundacao: req.body.data_fundacao }),
+        ...(req.body.cidade && { cidade: req.body.cidade }),
+        ...(req.body.estado && { estado: req.body.estado })
+      };
 
       const [igreja] = await db
         .update(igrejas)
