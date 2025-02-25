@@ -761,7 +761,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [igreja] = await db
         .update(igrejas)
-        .set(req.body)
+        .set({
+          nome: req.body.nome,
+          cnpj: req.body.cnpj,
+          cep: req.body.cep,
+          endereco: req.body.endereco,
+          numero: req.body.numero,
+          complemento: req.body.complemento,
+          bairro: req.body.bairro,
+          website: req.body.website,
+          telefone: req.body.telefone,
+          email: req.body.email,
+          logo_url: req.body.logo_url,
+          data_fundacao: req.body.data_fundacao,
+        })
         .where(eq(igrejas.id, req.user.igreja_id))
         .returning();
 
