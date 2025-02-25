@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Igreja } from "@shared/schema";
 import { useEffect } from "react";
@@ -40,9 +40,9 @@ const igrejaFormSchema = z.object({
   bairro: z.string().optional(),
   website: z.string().optional(),
   telefone: z.string().optional(),
-  email: z.string().optional(),
+  email: z.string().email("Email inválido").optional(),
   logo_url: z.string().optional(),
-  data_fundacao: z.string().optional(),
+  data_fundacao: z.string().optional().transform(d => d || null),
 });
 
 type IgrejaFormValues = z.infer<typeof igrejaFormSchema>;
@@ -50,9 +50,11 @@ type IgrejaFormValues = z.infer<typeof igrejaFormSchema>;
 export default function ConfiguracoesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: igreja } = useQuery<Igreja>({
     queryKey: ["/api/igreja", user?.igreja_id],
+    queryFn: () => apiRequest("GET", `/api/igreja/${user?.igreja_id}`).then(res => res.json()),
     enabled: !!user?.igreja_id,
   });
 
@@ -76,6 +78,7 @@ export default function ConfiguracoesPage() {
   // Update form when igreja data is loaded
   useEffect(() => {
     if (igreja) {
+      console.log("Loading igreja data:", igreja);
       form.reset({
         cnpj: igreja.cnpj || "",
         cep: igreja.cep || "",
@@ -98,6 +101,7 @@ export default function ConfiguracoesPage() {
       return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/igreja"] });
       toast({
         title: "Configurações atualizadas",
         description: "As informações da igreja foram atualizadas com sucesso.",
@@ -113,6 +117,7 @@ export default function ConfiguracoesPage() {
   });
 
   const onSubmit = (values: IgrejaFormValues) => {
+    console.log("Submitting values:", values);
     updateIgrejaMutation.mutate(values);
   };
 
@@ -288,19 +293,6 @@ export default function ConfiguracoesPage() {
                         <FormLabel>Data de Fundação</FormLabel>
                         <FormControl>
                           <Input {...field} type="date" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="logo_url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL da Logo</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
