@@ -1,17 +1,16 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import Navigation from "@/components/layout/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { useIgrejaContext } from "@/hooks/use-igreja";
+import { Navigation } from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useIgrejaContext } from "@/hooks/use-igreja-context";
-import { useEffect } from "react";
 
 const formatCNPJ = (value: string) => {
   if (!value) return value;
@@ -32,19 +31,19 @@ const formatPhone = (value: string) => {
 };
 
 const igrejaFormSchema = z.object({
-  nome: z.string().optional(),
-  cnpj: z.string().optional(),
-  cep: z.string().optional(),
-  endereco: z.string().optional(),
-  numero: z.string().optional(),
-  complemento: z.string().optional(),
-  bairro: z.string().optional(),
-  website: z.string().optional(),
-  telefone: z.string().optional(),
-  email: z.string().email("Email inválido").optional(),
-  logo: z.any().optional(), // Added logo field
-  logo_url: z.string().optional(),
-  data_fundacao: z.string().optional().transform(d => d || null),
+  nome: z.string(),
+  cnpj: z.string(),
+  cep: z.string(),
+  endereco: z.string(),
+  numero: z.string(),
+  complemento: z.string(),
+  bairro: z.string(),
+  website: z.string(),
+  telefone: z.string(),
+  email: z.string().email("Email inválido"),
+  logo: z.any().nullable(),
+  logo_url: z.string(),
+  data_fundacao: z.string().transform(d => d || null),
 });
 
 type IgrejaFormValues = z.infer<typeof igrejaFormSchema>;
@@ -68,7 +67,7 @@ export default function ConfiguracoesPage() {
       website: "",
       telefone: "",
       email: "",
-      logo: null, // Added logo default value
+      logo: null,
       logo_url: "",
       data_fundacao: "",
     },
@@ -104,7 +103,7 @@ export default function ConfiguracoesPage() {
         }
       });
 
-      const res = await apiRequest("POST", "/api/user/igreja", formData); // Send FormData
+      const res = await apiRequest("POST", "/api/user/igreja", formData); 
       const data = await res.json();
       return data;
     },
@@ -158,12 +157,10 @@ export default function ConfiguracoesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           Configurações da Igreja
         </h1>
-
         <Card>
           <CardHeader>
             <CardTitle>Informações Gerais</CardTitle>
@@ -179,7 +176,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>Nome da Igreja</FormLabel>
                         <FormControl>
-                          <Input {...field} /> {/* Removed disabled */}
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
