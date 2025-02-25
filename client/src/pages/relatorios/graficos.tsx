@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Printer, Loader2 } from "lucide-react";
+import { FileDown, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { useEffect, useState, useRef } from "react";
+import { useRef } from "react";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -38,50 +40,55 @@ export function RelatorioGraficos() {
 
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+  const handleExportPDF = async () => {
+    if (!contentRef.current) return;
 
-    // Get the styles from the current document
-    const styles = Array.from(document.styleSheets)
-      .map(styleSheet => {
-        try {
-          return Array.from(styleSheet.cssRules)
-            .map(rule => rule.cssText)
-            .join('\n');
-        } catch {
-          return '';
+    try {
+      const content = contentRef.current;
+      const canvas = await html2canvas(content, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+
+      const contentWidth = canvas.width;
+      const contentHeight = canvas.height;
+
+      // A4 dimensions in points (pt)
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+
+      // Calculate scaling to fit width
+      const scale = pageWidth / contentWidth;
+      const scaledHeight = contentHeight * scale;
+
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      let position = 0;
+
+      // Add pages as needed
+      while (position < scaledHeight) {
+        if (position > 0) {
+          pdf.addPage();
         }
-      })
-      .join('\n');
 
-    // Get the content
-    const content = contentRef.current?.innerHTML || '';
+        pdf.addImage(
+          canvas.toDataURL('image/png'),
+          'PNG',
+          0,
+          -position,
+          pageWidth,
+          contentHeight * scale,
+          '',
+          'FAST'
+        );
 
-    // Create the print document
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Relatório Gráfico</title>
-          <style>${styles}</style>
-        </head>
-        <body class="printing">
-          <div class="max-w-7xl mx-auto px-4 py-8">
-            ${content}
-          </div>
-          <script>
-            window.onload = () => {
-              setTimeout(() => {
-                window.print();
-                window.close();
-              }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+        position += pageHeight;
+      }
+
+      pdf.save('relatorio-grafico.pdf');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+    }
   };
 
   const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }> = []) => {
@@ -92,14 +99,14 @@ export function RelatorioGraficos() {
   };
 
   return (
-    <div className="space-y-6 print:space-y-12">
+    <div className="space-y-6">
       <div ref={contentRef}>
-        <Card className="print:shadow-none">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Análise Gráfica</CardTitle>
-            <Button onClick={handlePrint} className="print:hidden">
-              <Printer className="h-4 w-4 mr-2" />
-              Imprimir
+            <Button onClick={handleExportPDF}>
+              <FileDown className="h-4 w-4 mr-2" />
+              Exportar PDF
             </Button>
           </CardHeader>
           <CardContent>
@@ -110,7 +117,7 @@ export function RelatorioGraficos() {
             ) : graficos ? (
               <div className="space-y-12">
                 {/* Gráfico de Crescimento Mensal */}
-                <div className="print:break-inside-avoid">
+                <div>
                   <h3 className="text-lg font-medium mb-4">Crescimento Mensal</h3>
                   <div className="w-full h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -130,9 +137,9 @@ export function RelatorioGraficos() {
                 </div>
 
                 {/* Gráficos em Pizza */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 print:grid-cols-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {/* Distribuição por Tipo */}
-                  <div className="print:break-inside-avoid">
+                  <div>
                     <h3 className="text-lg font-medium mb-4">Distribuição por Tipo</h3>
                     <div className="w-full aspect-square">
                       <ResponsiveContainer width="100%" height="100%">
@@ -161,7 +168,7 @@ export function RelatorioGraficos() {
                   </div>
 
                   {/* Distribuição por Idade */}
-                  <div className="print:break-inside-avoid">
+                  <div>
                     <h3 className="text-lg font-medium mb-4">Distribuição por Idade</h3>
                     <div className="w-full aspect-square">
                       <ResponsiveContainer width="100%" height="100%">
@@ -191,7 +198,7 @@ export function RelatorioGraficos() {
                   </div>
 
                   {/* Distribuição por Modo de Admissão */}
-                  <div className="print:break-inside-avoid">
+                  <div>
                     <h3 className="text-lg font-medium mb-4">Distribuição por Modo de Admissão</h3>
                     <div className="w-full aspect-square">
                       <ResponsiveContainer width="100%" height="100%">
@@ -224,7 +231,7 @@ export function RelatorioGraficos() {
                 </div>
 
                 {/* Distribuição por Sociedade Interna */}
-                <div className="print:break-inside-avoid">
+                <div>
                   <h3 className="text-lg font-medium mb-4">Distribuição por Sociedade Interna</h3>
                   <div className="w-full h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">

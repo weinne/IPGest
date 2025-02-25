@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Printer, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { FileDown, Loader2 } from "lucide-react";
+import { useState, useRef } from "react";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type Filters = {
   data_inicio?: string;
@@ -22,6 +24,7 @@ type Ocorrencia = {
 export function RelatorioOcorrencias() {
   const [filters, setFilters] = useState<Filters>({});
   const form = useForm<Filters>();
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const { data: ocorrencias = [], isLoading } = useQuery<Ocorrencia[]>({
     queryKey: ["/api/reports/ocorrencias", filters],
@@ -33,8 +36,55 @@ export function RelatorioOcorrencias() {
     },
   });
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportPDF = async () => {
+    if (!contentRef.current) return;
+
+    try {
+      const content = contentRef.current;
+      const canvas = await html2canvas(content, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+
+      const contentWidth = canvas.width;
+      const contentHeight = canvas.height;
+
+      // A4 dimensions in points (pt)
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+
+      // Calculate scaling to fit width
+      const scale = pageWidth / contentWidth;
+      const scaledHeight = contentHeight * scale;
+
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      let position = 0;
+
+      // Add pages as needed
+      while (position < scaledHeight) {
+        if (position > 0) {
+          pdf.addPage();
+        }
+
+        pdf.addImage(
+          canvas.toDataURL('image/png'),
+          'PNG',
+          0,
+          -position,
+          pageWidth,
+          contentHeight * scale,
+          '',
+          'FAST'
+        );
+
+        position += pageHeight;
+      }
+
+      pdf.save('relatorio-ocorrencias.pdf');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+    }
   };
 
   const handleSubmit = (data: Filters) => {
@@ -104,43 +154,45 @@ export function RelatorioOcorrencias() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Linha do Tempo</CardTitle>
-          <Button onClick={handlePrint} className="print:hidden">
-            <Printer className="h-4 w-4 mr-2" />
-            Imprimir
+          <Button onClick={handleExportPDF}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Exportar PDF
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : ocorrencias?.length ? (
-            <div className="relative">
-              <div className="absolute top-0 bottom-0 left-[19px] w-0.5 bg-gray-200" />
-              <ul className="space-y-6">
-                {ocorrencias.map((ocorrencia, index) => (
-                  <li key={index} className="relative pl-10">
-                    <div className="absolute left-0 top-2 w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-primary">
-                      <div className="w-3 h-3 rounded-full bg-primary" />
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border">
-                      <time className="block text-sm text-gray-500">
-                        {new Date(ocorrencia.data).toLocaleDateString()}
-                      </time>
-                      <p className="mt-2 text-gray-700">{ocorrencia.descricao}</p>
-                      <span className="inline-block mt-2 text-sm font-medium text-primary">
-                        {ocorrencia.tipo}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p className="text-center text-gray-500 py-8">
-              Nenhuma ocorrência encontrada no período selecionado.
-            </p>
-          )}
+          <div ref={contentRef}>
+            {isLoading ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : ocorrencias?.length ? (
+              <div className="relative">
+                <div className="absolute top-0 bottom-0 left-[19px] w-0.5 bg-gray-200" />
+                <ul className="space-y-6">
+                  {ocorrencias.map((ocorrencia, index) => (
+                    <li key={index} className="relative pl-10">
+                      <div className="absolute left-0 top-2 w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-primary">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border">
+                        <time className="block text-sm text-gray-500">
+                          {new Date(ocorrencia.data).toLocaleDateString()}
+                        </time>
+                        <p className="mt-2 text-gray-700">{ocorrencia.descricao}</p>
+                        <span className="inline-block mt-2 text-sm font-medium text-primary">
+                          {ocorrencia.tipo}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-8">
+                Nenhuma ocorrência encontrada no período selecionado.
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
