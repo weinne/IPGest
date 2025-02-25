@@ -760,9 +760,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         file: req.file
       });
 
-      const [igreja] = await db
-        .update(igrejas)
-        .set({
+      // Filtra campos vazios
+      const updateData = Object.fromEntries(
+        Object.entries({
           nome: req.body.nome,
           cnpj: req.body.cnpj,
           cep: req.body.cep,
@@ -773,11 +773,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           website: req.body.website,
           telefone: req.body.telefone,
           email: req.body.email,
-          logo_url: req.file ? req.file.filename : req.body.logo_url,
-          data_fundacao: req.body.data_fundacao,
+          logo_url: req.file ? req.file.filename : undefined,
+          data_fundacao: req.body.data_fundacao || undefined,
           cidade: req.body.cidade,
           estado: req.body.estado
-        })
+        }).filter(([_, v]) => v !== undefined)
+      );
+
+      const [igreja] = await db
+        .update(igrejas)
+        .set(updateData)
         .where(eq(igrejas.id, req.user.igreja_id))
         .returning();
 
