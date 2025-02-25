@@ -50,7 +50,7 @@ export default function HomePage() {
             const Icon = card.icon;
             return (
               <Link key={card.link} href={card.link}>
-                <Card className="hover:bg-gray-50 cursor-pointer transition-colors">
+                <Card className="hover:bg-green-50 dark:hover:bg-green-950/50 cursor-pointer transition-colors">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-lg font-medium">
                       {card.title}
