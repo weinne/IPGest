@@ -193,14 +193,17 @@ export default function AuthPage() {
         </Card>
         </div>
         <div className="w-full md:w-[40%] flex items-center justify-center p-4 md:p-8 bg-green-900/10">
-        <div className="w-full max-w-md text-center">
-          <h2 className="text-xl md:text-2xl font-bold text-green-900 mb-2 md:mb-4">Sistema de Gestão IPB</h2>
-          <p className="text-sm md:text-base text-green-800">
-            Bem-vindo ao sistema de gestão para igrejas presbiterianas. Esta plataforma permite gerenciar membros, 
-            eventos e recursos da sua igreja de forma eficiente e organizada.
-          </p>
+          <div className="w-full max-w-md text-center">
+            <h2 className="text-xl md:text-2xl font-bold text-green-900 mb-2 md:mb-4">Sistema de Gestão IPB</h2>
+            <p className="text-sm md:text-base text-green-800">
+              Bem-vindo ao sistema de gestão para igrejas presbiterianas. Esta plataforma permite gerenciar membros, 
+              eventos e recursos da sua igreja de forma eficiente e organizada.
+            </p>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
   );
 }
