@@ -684,17 +684,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateIgreja(id: number, data: Partial<Igreja>): Promise<Igreja> {
-    // Remove campos undefined/null/empty string
-    const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as Record<string, any>);
-
     const [updatedIgreja] = await db
       .update(igrejas)
-      .set(cleanData)
+      .set(data)
       .where(eq(igrejas.id, id))
       .returning();
     return updatedIgreja;

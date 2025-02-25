@@ -722,7 +722,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         distribuicao_sociedades: distribuicaoSociedades,
         distribuicao_idade: distribuicaoIdade,
         distribuicao_admissao: distribuicaoAdmissao
-      });    } catch (error) {      console.error("Error in /api/reports/graficos:", error);
+      });
+    } catch (error) {
+      console.error("Error in /api/reports/graficos:", error);
       res.status(500).json({ message: (error as Error).message });
     }
   });
@@ -747,39 +749,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/user/igreja", upload.single('logo'), async (req, res) => {
+  app.post("/api/user/igreja", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      console.log("Request body:", req.body);
-      console.log("File:", req.file);
-
-      const updateData = {} as Record<string, any>;
-
-      // Add form fields that have values
-      Object.entries(req.body).forEach(([key, value]) => {
-        if (value !== '' && value !== undefined && value !== null) {
-          updateData[key] = value;
-        } else {
-          updateData[key] = null;
-        }
+      console.log("Igreja update request:", {
+        body: req.body,
+        igreja_id: req.user.igreja_id
       });
-
-      // Add logo if uploaded
-      if (req.file) {
-        updateData.logo_url = req.file.filename;
-      }
-
-      console.log("Final update data:", updateData);
 
       const [igreja] = await db
         .update(igrejas)
-        .set(updateData)
+        .set({
+          nome: req.body.nome,
+          cnpj: req.body.cnpj,
+          cep: req.body.cep,
+          endereco: req.body.endereco,
+          numero: req.body.numero,
+          complemento: req.body.complemento,
+          bairro: req.body.bairro,
+          website: req.body.website,
+          telefone: req.body.telefone,
+          email: req.body.email,
+          logo_url: req.body.logo_url,
+          data_fundacao: req.body.data_fundacao,
+        })
         .where(eq(igrejas.id, req.user.igreja_id))
         .returning();
 
-      console.log("Updated igreja:", igreja);
+      console.log("Igreja update result:", igreja);
       res.json(igreja);
     } catch (error) {
       console.error("Error updating igreja:", error);
