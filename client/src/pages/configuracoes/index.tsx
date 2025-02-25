@@ -13,8 +13,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { useIgrejaContext } from "@/hooks/use-igreja-context";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { fetchAddressByCep } from "@/lib/cep";
+import cn from "classnames";
 
 const formatCNPJ = (value: string) => {
   if (!value) return value;
@@ -58,7 +59,13 @@ export default function ConfiguracoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { igreja, isLoading, error } = useIgrejaContext();
-  const [preview, setPreview] = useState<string | null>(igreja?.logo_url ? `/uploads/${igreja.logo_url}` : null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (igreja?.logo_url) {
+      setPreview(`/uploads/${igreja.logo_url}`);
+    }
+  }, [igreja?.logo_url]);
 
   const form = useForm<IgrejaFormValues>({
     resolver: zodResolver(igrejaFormSchema),
@@ -124,7 +131,6 @@ export default function ConfiguracoesPage() {
         cidade: igreja.cidade || "",
         estado: igreja.estado || ""
       });
-      setPreview(igreja.logo_url ? `/uploads/${igreja.logo_url}` : null);
     }
   }, [igreja, form]);
 
@@ -146,8 +152,12 @@ export default function ConfiguracoesPage() {
         body: formData,
       });
 
-      const data = await res.json();
-      return data;
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/igreja"] });
@@ -177,7 +187,7 @@ export default function ConfiguracoesPage() {
         <Navigation />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-border" />
           </div>
         </main>
       </div>
@@ -435,8 +445,16 @@ export default function ConfiguracoesPage() {
                 <Button
                   type="submit"
                   disabled={updateIgrejaMutation.isPending}
+                  className="w-full md:w-auto"
                 >
-                  {updateIgrejaMutation.isPending ? "Salvando..." : "Salvar"}
+                  {updateIgrejaMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    "Salvar"
+                  )}
                 </Button>
               </form>
             </Form>
