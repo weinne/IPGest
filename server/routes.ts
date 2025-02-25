@@ -749,22 +749,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/user/igreja", upload.single('logo'), async (req, res) => {
+  app.post("/api/user/igreja", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
       console.log("Igreja update request:", {
         body: req.body,
-        file: req.file,
         igreja_id: req.user.igreja_id
       });
 
       const [igreja] = await db
         .update(igrejas)
         .set({
-          ...req.body,
-          logo_url: req.file ? req.file.filename : req.body.logo_url,
           nome: req.body.nome,
           cnpj: req.body.cnpj,
           cep: req.body.cep,

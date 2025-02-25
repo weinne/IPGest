@@ -42,7 +42,6 @@ const igrejaFormSchema = z.object({
   website: z.string().optional(),
   telefone: z.string().optional(),
   email: z.string().email("Email inválido").optional(),
-  logo: z.any().optional(), // Added logo field
   logo_url: z.string().optional(),
   data_fundacao: z.string().optional().transform(d => d || null),
 });
@@ -68,7 +67,6 @@ export default function ConfiguracoesPage() {
       website: "",
       telefone: "",
       email: "",
-      logo: null, // Added logo default value
       logo_url: "",
       data_fundacao: "",
     },
@@ -76,6 +74,7 @@ export default function ConfiguracoesPage() {
 
   useEffect(() => {
     if (igreja) {
+      console.log("Setting igreja data in form:", igreja);
       form.reset({
         nome: igreja.nome || "",
         cnpj: igreja.cnpj || "",
@@ -95,17 +94,10 @@ export default function ConfiguracoesPage() {
 
   const updateIgrejaMutation = useMutation({
     mutationFn: async (values: IgrejaFormValues) => {
-      const formData = new FormData();
-      Object.keys(values).forEach(key => {
-        if (key === 'logo' && values[key]) {
-          formData.append('logo', values[key]);
-        } else if (values[key] !== null && values[key] !== undefined) {
-          formData.append(key, values[key]);
-        }
-      });
-
-      const res = await apiRequest("POST", "/api/user/igreja", formData); // Send FormData
+      console.log("Mutation: sending igreja update with values:", values);
+      const res = await apiRequest("POST", "/api/user/igreja", values);
       const data = await res.json();
+      console.log("Mutation: received response:", data);
       return data;
     },
     onSuccess: () => {
@@ -179,7 +171,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>Nome da Igreja</FormLabel>
                         <FormControl>
-                          <Input {...field} /> {/* Removed disabled */}
+                          <Input {...field} disabled />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -193,7 +185,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <FormControl>
-                          <Input
+                          <Input 
                             {...field}
                             placeholder="00.000.000/0000-00"
                             onChange={(e) => {
@@ -214,7 +206,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CEP</FormLabel>
                         <FormControl>
-                          <Input
+                          <Input 
                             {...field}
                             placeholder="00000-000"
                             onChange={(e) => {
@@ -305,7 +297,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input
+                          <Input 
                             {...field}
                             placeholder="(00) 00000-0000"
                             onChange={(e) => {
@@ -332,19 +324,7 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="logo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Logo</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="file" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
                   <FormField
                     control={form.control}
                     name="data_fundacao"
