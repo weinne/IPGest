@@ -749,14 +749,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/user/igreja", async (req, res) => {
+  app.post("/api/user/igreja", upload.single('logo'), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
       console.log("Igreja update request:", {
         body: req.body,
-        igreja_id: req.user.igreja_id
+        igreja_id: req.user.igreja_id,
+        file: req.file
       });
 
       const [igreja] = await db
@@ -772,8 +773,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           website: req.body.website,
           telefone: req.body.telefone,
           email: req.body.email,
-          logo_url: req.body.logo_url,
+          logo_url: req.file ? req.file.filename : req.body.logo_url,
           data_fundacao: req.body.data_fundacao,
+          cidade: req.body.cidade,
+          estado: req.body.estado
         })
         .where(eq(igrejas.id, req.user.igreja_id))
         .returning();

@@ -137,19 +137,23 @@ export default function ConfiguracoesPage() {
   const updateIgrejaMutation = useMutation({
     mutationFn: async (values: IgrejaFormValues & { logo?: File }) => {
       const formData = new FormData();
+
+      // First add all the form values
       Object.entries(values).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          if (key === 'logo' && value instanceof File) {
-            formData.append('logo', value);
-          } else {
-            formData.append(key, String(value));
-          }
+        if (value !== null && value !== undefined && key !== 'logo') {
+          formData.append(key, String(value));
         }
       });
 
-      const res = await fetch("/api/user/igreja", {
-        method: "POST",
-        body: formData,
+      // Then add the file if it exists
+      if (values.logo) {
+        formData.append('logo', values.logo);
+      }
+
+      // Use apiRequest instead of fetch directly
+      const res = await apiRequest("POST", "/api/user/igreja", formData, {
+        // Don't auto-stringify FormData
+        headers: {}
       });
 
       if (!res.ok) {
@@ -167,6 +171,7 @@ export default function ConfiguracoesPage() {
       });
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Erro ao atualizar configurações",
         description: error.message,
