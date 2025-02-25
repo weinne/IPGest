@@ -11,3 +11,37 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@media print {
+  /* Hide navigation and other UI elements when printing */
+  nav, 
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Remove backgrounds and shadows */
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  /* Ensure proper page breaks */
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+  }
+
+  /* Adjust spacing for print */
+  .print\:space-y-12 > * + * {
+    margin-top: 3rem;
+  }
+
+  /* Ensure charts are properly sized on print */
+  .recharts-wrapper {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Adjust grid layout for print */
+  .print\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

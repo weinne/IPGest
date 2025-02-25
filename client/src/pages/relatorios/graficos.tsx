@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Printer, Loader2 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { useEffect, useState } from "react";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -47,8 +48,8 @@ export function RelatorioGraficos() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-6 print:space-y-12">
+      <Card className="print:shadow-none">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Análise Gráfica</CardTitle>
           <Button onClick={handlePrint} className="print:hidden">
@@ -62,126 +63,138 @@ export function RelatorioGraficos() {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : graficos ? (
-            <div className="space-y-8">
+            <div className="space-y-12">
               {/* Gráfico de Crescimento Mensal */}
-              <div>
+              <div className="print:break-inside-avoid">
                 <h3 className="text-lg font-medium mb-4">Crescimento Mensal</h3>
-                <div className="w-full overflow-x-auto">
-                  <BarChart
-                    width={800}
-                    height={400}
-                    data={formatarDataGrafico(graficos.crescimento_mensal)}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="mes" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="total" fill="#8884d8" name="Novos Membros" />
-                  </BarChart>
+                <div className="w-full h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={formatarDataGrafico(graficos.crescimento_mensal)}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="mes" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="total" fill="#8884d8" name="Novos Membros" />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
               {/* Gráficos em Pizza */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 print:grid-cols-3">
                 {/* Distribuição por Tipo */}
-                <div>
+                <div className="print:break-inside-avoid">
                   <h3 className="text-lg font-medium mb-4">Distribuição por Tipo</h3>
-                  <PieChart width={400} height={400}>
-                    <Pie
-                      data={[
-                        { name: 'Comungantes', value: graficos.distribuicao_tipos?.comungantes || 0 },
-                        { name: 'Não Comungantes', value: graficos.distribuicao_tipos?.nao_comungantes || 0 }
-                      ]}
-                      cx={200}
-                      cy={200}
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      outerRadius={160}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {[0, 1].map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
+                  <div className="w-full aspect-square">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Comungantes', value: graficos.distribuicao_tipos?.comungantes || 0 },
+                            { name: 'Não Comungantes', value: graficos.distribuicao_tipos?.nao_comungantes || 0 }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                          outerRadius="80%"
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {[0, 1].map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
 
                 {/* Distribuição por Idade */}
-                <div>
+                <div className="print:break-inside-avoid">
                   <h3 className="text-lg font-medium mb-4">Distribuição por Idade</h3>
-                  <PieChart width={400} height={400}>
-                    <Pie
-                      data={[
-                        { name: 'Jovens (<30)', value: graficos.distribuicao_idade?.jovens || 0 },
-                        { name: 'Adultos (30-59)', value: graficos.distribuicao_idade?.adultos || 0 },
-                        { name: 'Idosos (60+)', value: graficos.distribuicao_idade?.idosos || 0 }
-                      ]}
-                      cx={200}
-                      cy={200}
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      outerRadius={160}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {[0, 1, 2].map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
+                  <div className="w-full aspect-square">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Jovens (<30)', value: graficos.distribuicao_idade?.jovens || 0 },
+                            { name: 'Adultos (30-59)', value: graficos.distribuicao_idade?.adultos || 0 },
+                            { name: 'Idosos (60+)', value: graficos.distribuicao_idade?.idosos || 0 }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                          outerRadius="80%"
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {[0, 1, 2].map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
 
                 {/* Distribuição por Modo de Admissão */}
-                <div>
+                <div className="print:break-inside-avoid">
                   <h3 className="text-lg font-medium mb-4">Distribuição por Modo de Admissão</h3>
-                  <PieChart width={400} height={400}>
-                    <Pie
-                      data={[
-                        { name: 'Batismo', value: graficos.distribuicao_admissao?.batismo || 0 },
-                        { name: 'Profissão de Fé', value: graficos.distribuicao_admissao?.profissao_fe || 0 },
-                        { name: 'Transferência', value: graficos.distribuicao_admissao?.transferencia || 0 },
-                        { name: 'Reconciliação', value: graficos.distribuicao_admissao?.reconciliacao || 0 },
-                        { name: 'Jurisdição', value: graficos.distribuicao_admissao?.jurisdicao || 0 }
-                      ]}
-                      cx={200}
-                      cy={200}
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      outerRadius={160}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {[0, 1, 2, 3, 4].map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
+                  <div className="w-full aspect-square">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Batismo', value: graficos.distribuicao_admissao?.batismo || 0 },
+                            { name: 'Profissão de Fé', value: graficos.distribuicao_admissao?.profissao_fe || 0 },
+                            { name: 'Transferência', value: graficos.distribuicao_admissao?.transferencia || 0 },
+                            { name: 'Reconciliação', value: graficos.distribuicao_admissao?.reconciliacao || 0 },
+                            { name: 'Jurisdição', value: graficos.distribuicao_admissao?.jurisdicao || 0 }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                          outerRadius="80%"
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {[0, 1, 2, 3, 4].map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
 
               {/* Distribuição por Sociedade Interna */}
-              <div>
+              <div className="print:break-inside-avoid">
                 <h3 className="text-lg font-medium mb-4">Distribuição por Sociedade Interna</h3>
-                <div className="w-full overflow-x-auto">
-                  <BarChart
-                    width={800}
-                    height={400}
-                    data={graficos.distribuicao_sociedades || []}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="sociedade" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="total" fill="#82ca9d" name="Número de Membros" />
-                  </BarChart>
+                <div className="w-full h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={graficos.distribuicao_sociedades || []}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="sociedade" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="total" fill="#82ca9d" name="Número de Membros" />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </div>
