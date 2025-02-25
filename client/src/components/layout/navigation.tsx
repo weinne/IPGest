@@ -3,7 +3,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Menu, LogOut, ChevronDown, UserCog, Settings, User } from "lucide-react";
+import {
+  Menu,
+  LogOut,
+  ChevronDown,
+  UserCog,
+  Settings,
+  User,
+} from "lucide-react";
 import { allRoutes } from "@/lib/routes";
 import {
   DropdownMenu,
@@ -13,11 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navigation() {
@@ -27,29 +30,28 @@ export default function Navigation() {
   const isAdmin = user?.role === "administrador";
 
   // Only add the users management route for admins
-  const routes = isAdmin ? [
-    ...allRoutes,
-    {
-      path: "/usuarios",
-      label: "Usuários",
-      icon: UserCog
-    }
-  ] : allRoutes;
+  const routes = isAdmin
+    ? [
+        ...allRoutes,
+        {
+          path: "/usuarios",
+          label: "Usuários",
+          icon: UserCog,
+        },
+      ]
+    : allRoutes;
 
   const NavLinks = () => (
     <>
       {routes.map((route) => {
         const Icon = route.icon;
         return (
-          <Link 
-            key={route.path}
-            href={route.path}
-          >
+          <Link key={route.path} href={route.path}>
             <Button
               variant="ghost"
               className={cn(
                 navigationMenuTriggerStyle(),
-                location === route.path && "bg-accent text-accent-foreground"
+                location === route.path && "bg-accent text-accent-foreground",
               )}
             >
               <Icon className="mr-2 h-4 w-4" />
@@ -67,7 +69,9 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <span className="font-semibold text-xl text-blue-600">IPB Gestão</span>
+              <span className="font-semibold text-xl text-green-800">
+                IPGest
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -97,7 +101,10 @@ export default function Navigation() {
                 <Button variant="ghost" className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     {user?.foto_url ? (
-                      <AvatarImage src={`/uploads/${user.foto_url}`} alt={user.username} />
+                      <AvatarImage
+                        src={`/uploads/${user.foto_url}`}
+                        alt={user.username}
+                      />
                     ) : (
                       <AvatarFallback>
                         <User className="h-4 w-4" />

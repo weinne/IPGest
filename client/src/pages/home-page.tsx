@@ -1,6 +1,12 @@
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, UserPlus, UsersRound, ChevronRight, FileText } from "lucide-react";
+import {
+  Users,
+  UserPlus,
+  UsersRound,
+  ChevronRight,
+  FileText,
+} from "lucide-react";
 import { Link } from "wouter";
 
 export default function HomePage() {
@@ -9,26 +15,26 @@ export default function HomePage() {
       title: "Gestão de Membros",
       description: "Cadastre e gerencie membros comungantes e não-comungantes",
       icon: Users,
-      link: "/membros"
+      link: "/membros",
     },
     {
       title: "Sociedades Internas",
       description: "Administre UCP, UPA, UMP, SAF, UPH e outros grupos",
       icon: UsersRound,
-      link: "/grupos"
+      link: "/grupos",
     },
     {
       title: "Liderança",
       description: "Controle de pastores, presbíteros e diáconos",
       icon: UserPlus,
-      link: "/lideranca"
+      link: "/lideranca",
     },
     {
       title: "Relatórios",
       description: "Estatísticas, gráficos e relatórios da igreja",
       icon: FileText,
-      link: "/relatorios"
-    }
+      link: "/relatorios",
+    },
   ];
 
   return (
@@ -56,7 +62,7 @@ export default function HomePage() {
                     <p className="text-sm text-muted-foreground">
                       {card.description}
                     </p>
-                    <div className="flex items-center pt-4 text-blue-600">
+                    <div className="flex items-center pt-4 text-green-800">
                       <span className="text-sm font-medium">Acessar</span>
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </div>

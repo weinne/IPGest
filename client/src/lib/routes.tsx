@@ -2,11 +2,6 @@ import { Home, Users, Boxes, UserCog, FileText } from "lucide-react";
 
 export const allRoutes = [
   {
-    path: "/dashboard",
-    label: "Dashboard",
-    icon: Home,
-  },
-  {
     path: "/membros",
     label: "Membros",
     icon: Users,
