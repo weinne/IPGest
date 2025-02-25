@@ -763,21 +763,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Inicia com campos obrigatórios
       const updateData = {};
       
-      // Adiciona campos somente se existirem e não forem vazios
-      if (req.body.nome !== undefined && req.body.nome !== '') updateData.nome = req.body.nome;
-      if (req.body.cnpj !== undefined && req.body.cnpj !== '') updateData.cnpj = req.body.cnpj;
-      if (req.body.cep !== undefined && req.body.cep !== '') updateData.cep = req.body.cep;
-      if (req.body.endereco !== undefined && req.body.endereco !== '') updateData.endereco = req.body.endereco;
-      if (req.body.numero !== undefined && req.body.numero !== '') updateData.numero = req.body.numero;
-      if (req.body.complemento !== undefined && req.body.complemento !== '') updateData.complemento = req.body.complemento;
-      if (req.body.bairro !== undefined && req.body.bairro !== '') updateData.bairro = req.body.bairro;
-      if (req.body.website !== undefined && req.body.website !== '') updateData.website = req.body.website;
-      if (req.body.telefone !== undefined && req.body.telefone !== '') updateData.telefone = req.body.telefone;
-      if (req.body.email !== undefined && req.body.email !== '') updateData.email = req.body.email;
-      if (req.body.data_fundacao !== undefined && req.body.data_fundacao !== '') updateData.data_fundacao = req.body.data_fundacao;
-      if (req.body.cidade !== undefined && req.body.cidade !== '') updateData.cidade = req.body.cidade;
-      if (req.body.estado !== undefined && req.body.estado !== '') updateData.estado = req.body.estado;
-      if (req.file) updateData.logo_url = req.file.filename;
+      // Adiciona campos do formulário
+      const fields = ['nome', 'cnpj', 'cep', 'endereco', 'numero', 'complemento', 'bairro', 'website', 'telefone', 'email', 'data_fundacao', 'cidade', 'estado'];
+      
+      fields.forEach(field => {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      });
+
+      if (req.file) {
+        updateData.logo_url = req.file.filename;
+      }
 
       if (Object.keys(updateData).length === 0) {
         return res.status(400).json({ message: "Nenhum dado válido para atualizar" });
