@@ -4,7 +4,14 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -13,11 +20,15 @@ import { apiRequest } from "@/lib/queryClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
 import { useCallback } from "react";
+import { ThemeToggle } from "@/components/theme-toggle"; // Added import
 
 const profileFormSchema = z.object({
   nome_completo: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
-  foto_url: z.string().optional().transform(f => f || ""),
+  foto_url: z
+    .string()
+    .optional()
+    .transform((f) => f || ""),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -62,13 +73,11 @@ export default function PerfilPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navigation />
-
+      <ThemeToggle /> {/* Added ThemeToggle */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Meu Perfil
-        </h1>
+        <h1 className="text-3xl font-bold mb-8">Meu Perfil</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="md:col-span-2">
@@ -77,7 +86,10 @@ export default function PerfilPage() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   <FormField
                     control={form.control}
                     name="nome_completo"
@@ -124,7 +136,10 @@ export default function PerfilPage() {
             <CardContent className="flex flex-col items-center gap-4">
               <Avatar className="h-32 w-32">
                 {user?.foto_url ? (
-                  <AvatarImage src={`/uploads/${user.foto_url}`} alt={user.username} />
+                  <AvatarImage
+                    src={`/uploads/${user.foto_url}`}
+                    alt={user.username}
+                  />
                 ) : (
                   <AvatarFallback>
                     <User className="h-16 w-16" />
@@ -132,7 +147,8 @@ export default function PerfilPage() {
                 )}
               </Avatar>
               <p className="text-sm text-muted-foreground text-center">
-                Sua foto será exibida no menu de navegação e em outras áreas do sistema.
+                Sua foto será exibida no menu de navegação e em outras áreas do
+                sistema.
               </p>
               <Button variant="outline" className="w-full">
                 Alterar Foto

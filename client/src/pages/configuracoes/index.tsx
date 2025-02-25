@@ -4,7 +4,14 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -12,23 +19,27 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useIgrejaContext } from "@/hooks/use-igreja-context";
 import { useEffect } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const formatCNPJ = (value: string) => {
   if (!value) return value;
-  const digits = value.replace(/\D/g, '');
-  return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  const digits = value.replace(/\D/g, "");
+  return digits.replace(
+    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+    "$1.$2.$3/$4-$5",
+  );
 };
 
 const formatCEP = (value: string) => {
   if (!value) return value;
-  const digits = value.replace(/\D/g, '');
-  return digits.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+  const digits = value.replace(/\D/g, "");
+  return digits.replace(/^(\d{5})(\d{3})$/, "$1-$2");
 };
 
 const formatPhone = (value: string) => {
   if (!value) return value;
-  const digits = value.replace(/\D/g, '');
-  return digits.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+  const digits = value.replace(/\D/g, "");
+  return digits.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
 };
 
 const igrejaFormSchema = z.object({
@@ -43,7 +54,10 @@ const igrejaFormSchema = z.object({
   telefone: z.string().optional(),
   email: z.string().email("Email inválido").optional(),
   logo_url: z.string().optional(),
-  data_fundacao: z.string().optional().transform(d => d || null),
+  data_fundacao: z
+    .string()
+    .optional()
+    .transform((d) => d || null),
 });
 
 type IgrejaFormValues = z.infer<typeof igrejaFormSchema>;
@@ -87,7 +101,9 @@ export default function ConfiguracoesPage() {
         telefone: igreja.telefone || "",
         email: igreja.email || "",
         logo_url: igreja.logo_url || "",
-        data_fundacao: igreja.data_fundacao ? new Date(igreja.data_fundacao).toISOString().split('T')[0] : "",
+        data_fundacao: igreja.data_fundacao
+          ? new Date(igreja.data_fundacao).toISOString().split("T")[0]
+          : "",
       });
     }
   }, [igreja, form]);
@@ -123,7 +139,7 @@ export default function ConfiguracoesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Navigation />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center justify-center">
@@ -140,7 +156,8 @@ export default function ConfiguracoesPage() {
         <Navigation />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center text-red-600">
-            Erro ao carregar dados da igreja: {error instanceof Error ? error.message : 'Erro desconhecido'}
+            Erro ao carregar dados da igreja:{" "}
+            {error instanceof Error ? error.message : "Erro desconhecido"}
           </div>
         </main>
       </div>
@@ -148,13 +165,11 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <Navigation />
-
+      <ThemeToggle />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Configurações da Igreja
-        </h1>
+        <h1 className="text-3xl font-bold mb-8">Configurações da Igreja</h1>
 
         <Card>
           <CardHeader>
@@ -162,7 +177,10 @@ export default function ConfiguracoesPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -185,7 +203,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             {...field}
                             placeholder="00.000.000/0000-00"
                             onChange={(e) => {
@@ -206,7 +224,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CEP</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             {...field}
                             placeholder="00000-000"
                             onChange={(e) => {
@@ -297,7 +315,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             {...field}
                             placeholder="(00) 00000-0000"
                             onChange={(e) => {
@@ -340,10 +358,7 @@ export default function ConfiguracoesPage() {
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={updateIgrejaMutation.isPending}
-                >
+                <Button type="submit" disabled={updateIgrejaMutation.isPending}>
                   {updateIgrejaMutation.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </form>

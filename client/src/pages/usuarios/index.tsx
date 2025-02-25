@@ -7,6 +7,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { User } from "@shared/schema";
 import { NovoUsuarioDialog } from "./novo-usuario-dialog";
 import { UserPlus } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle"; // Added import
 
 const columns = [
   {
@@ -31,27 +32,28 @@ export default function UsuariosPage() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col gap-8 p-8">
+    <div className="bg-gray-50 dark:bg-gray-950">
+      <ThemeToggle />
       <Navigation />
-      <div className="flex flex-col gap-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Usuários</h1>
+          <NovoUsuarioDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Novo Usuário
+            </Button>
+          </NovoUsuarioDialog>
+        </div>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>Usuários</CardTitle>
-            <NovoUsuarioDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Novo Usuário
-              </Button>
-            </NovoUsuarioDialog>
+          <CardHeader>
+            <CardTitle>Lista de UsuáriosUsuários</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable
-              columns={columns}
-              data={usuarios}
-            />
+            <DataTable columns={columns} data={usuarios} />
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

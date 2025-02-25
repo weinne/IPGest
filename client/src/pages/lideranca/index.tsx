@@ -5,7 +5,12 @@ import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Lideranca, MandatoLideranca, Pastor, MandatoPastor } from "@shared/schema";
+import {
+  Lideranca,
+  MandatoLideranca,
+  Pastor,
+  MandatoPastor,
+} from "@shared/schema";
 import { Pencil, Eye, MoreHorizontal, ClipboardList } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,12 +22,15 @@ import { useToast } from "@/hooks/use-toast";
 import { NovaLiderancaDialog } from "./nova-lideranca-dialog";
 import { NovoPastorDialog } from "./novo-pastor-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import React from 'react';
+import React from "react";
 import { GerenciarMandatosDialog } from "./gerenciar-mandatos-dialog";
 import { GerenciarMandatosPastorDialog } from "./gerenciar-mandatos-pastor-dialog";
+import { ThemeToggle } from "@/components/theme-toggle"; // Added import
 
 // Helper function to check if a mandate is expired
-const checkMandatoStatus = (mandato: MandatoLideranca | MandatoPastor | undefined) => {
+const checkMandatoStatus = (
+  mandato: MandatoLideranca | MandatoPastor | undefined,
+) => {
   if (!mandato) return undefined;
 
   if (mandato.status !== "ativo") return mandato.status;
@@ -71,7 +79,9 @@ const liderancasColumns = [
     cell: ({ row }: { row: any }) => {
       const mandato = row.original.mandato as MandatoLideranca;
       if (!mandato?.data_inicio) return "-";
-      return format(new Date(mandato.data_inicio), "dd/MM/yyyy", { locale: ptBR });
+      return format(new Date(mandato.data_inicio), "dd/MM/yyyy", {
+        locale: ptBR,
+      });
     },
   },
   {
@@ -90,7 +100,7 @@ const liderancasColumns = [
       const mandatos = row.original.mandatos as MandatoLideranca[];
       return (
         <div className="text-center">
-          {mandatos.length} mandato{mandatos.length === 1 ? '' : 's'}
+          {mandatos.length} mandato{mandatos.length === 1 ? "" : "s"}
         </div>
       );
     },
@@ -146,7 +156,10 @@ const pastoresColumns = [
         eleito: "Eleito",
         designado: "Designado",
       };
-      return tipoMap[mandato.tipo_vinculo as keyof typeof tipoMap] || mandato.tipo_vinculo;
+      return (
+        tipoMap[mandato.tipo_vinculo as keyof typeof tipoMap] ||
+        mandato.tipo_vinculo
+      );
     },
   },
   {
@@ -174,7 +187,9 @@ const pastoresColumns = [
     cell: ({ row }: { row: any }) => {
       const mandato = row.original.mandato as MandatoPastor;
       if (!mandato?.data_inicio) return "-";
-      return format(new Date(mandato.data_inicio), "dd/MM/yyyy", { locale: ptBR });
+      return format(new Date(mandato.data_inicio), "dd/MM/yyyy", {
+        locale: ptBR,
+      });
     },
   },
   {
@@ -233,29 +248,39 @@ const pastoresColumns = [
 export default function LiderancaPage() {
   const { toast } = useToast();
 
-  const { data: liderancas = [], isLoading: isLoadingLiderancas } = useQuery<Lideranca[]>({
+  const { data: liderancas = [], isLoading: isLoadingLiderancas } = useQuery<
+    Lideranca[]
+  >({
     queryKey: ["/api/liderancas"],
   });
 
-  const { data: mandatosLiderancas = [], isLoading: isLoadingMandatosLiderancas } = useQuery<MandatoLideranca[]>({
+  const {
+    data: mandatosLiderancas = [],
+    isLoading: isLoadingMandatosLiderancas,
+  } = useQuery<MandatoLideranca[]>({
     queryKey: ["/api/mandatos/liderancas"],
   });
 
-  const { data: pastores = [], isLoading: isLoadingPastores } = useQuery<Pastor[]>({
+  const { data: pastores = [], isLoading: isLoadingPastores } = useQuery<
+    Pastor[]
+  >({
     queryKey: ["/api/pastores"],
   });
 
-  const { data: mandatosPastores = [], isLoading: isLoadingMandatosPastores } = useQuery<MandatoPastor[]>({
-    queryKey: ["/api/mandatos/pastores"],
-  });
+  const { data: mandatosPastores = [], isLoading: isLoadingMandatosPastores } =
+    useQuery<MandatoPastor[]>({
+      queryKey: ["/api/mandatos/pastores"],
+    });
 
   const pastoresComMandatos = React.useMemo(() => {
     return pastores.map((pastor: Pastor) => {
-      const allMandatos = mandatosPastores.filter(m => m.pastor_id === pastor.id);
+      const allMandatos = mandatosPastores.filter(
+        (m) => m.pastor_id === pastor.id,
+      );
       const today = new Date();
 
       // Find current mandate - either active with no end date or includes today's date
-      const currentMandate = allMandatos.find(m => {
+      const currentMandate = allMandatos.find((m) => {
         if (m.status !== "ativo") return false;
         if (!m.data_fim) return true;
 
@@ -273,11 +298,13 @@ export default function LiderancaPage() {
 
   const liderancasComMandatos = React.useMemo(() => {
     return liderancas.map((lideranca: Lideranca) => {
-      const allMandatos = mandatosLiderancas.filter(m => m.lideranca_id === lideranca.id);
+      const allMandatos = mandatosLiderancas.filter(
+        (m) => m.lideranca_id === lideranca.id,
+      );
       const today = new Date();
 
       // Find current mandate - either active with no end date or includes today's date
-      const currentMandate = allMandatos.find(m => {
+      const currentMandate = allMandatos.find((m) => {
         if (m.status !== "ativo") return false;
         if (!m.data_fim) return true;
 
@@ -294,14 +321,13 @@ export default function LiderancaPage() {
   }, [liderancas, mandatosLiderancas]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navigation />
+      <ThemeToggle />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Liderança
-          </h1>
+          <h1 className="text-3xl font-bold">Liderança</h1>
           <div className="flex gap-4">
             <NovaLiderancaDialog />
             <NovoPastorDialog />

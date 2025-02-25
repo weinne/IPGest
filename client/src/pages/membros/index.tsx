@@ -20,6 +20,7 @@ import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { UserCircle } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle"; // Added import
 
 const columns = [
   {
@@ -104,6 +105,7 @@ const columns = [
 
       return (
         <>
+          <ThemeToggle /> {/* Added ThemeToggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -148,14 +150,12 @@ export default function MembrosPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Membros
-          </h1>
+          <h1 className="text-3xl font-bold">Membros</h1>
           <NovoMembroDialog />
         </div>
 
@@ -167,11 +167,7 @@ export default function MembrosPage() {
             {isLoading ? (
               <div className="text-center py-4">Carregando...</div>
             ) : (
-              <DataTable
-                columns={columns}
-                data={membros}
-                searchColumn="nome"
-              />
+              <DataTable columns={columns} data={membros} searchColumn="nome" />
             )}
           </CardContent>
         </Card>
