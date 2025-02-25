@@ -722,8 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         distribuicao_sociedades: distribuicaoSociedades,
         distribuicao_idade: distribuicaoIdade,
         distribuicao_admissao: distribuicaoAdmissao
-      });
-    } catch (error) {      console.error("Error in /api/reports/graficos:", error);
+      });    } catch (error) {      console.error("Error in /api/reports/graficos:", error);
       res.status(500).json({ message: (error as Error).message });
     }
   });
@@ -758,18 +757,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updateData = {
         nome: req.body.nome,
-        cnpj: req.body.cnpj,
-        cep: req.body.cep,
-        endereco: req.body.endereco,
-        numero: req.body.numero,
-        complemento: req.body.complemento,
-        bairro: req.body.bairro,
-        website: req.body.website,
-        telefone: req.body.telefone,
-        email: req.body.email,
-        data_fundacao: req.body.data_fundacao,
-        cidade: req.body.cidade,
-        estado: req.body.estado,
+        cnpj: req.body.cnpj || null,
+        cep: req.body.cep || null,
+        endereco: req.body.endereco || null,
+        numero: req.body.numero || null,
+        complemento: req.body.complemento || null,
+        bairro: req.body.bairro || null,
+        website: req.body.website || null,
+        telefone: req.body.telefone || null,
+        email: req.body.email || null,
+        data_fundacao: req.body.data_fundacao || null,
+        cidade: req.body.cidade || null,
+        estado: req.body.estado || null,
       };
 
       // Add logo if file was uploaded

@@ -135,55 +135,55 @@ export default function ConfiguracoesPage() {
   }, [igreja, form]);
 
   const updateIgrejaMutation = useMutation({
-        mutationFn: async (values: IgrejaFormValues & { logo?: File }) => {
-          const formData = new FormData();
+    mutationFn: async (values: IgrejaFormValues & { logo?: File }) => {
+      const formData = new FormData();
 
-          // Ensure all fields are included in the form data
-          const fields = [
-            'nome', 'cnpj', 'cep', 'endereco', 'numero', 'complemento', 'bairro',
-            'website', 'telefone', 'email', 'data_fundacao', 'cidade', 'estado'
-          ];
+      // Ensure all fields are included in the form data
+      const fields = [
+        'nome', 'cnpj', 'cep', 'endereco', 'numero', 'complemento', 'bairro',
+        'website', 'telefone', 'email', 'data_fundacao', 'cidade', 'estado'
+      ];
 
-          fields.forEach(field => {
-            formData.append(field, values[field] || '');
-          });
-
-          if (values.logo) {
-            formData.append('logo', values.logo);
-          }
-
-          console.log("FormData entries:");
-          for (const [key, value] of formData.entries()) {
-            console.log(key, ':', value);
-          }
-
-          const res = await apiRequest("POST", "/api/user/igreja", formData, {
-            headers: {}
-          });
-
-          if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.message);
-          }
-
-          return res.json();
-        },
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/igreja"] });
-          toast({
-            title: "Configurações atualizadas",
-            description: "As informações da igreja foram atualizadas com sucesso.",
-          });
-        },
-        onError: (error: Error) => {
-          console.error("Mutation error:", error);
-          toast({
-            title: "Erro ao atualizar configurações",
-            description: error.message,
-            variant: "destructive",
-          });
-        },
+      fields.forEach(field => {
+        formData.append(field, values[field] || '');
       });
+
+      if (values.logo) {
+        formData.append('logo', values.logo);
+      }
+
+      console.log("FormData entries:");
+      for (const [key, value] of formData.entries()) {
+        console.log(key, ':', value);
+      }
+
+      const res = await apiRequest("POST", "/api/user/igreja", formData, {
+        headers: {}
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/igreja"] });
+      toast({
+        title: "Configurações atualizadas",
+        description: "As informações da igreja foram atualizadas com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Mutation error:", error);
+      toast({
+        title: "Erro ao atualizar configurações",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const onSubmit = (values: IgrejaFormValues) => {
     const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
