@@ -566,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             WHEN data_exclusao IS NOT NULL THEN 'exclusao'
             ELSE 'admissao'
           END`,
-          data: sql<Date>`COALESCE(data_exclusao, data_admissao)`,
+          data: sql<string>`COALESCE(data_exclusao, data_admissao)::text`,
           descricao: sql<string>`CONCAT(nome, ' - ', 
             CASE 
               WHEN data_exclusao IS NOT NULL THEN CONCAT('Excluído por ', motivo_exclusao)
@@ -590,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             WHEN data_fim IS NOT NULL THEN 'fim_mandato'
             ELSE 'inicio_mandato'
           END`,
-          data: sql<Date>`COALESCE(data_fim, data_inicio)`,
+          data: sql<string>`COALESCE(data_fim, data_inicio)::text`,
           descricao: sql<string>`CONCAT(
             CASE 
               WHEN data_fim IS NOT NULL THEN 'Fim do mandato de '
@@ -616,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             WHEN data_fim IS NOT NULL THEN 'fim_mandato'
             ELSE 'inicio_mandato'
           END`,
-          data: sql<Date>`COALESCE(data_fim, data_inicio)`,
+          data: sql<string>`COALESCE(data_fim, data_inicio)::text`,
           descricao: sql<string>`CONCAT(
             pastores.nome,
             CASE 
@@ -639,10 +639,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...membrosOcorrencias,
         ...liderancasOcorrencias,
         ...pastoresOcorrencias
-      ].sort((a, b) => b.data.getTime() - a.data.getTime());
+      ].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
 
       res.json(ocorrencias);
     } catch (error) {
+      console.error("Error in /api/reports/ocorrencias:", error);
       res.status(500).json({ message: (error as Error).message });
     }
   });

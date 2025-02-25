@@ -23,19 +23,26 @@ export function RelatorioOcorrencias() {
   const [filters, setFilters] = useState<Filters>({});
   const form = useForm<Filters>();
 
-  const { data: ocorrencias, isLoading } = useQuery<Ocorrencia[]>({
+  const { data: ocorrencias = [], isLoading } = useQuery<Ocorrencia[]>({
     queryKey: ["/api/reports/ocorrencias", filters],
     queryFn: () => {
       const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
+      if (filters.data_inicio) params.append('data_inicio', filters.data_inicio);
+      if (filters.data_fim) params.append('data_fim', filters.data_fim);
       return fetch(`/api/reports/ocorrencias?${params}`).then(res => res.json());
     },
   });
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleSubmit = (data: Filters) => {
+    // Only include filters that have values
+    const newFilters: Filters = {};
+    if (data.data_inicio) newFilters.data_inicio = data.data_inicio;
+    if (data.data_fim) newFilters.data_fim = data.data_fim;
+    setFilters(newFilters);
   };
 
   return (
@@ -47,7 +54,7 @@ export function RelatorioOcorrencias() {
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((data) => setFilters(data))}
+              onSubmit={form.handleSubmit(handleSubmit)}
               className="grid grid-cols-1 md:grid-cols-3 gap-4"
             >
               <FormField
@@ -78,10 +85,14 @@ export function RelatorioOcorrencias() {
 
               <div className="flex items-end space-x-2">
                 <Button type="submit">Filtrar</Button>
-                <Button type="button" variant="outline" onClick={() => {
-                  form.reset();
-                  setFilters({});
-                }}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    form.reset();
+                    setFilters({});
+                  }}
+                >
                   Limpar
                 </Button>
               </div>

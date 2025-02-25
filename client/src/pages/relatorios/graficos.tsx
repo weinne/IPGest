@@ -32,6 +32,7 @@ export function RelatorioGraficos() {
     window.print();
   };
 
+  // Add default empty array for safety
   const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }> = []) => {
     return crescimentoMensal.map(item => ({
       mes: new Date(item.mes).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
@@ -43,7 +44,7 @@ export function RelatorioGraficos() {
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Crescimento Mensal</CardTitle>
+          <CardTitle>Análise Gráfica</CardTitle>
           <Button onClick={handlePrint} className="print:hidden">
             <Printer className="h-4 w-4 mr-2" />
             Imprimir
@@ -57,20 +58,23 @@ export function RelatorioGraficos() {
           ) : graficos ? (
             <div className="space-y-8">
               {/* Gráfico de Crescimento Mensal */}
-              <div className="w-full h-[400px]">
-                <BarChart
-                  width={800}
-                  height={400}
-                  data={formatarDataGrafico(graficos.crescimento_mensal)}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mes" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="total" fill="#8884d8" name="Novos Membros" />
-                </BarChart>
+              <div>
+                <h3 className="text-lg font-medium mb-4">Crescimento Mensal</h3>
+                <div className="w-full overflow-x-auto">
+                  <BarChart
+                    width={800}
+                    height={400}
+                    data={formatarDataGrafico(graficos.crescimento_mensal)}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="total" fill="#8884d8" name="Novos Membros" />
+                  </BarChart>
+                </div>
               </div>
 
               {/* Gráficos em Pizza */}
@@ -130,19 +134,21 @@ export function RelatorioGraficos() {
               {/* Distribuição por Sociedade Interna */}
               <div>
                 <h3 className="text-lg font-medium mb-4">Distribuição por Sociedade Interna</h3>
-                <BarChart
-                  width={800}
-                  height={400}
-                  data={graficos.distribuicao_sociedades || []}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="sociedade" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="total" fill="#82ca9d" name="Número de Membros" />
-                </BarChart>
+                <div className="w-full overflow-x-auto">
+                  <BarChart
+                    width={800}
+                    height={400}
+                    data={graficos.distribuicao_sociedades || []}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="sociedade" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="total" fill="#82ca9d" name="Número de Membros" />
+                  </BarChart>
+                </div>
               </div>
             </div>
           ) : null}
