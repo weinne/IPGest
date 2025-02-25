@@ -755,31 +755,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Dados recebidos para nova igreja:", req.body);
       console.log("Arquivo recebido:", req.file);
 
+      // Remove empty strings, keep actual empty values for update
       const updateData = {
         nome: req.body.nome,
-        cnpj: req.body.cnpj || null,
-        cep: req.body.cep || null,
-        endereco: req.body.endereco || null,
-        numero: req.body.numero || null,
-        complemento: req.body.complemento || null,
-        bairro: req.body.bairro || null,
-        website: req.body.website || null,
-        telefone: req.body.telefone || null,
-        email: req.body.email || null,
-        logo_url: req.file ? req.file.filename : undefined,
-        data_fundacao: req.body.data_fundacao || null,
-        cidade: req.body.cidade || null,
-        estado: req.body.estado || null,
+        cnpj: req.body.cnpj === '' ? null : req.body.cnpj,
+        cep: req.body.cep === '' ? null : req.body.cep,
+        endereco: req.body.endereco === '' ? null : req.body.endereco,
+        numero: req.body.numero === '' ? null : req.body.numero,
+        complemento: req.body.complemento === '' ? null : req.body.complemento,
+        bairro: req.body.bairro === '' ? null : req.body.bairro,
+        website: req.body.website === '' ? null : req.body.website,
+        telefone: req.body.telefone === '' ? null : req.body.telefone,
+        email: req.body.email === '' ? null : req.body.email,
+        data_fundacao: req.body.data_fundacao === '' ? null : req.body.data_fundacao,
+        cidade: req.body.cidade === '' ? null : req.body.cidade,
+        estado: req.body.estado === '' ? null : req.body.estado,
       };
 
-      // Remove undefined values
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
-        }
-      });
+      // Handle logo separately to avoid undefined
+      if (req.file) {
+        updateData.logo_url = req.file.filename;
+      }
 
-      console.log("Update data:", updateData);
+      console.log("Final update data:", updateData);
 
       const [igreja] = await db
         .update(igrejas)
