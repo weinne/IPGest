@@ -35,7 +35,7 @@ export default function AuthPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex">
       <div className="flex-1 flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -191,33 +191,13 @@ export default function AuthPage() {
           </CardContent>
         </Card>
       </div>
-
-      <div className="hidden lg:flex flex-1 bg-blue-600 items-center justify-center p-12 text-white">
-        <div className="max-w-lg">
-          <h1 className="text-4xl font-bold mb-6">
-            Sistema de Gestão para Igrejas Presbiterianas
-          </h1>
-          <p className="text-lg opacity-90 mb-8">
-            Gerencie membros, sociedades internas e liderança da sua igreja de forma simples e organizada, seguindo o Manual Presbiteriano da IPB.
+      <div className="flex-1 flex items-center justify-center p-8 bg-green-900/10 order-1 md:order-2">
+        <div className="max-w-md text-center md:text-left">
+          <h2 className="text-2xl font-bold text-green-900 mb-4">Sistema de Gestão IPB</h2>
+          <p className="text-green-800">
+            Bem-vindo ao sistema de gestão para igrejas presbiterianas. Esta plataforma permite gerenciar membros, 
+            eventos e recursos da sua igreja de forma eficiente e organizada.
           </p>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold mb-2">Gestão de Membros</h3>
-              <p className="opacity-75">Cadastro completo de membros comungantes e não-comungantes</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Sociedades Internas</h3>
-              <p className="opacity-75">UCP, UPA, UMP, SAF, UPH e outros grupos</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Liderança</h3>
-              <p className="opacity-75">Controle de pastores, presbíteros e diáconos</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Relatórios</h3>
-              <p className="opacity-75">Geração de relatórios e documentos oficiais</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
