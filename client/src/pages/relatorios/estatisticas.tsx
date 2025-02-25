@@ -126,15 +126,15 @@ export default function EstatisticasReport() {
               <dl className="grid grid-cols-1 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Por Batismo</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.admissoes.batismo}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.admissoes?.batismo || 0}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Por Profissão de Fé</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.admissoes.profissao_fe}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.admissoes?.profissao_fe || 0}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Por Transferência</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.admissoes.transferencia}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.admissoes?.transferencia || 0}</dd>
                 </div>
               </dl>
             </CardContent>
@@ -148,11 +148,11 @@ export default function EstatisticasReport() {
               <dl className="grid grid-cols-1 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Comungantes</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.membros.por_tipo.comungantes}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.membros?.por_tipo?.comungantes || 0}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Não Comungantes</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.membros.por_tipo.nao_comungantes}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.membros?.por_tipo?.nao_comungantes || 0}</dd>
                 </div>
               </dl>
             </CardContent>
@@ -166,11 +166,11 @@ export default function EstatisticasReport() {
               <dl className="grid grid-cols-1 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Masculino</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.membros.por_sexo.masculino}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.membros?.por_sexo?.masculino || 0}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Feminino</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.membros.por_sexo.feminino}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.membros?.por_sexo?.feminino || 0}</dd>
                 </div>
               </dl>
             </CardContent>
@@ -184,15 +184,15 @@ export default function EstatisticasReport() {
               <dl className="grid grid-cols-1 gap-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Pastores</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.lideranca.pastores}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.lideranca?.pastores || 0}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Presbíteros</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.lideranca.presbiteros}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.lideranca?.presbiteros || 0}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Diáconos</dt>
-                  <dd className="text-3xl font-bold">{estatisticas.lideranca.diaconos}</dd>
+                  <dd className="text-3xl font-bold">{estatisticas?.lideranca?.diaconos || 0}</dd>
                 </div>
               </dl>
             </CardContent>
@@ -213,7 +213,7 @@ export default function EstatisticasReport() {
                     </tr>
                   </thead>
                   <tbody>
-                    {estatisticas.sociedades.map((sociedade) => (
+                    {estatisticas?.sociedades?.map((sociedade) => (
                       <tr key={sociedade.id} className="border-b">
                         <td className="py-2">{sociedade.nome}</td>
                         <td className="py-2">{sociedade.tipo}</td>

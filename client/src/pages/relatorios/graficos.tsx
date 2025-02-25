@@ -6,17 +6,33 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, 
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
+type GraficosData = {
+  crescimento_mensal: Array<{ mes: string; total: number }>;
+  distribuicao_tipos: {
+    comungantes: number;
+    nao_comungantes: number;
+  };
+  distribuicao_idade: {
+    jovens: number;
+    adultos: number;
+    idosos: number;
+  };
+  distribuicao_sociedades: Array<{
+    sociedade: string;
+    total: number;
+  }>;
+};
+
 export function RelatorioGraficos() {
-  const { data: graficos, isLoading } = useQuery({
+  const { data: graficos, isLoading } = useQuery<GraficosData>({
     queryKey: ["/api/reports/graficos"],
-    queryFn: () => fetch("/api/reports/graficos").then(res => res.json()),
   });
 
   const handlePrint = () => {
     window.print();
   };
 
-  const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }>) => {
+  const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }> = []) => {
     return crescimentoMensal.map(item => ({
       mes: new Date(item.mes).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
       total: item.total
@@ -65,8 +81,8 @@ export function RelatorioGraficos() {
                   <PieChart width={400} height={400}>
                     <Pie
                       data={[
-                        { name: 'Comungantes', value: graficos.distribuicao_tipos.comungantes },
-                        { name: 'Não Comungantes', value: graficos.distribuicao_tipos.nao_comungantes }
+                        { name: 'Comungantes', value: graficos.distribuicao_tipos?.comungantes || 0 },
+                        { name: 'Não Comungantes', value: graficos.distribuicao_tipos?.nao_comungantes || 0 }
                       ]}
                       cx={200}
                       cy={200}
@@ -90,9 +106,9 @@ export function RelatorioGraficos() {
                   <PieChart width={400} height={400}>
                     <Pie
                       data={[
-                        { name: 'Jovens', value: graficos.distribuicao_idade.jovens },
-                        { name: 'Adultos', value: graficos.distribuicao_idade.adultos },
-                        { name: 'Idosos', value: graficos.distribuicao_idade.idosos }
+                        { name: 'Jovens', value: graficos.distribuicao_idade?.jovens || 0 },
+                        { name: 'Adultos', value: graficos.distribuicao_idade?.adultos || 0 },
+                        { name: 'Idosos', value: graficos.distribuicao_idade?.idosos || 0 }
                       ]}
                       cx={200}
                       cy={200}
@@ -117,7 +133,7 @@ export function RelatorioGraficos() {
                 <BarChart
                   width={800}
                   height={400}
-                  data={graficos.distribuicao_sociedades}
+                  data={graficos.distribuicao_sociedades || []}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
