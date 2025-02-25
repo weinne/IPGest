@@ -32,6 +32,7 @@ const formatPhone = (value: string) => {
 };
 
 const igrejaFormSchema = z.object({
+  nome: z.string().optional(),
   cnpj: z.string().optional(),
   cep: z.string().optional(),
   endereco: z.string().optional(),
@@ -52,7 +53,7 @@ export default function ConfiguracoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: igreja } = useQuery<Igreja>({
+  const { data: igreja, isLoading } = useQuery<Igreja>({
     queryKey: ["/api/igreja", user?.igreja_id],
     queryFn: () => apiRequest("GET", `/api/igreja/${user?.igreja_id}`).then(res => res.json()),
     enabled: !!user?.igreja_id,
@@ -61,6 +62,7 @@ export default function ConfiguracoesPage() {
   const form = useForm<IgrejaFormValues>({
     resolver: zodResolver(igrejaFormSchema),
     defaultValues: {
+      nome: "",
       cnpj: "",
       cep: "",
       endereco: "",
@@ -80,6 +82,7 @@ export default function ConfiguracoesPage() {
     if (igreja) {
       console.log("Loading igreja data:", igreja);
       form.reset({
+        nome: igreja.nome || "",
         cnpj: igreja.cnpj || "",
         cep: igreja.cep || "",
         endereco: igreja.endereco || "",
@@ -97,6 +100,7 @@ export default function ConfiguracoesPage() {
 
   const updateIgrejaMutation = useMutation({
     mutationFn: async (values: IgrejaFormValues) => {
+      console.log("Submitting values:", values);
       const res = await apiRequest("POST", "/api/user/igreja", values);
       return res.json();
     },
@@ -117,9 +121,21 @@ export default function ConfiguracoesPage() {
   });
 
   const onSubmit = (values: IgrejaFormValues) => {
-    console.log("Submitting values:", values);
     updateIgrejaMutation.mutate(values);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -138,6 +154,20 @@ export default function ConfiguracoesPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="nome"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome da Igreja</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="cnpj"
