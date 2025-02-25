@@ -21,7 +21,7 @@ function Router() {
       <ProtectedRoute path="/membros" component={MembrosPage} />
       <ProtectedRoute path="/grupos" component={GruposPage} />
       <ProtectedRoute path="/lideranca" component={LiderancaPage} />
-      <ProtectedRoute path="/relatorios/*" component={RelatoriosPage} />
+      <ProtectedRoute path="/relatorios" component={RelatoriosPage} />
       <ProtectedRoute path="/usuarios" component={UsuariosPage} />
       <Route component={NotFound} />
     </Switch>
