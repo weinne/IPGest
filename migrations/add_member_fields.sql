@@ -1,0 +1,6 @@
+
+ALTER TABLE membros 
+ADD COLUMN IF NOT EXISTS sexo TEXT CHECK (sexo IN ('masculino', 'feminino')),
+ADD COLUMN IF NOT EXISTS cep TEXT,
+ADD COLUMN IF NOT EXISTS numero TEXT,
+ADD COLUMN IF NOT EXISTS cidade_atual TEXT;
