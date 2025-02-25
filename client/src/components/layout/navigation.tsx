@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown, UserCog } from "lucide-react";
 import { allRoutes } from "@/lib/routes";
 import {
   DropdownMenu,
