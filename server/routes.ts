@@ -9,7 +9,17 @@ import { canWrite, isAdmin } from "./middleware";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import express from "express";
-import { and, eq, gte, lte, sql } from "drizzle-orm"; // Added import for drizzle-orm
+import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { db } from "./db";
+import {
+  membros,
+  grupos,
+  membros_grupos,
+  liderancas,
+  pastores,
+  mandatos_liderancas,
+  mandatos_pastores
+} from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
@@ -19,7 +29,6 @@ async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
-// Configure multer for file uploads
 const uploadDir = join(process.cwd(), "uploads");
 const upload = multer({
   storage: multer.diskStorage({
@@ -35,19 +44,14 @@ const upload = multer({
   })
 });
 
-// Add audit log helper
 function logAudit(req: Request, operacao: string, tipo: string, id: number) {
   console.log(`AUDIT: usuário ${req.user?.username} (${req.user?.id}) realizou ${operacao} em ${tipo} #${id} às ${new Date().toISOString()}`);
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication routes
   setupAuth(app);
-
-  // Serve uploaded files statically
   app.use('/uploads', express.static(uploadDir));
 
-  // User management routes
   app.post("/api/users", async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
@@ -81,7 +85,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Members routes
   app.get("/api/membros", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -141,7 +144,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Groups routes
   app.get("/api/grupos", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -205,7 +207,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Leadership routes
   app.get("/api/liderancas", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -230,7 +231,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dataInicio = new Date(req.body.data_inicio);
       const dataFim = req.body.data_fim ? new Date(req.body.data_fim) : null;
 
-      // Validação das datas
       if (isNaN(dataEleicao.getTime())) {
         throw new Error("Data de eleição inválida");
       }
@@ -260,7 +260,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Pastor routes
   app.get("/api/pastores", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -303,7 +302,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mandatos de lideranças
   app.get("/api/mandatos/liderancas", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -367,7 +365,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mandatos de pastores
   app.get("/api/mandatos/pastores", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -431,7 +428,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Reports routes
   app.get("/api/reports/membros", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -443,7 +439,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(membros)
         .where(eq(membros.igreja_id, req.user.igreja_id));
 
-      // Apply filters
       if (filters.tipo) {
         query = query.where(eq(membros.tipo, filters.tipo as string));
       }
@@ -465,6 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await query;
       res.json(result);
     } catch (error) {
+      console.error("Error in /api/reports/membros:", error);
       res.status(500).json({ message: (error as Error).message });
     }
   });
@@ -477,7 +473,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { data_inicio, data_fim } = req.query;
       const igreja_id = req.user.igreja_id;
 
-      // Estatísticas gerais
       const [admissoesPorTipo] = await db
         .select({
           batismo: sql<number>`COUNT(CASE WHEN tipo_admissao = 'batismo' THEN 1 END)`,
@@ -551,6 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lideranca: liderancasCount
       });
     } catch (error) {
+      console.error("Error in /api/reports/estatisticas:", error);
       res.status(500).json({ message: (error as Error).message });
     }
   });
@@ -563,7 +559,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { data_inicio, data_fim } = req.query;
       const igreja_id = req.user.igreja_id;
 
-      // Admissões e exclusões de membros
       const membrosOcorrencias = await db
         .select({
           tipo: sql<string>`'membro'`,
@@ -588,7 +583,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
 
-      // Mandatos de lideranças
       const liderancasOcorrencias = await db
         .select({
           tipo: sql<string>`'lideranca'`,
@@ -615,7 +609,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
 
-      // Mandatos de pastores
       const pastoresOcorrencias = await db
         .select({
           tipo: sql<string>`'pastor'`,
@@ -642,7 +635,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
 
-      // Combine and sort all occurrences
       const ocorrencias = [
         ...membrosOcorrencias,
         ...liderancasOcorrencias,
@@ -662,7 +654,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const igreja_id = req.user.igreja_id;
 
-      // Crescimento mensal de membros (últimos 12 meses)
       const crescimentoMensal = await db
         .select({
           mes: sql<string>`DATE_TRUNC('month', data_admissao)::date`,
@@ -678,7 +669,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .groupBy(sql`DATE_TRUNC('month', data_admissao)`)
         .orderBy(sql`DATE_TRUNC('month', data_admissao)`);
 
-      // Distribuição atual de membros por tipo
       const [distribuicaoTipos] = await db
         .select({
           comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' THEN 1 END)`,
@@ -692,7 +682,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
 
-      // Distribuição por sociedade interna
       const distribuicaoSociedades = await db
         .select({
           sociedade: grupos.nome,
@@ -703,7 +692,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(grupos.igreja_id, igreja_id))
         .groupBy(grupos.id, grupos.nome);
 
-      // Distribuição por faixa etária
       const [distribuicaoIdade] = await db
         .select({
           jovens: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) < 30 THEN 1 END)`,
@@ -729,7 +717,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create HTTP server
   const httpServer = createServer(app);
 
   return httpServer;
