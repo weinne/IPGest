@@ -754,13 +754,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      console.log("Received form data:", req.body);
-      
+      console.log("Dados recebidos:", req.body);
+
       const updateData: Record<string, any> = {};
-      
+
       // Adiciona campos do formulário
       const fields = ['nome', 'cnpj', 'cep', 'endereco', 'numero', 'complemento', 'bairro', 'website', 'telefone', 'email', 'data_fundacao', 'cidade', 'estado'];
-      
+
       for (const field of fields) {
         // Inclui o campo mesmo se for string vazia
         updateData[field] = req.body[field] ?? null;
