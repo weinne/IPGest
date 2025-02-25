@@ -48,7 +48,11 @@ export function NovoMembroDialog() {
       nome: "",
       email: null,
       telefone: null,
+      sexo: "masculino",
+      cep: null,
       endereco: null,
+      numero: null,
+      cidade_atual: null,
       data_nascimento: null,
       cpf: null,
       rg: null,
@@ -77,6 +81,27 @@ export function NovoMembroDialog() {
         setPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const fetchAddress = async (cep: string) => {
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`); // Example CEP API
+      if (!response.ok) {
+        throw new Error('Erro ao buscar endereço.');
+      }
+      const data = await response.json();
+      if (data.erro) {
+          throw new Error('CEP inválido.');
+      }
+      form.setValue('endereco', data.logradouro);
+      form.setValue('cidade_atual', data.localidade);
+    } catch (error) {
+      toast({
+        title: 'Erro ao buscar endereço',
+        description: (error as Error).message,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -311,6 +336,32 @@ export function NovoMembroDialog() {
 
                 <FormField
                   control={form.control}
+                  name="cep"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                            fetchAddress(e.target.value);
+                          }}
+                          placeholder="00000-000"
+                          className={cn(
+                            form.formState.errors.cep && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.cep && !form.formState.errors.cep && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="endereco"
                   render={({ field }) => (
                     <FormItem>
@@ -329,6 +380,47 @@ export function NovoMembroDialog() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="numero"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          {...field}
+                          value={field.value || ""}
+                          className={cn(
+                            form.formState.errors.numero && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.numero && !form.formState.errors.numero && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cidade_atual"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade Atual</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ""}
+                          className={cn(
+                            form.formState.errors.cidade_atual && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.cidade_atual && !form.formState.errors.cidade_atual && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4">
@@ -336,6 +428,31 @@ export function NovoMembroDialog() {
                 <Separator />
 
                 <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="sexo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sexo</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || undefined}>
+                          <FormControl>
+                            <SelectTrigger className={cn(
+                              form.formState.errors.sexo && "border-red-500 focus-visible:ring-red-500",
+                              form.formState.dirtyFields.sexo && !form.formState.errors.sexo && "border-green-500 focus-visible:ring-green-500"
+                            )}>
+                              <SelectValue placeholder="Selecione o sexo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="masculino">Masculino</SelectItem>
+                            <SelectItem value="feminino">Feminino</SelectItem>
+                            <SelectItem value="outro">Outro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="data_nascimento"
@@ -357,28 +474,28 @@ export function NovoMembroDialog() {
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="cidade_natal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cidade Natal</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value || ""}
-                            className={cn(
-                              form.formState.errors.cidade_natal && "border-red-500 focus-visible:ring-red-500",
-                              form.formState.dirtyFields.cidade_natal && !form.formState.errors.cidade_natal && "border-green-500 focus-visible:ring-green-500"
-                            )}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="cidade_natal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade Natal</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ""}
+                          className={cn(
+                            form.formState.errors.cidade_natal && "border-red-500 focus-visible:ring-red-500",
+                            form.formState.dirtyFields.cidade_natal && !form.formState.errors.cidade_natal && "border-green-500 focus-visible:ring-green-500"
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}

@@ -52,7 +52,11 @@ export function EditarMembroDialog({ membro, open, onOpenChange }: EditarMembroD
       nome: membro.nome,
       email: membro.email || null,
       telefone: membro.telefone || null,
+      sexo: membro.sexo,
+      cep: membro.cep || null,
       endereco: membro.endereco || null,
+      numero: membro.numero || null,
+      cidade_atual: membro.cidade_atual || null,
       cpf: membro.cpf || null,
       rg: membro.rg || null,
       data_nascimento: membro.data_nascimento || null,
@@ -255,6 +259,69 @@ export function EditarMembroDialog({ membro, open, onOpenChange }: EditarMembroD
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="sexo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sexo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o sexo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="masculino">Masculino</SelectItem>
+                          <SelectItem value="feminino">Feminino</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cep"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} placeholder="00000-000" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="numero"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cidade_atual"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade Atual</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4">
