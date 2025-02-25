@@ -13,35 +13,86 @@
 }
 
 @media print {
+  /* Reset page margins and ensure white background */
+  @page {
+    margin: 1cm;
+    size: auto;
+  }
+
+  body {
+    background: white !important;
+    min-height: 100vh;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   /* Hide navigation and other UI elements when printing */
   nav, 
-  .print\:hidden {
+  .print\:hidden,
+  button {
     display: none !important;
   }
 
   /* Remove backgrounds and shadows */
   .print\:shadow-none {
     box-shadow: none !important;
+    border: none !important;
   }
 
   /* Ensure proper page breaks */
   .print\:break-inside-avoid {
-    break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 2cm;
   }
 
   /* Adjust spacing for print */
   .print\:space-y-12 > * + * {
-    margin-top: 3rem;
+    margin-top: 3rem !important;
   }
 
   /* Ensure charts are properly sized on print */
   .recharts-wrapper {
     width: 100% !important;
-    height: auto !important;
+    height: 100% !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .recharts-surface {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Make text darker for better print contrast */
+  text, .recharts-text {
+    fill: #000 !important;
+    color: #000 !important;
   }
 
   /* Adjust grid layout for print */
   .print\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 2rem !important;
+  }
+
+  /* Better spacing for pie charts */
+  .aspect-square {
+    height: 300px !important;
+    width: 300px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Ensure charts don't overflow */
+  .w-full.h-\[400px\] {
+    height: 350px !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Force show background colors and charts */
+  .printing * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

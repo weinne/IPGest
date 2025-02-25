@@ -36,8 +36,15 @@ export function RelatorioGraficos() {
     queryKey: ["/api/reports/graficos"],
   });
 
+  const [isPrinting, setIsPrinting] = useState(false);
+
   const handlePrint = () => {
-    window.print();
+    setIsPrinting(true);
+    // Give time for the state to update and charts to rerender
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 100);
   };
 
   const formatarDataGrafico = (crescimentoMensal: Array<{ mes: string; total: number }> = []) => {
@@ -47,8 +54,22 @@ export function RelatorioGraficos() {
     }));
   };
 
+  // Add print event listeners
+  useEffect(() => {
+    const beforePrint = () => setIsPrinting(true);
+    const afterPrint = () => setIsPrinting(false);
+
+    window.addEventListener('beforeprint', beforePrint);
+    window.addEventListener('afterprint', afterPrint);
+
+    return () => {
+      window.removeEventListener('beforeprint', beforePrint);
+      window.removeEventListener('afterprint', afterPrint);
+    };
+  }, []);
+
   return (
-    <div className="space-y-6 print:space-y-12">
+    <div className={`space-y-6 print:space-y-12 ${isPrinting ? 'printing' : ''}`}>
       <Card className="print:shadow-none">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Análise Gráfica</CardTitle>
