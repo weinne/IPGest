@@ -1,1 +1,1 @@
-<Link to="/" className="font-bold text-lg text-green-800">
+<Link to="/" className="font-bold text-lg">

@@ -64,14 +64,12 @@ export default function Navigation() {
   );
 
   return (
-    <nav className="border-b bg-white">
+    <nav className="border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <span className="font-semibold text-xl text-green-800">
-                IPGest
-              </span>
+              <span className="font-semibold text-xl">IPGest</span>
             </Link>
 
             {/* Desktop Navigation */}
