@@ -655,63 +655,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const igreja_id = req.user.igreja_id;
 
+      // Distribuição por tipo
+      const [distribuicaoTipos] = await db
+        .select({
+          comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' AND status = 'ativo' THEN 1 END)::int`,
+          nao_comungantes: sql<number>`COUNT(CASE WHEN tipo = 'nao_comungante' AND status = 'ativo' THEN 1 END)::int`
+        })
+        .from(membros)
+        .where(eq(membros.igreja_id, igreja_id));
+
+      // Distribuição por idade
+      const [distribuicaoIdade] = await db
+        .select({
+          jovens: sql<number>`COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) < 30 THEN 1 END)::int`,
+          adultos: sql<number>`COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) BETWEEN 30 AND 59 THEN 1 END)::int`,
+          idosos: sql<number>`COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) >= 60 THEN 1 END)::int`
+        })
+        .from(membros)
+        .where(eq(membros.igreja_id, igreja_id));
+
+      // Distribuição por modo de admissão
+      const [distribuicaoAdmissao] = await db
+        .select({
+          batismo: sql<number>`COUNT(CASE WHEN tipo_admissao = 'batismo' AND status = 'ativo' THEN 1 END)::int`,
+          profissao_fe: sql<number>`COUNT(CASE WHEN tipo_admissao = 'profissao_fe' AND status = 'ativo' THEN 1 END)::int`,
+          transferencia: sql<number>`COUNT(CASE WHEN tipo_admissao = 'transferencia' AND status = 'ativo' THEN 1 END)::int`,
+          reconciliacao: sql<number>`COUNT(CASE WHEN tipo_admissao = 'reconciliacao' AND status = 'ativo' THEN 1 END)::int`,
+          jurisdicao: sql<number>`COUNT(CASE WHEN tipo_admissao = 'jurisdicao' AND status = 'ativo' THEN 1 END)::int`
+        })
+        .from(membros)
+        .where(eq(membros.igreja_id, igreja_id));
+
+      // Crescimento mensal (últimos 12 meses)
       const crescimentoMensal = await db
         .select({
           mes: sql<string>`DATE_TRUNC('month', data_admissao)::date`,
-          total: sql<number>`COUNT(*)`
+          total: sql<number>`COUNT(*)::int`
         })
         .from(membros)
         .where(
           and(
             eq(membros.igreja_id, igreja_id),
-            gte(membros.data_admissao, sql`NOW() - INTERVAL '1 year'`),
+            gte(membros.data_admissao, sql`CURRENT_DATE - INTERVAL '1 year'`),
             eq(membros.status, 'ativo')
           )
         )
         .groupBy(sql`DATE_TRUNC('month', data_admissao)`)
         .orderBy(sql`DATE_TRUNC('month', data_admissao)`);
 
-      const [distribuicaoTipos] = await db
-        .select({
-          comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' AND status = 'ativo' THEN 1 END)`,
-          nao_comungantes: sql<number>`COUNT(CASE WHEN tipo = 'nao_comungante' AND status = 'ativo' THEN 1 END)`
-        })
-        .from(membros)
-        .where(eq(membros.igreja_id, igreja_id));
-
+      // Distribuição por sociedade
       const distribuicaoSociedades = await db
         .select({
           sociedade: grupos.nome,
-          total: sql<number>`COUNT(DISTINCT membros_grupos.membro_id)`
+          total: sql<number>`COUNT(DISTINCT CASE WHEN m.status = 'ativo' THEN membros_grupos.membro_id END)::int`
         })
         .from(grupos)
         .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
-        .leftJoin(membros, and(
-          eq(membros.id, membros_grupos.membro_id),
-          eq(membros.status, 'ativo')
-        ))
+        .leftJoin(membros.as('m'), eq(membros_grupos.membro_id, sql`m.id`))
         .where(eq(grupos.igreja_id, igreja_id))
         .groupBy(grupos.id, grupos.nome);
-
-      const [distribuicaoIdade] = await db
-        .select({
-          jovens: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) < 30 AND status = 'ativo' THEN 1 END)`,
-          adultos: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) BETWEEN 30 AND 59 AND status = 'ativo' THEN 1 END)`,
-          idosos: sql<number>`COUNT(CASE WHEN EXTRACT(YEAR FROM AGE(NOW(), data_nascimento)) >= 60 AND status = 'ativo' THEN 1 END)`
-        })
-        .from(membros)
-        .where(eq(membros.igreja_id, igreja_id));
-
-      const [distribuicaoAdmissao] = await db
-        .select({
-          batismo: sql<number>`COUNT(CASE WHEN tipo_admissao = 'batismo' AND status = 'ativo' THEN 1 END)`,
-          profissao_fe: sql<number>`COUNT(CASE WHEN tipo_admissao = 'profissao_fe' AND status = 'ativo' THEN 1 END)`,
-          transferencia: sql<number>`COUNT(CASE WHEN tipo_admissao = 'transferencia' AND status = 'ativo' THEN 1 END)`,
-          reconciliacao: sql<number>`COUNT(CASE WHEN tipo_admissao = 'reconciliacao' AND status = 'ativo' THEN 1 END)`,
-          jurisdicao: sql<number>`COUNT(CASE WHEN tipo_admissao = 'jurisdicao' AND status = 'ativo' THEN 1 END)`
-        })
-        .from(membros)
-        .where(eq(membros.igreja_id, igreja_id));
 
       res.json({
         crescimento_mensal: crescimentoMensal,
@@ -728,5 +730,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  return httpServer;
-}
+  return httpServer;}
