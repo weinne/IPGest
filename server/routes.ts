@@ -760,22 +760,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         file: req.file
       });
 
+      // Inicia com campos obrigatórios
       const updateData = {
-        ...(req.body.nome && { nome: req.body.nome }),
-        ...(req.body.cnpj && { cnpj: req.body.cnpj }),
-        ...(req.body.cep && { cep: req.body.cep }),
-        ...(req.body.endereco && { endereco: req.body.endereco }),
-        ...(req.body.numero && { numero: req.body.numero }),
-        ...(req.body.complemento && { complemento: req.body.complemento }),
-        ...(req.body.bairro && { bairro: req.body.bairro }),
-        ...(req.body.website && { website: req.body.website }),
-        ...(req.body.telefone && { telefone: req.body.telefone }),
-        ...(req.body.email && { email: req.body.email }),
-        ...(req.file && { logo_url: req.file.filename }),
-        ...(req.body.data_fundacao && { data_fundacao: req.body.data_fundacao }),
-        ...(req.body.cidade && { cidade: req.body.cidade }),
-        ...(req.body.estado && { estado: req.body.estado })
+        nome: req.body.nome || undefined,
+        cnpj: req.body.cnpj || undefined,
+        cep: req.body.cep || undefined,
+        endereco: req.body.endereco || undefined,
+        numero: req.body.numero || undefined,
+        complemento: req.body.complemento || undefined,
+        bairro: req.body.bairro || undefined,
+        website: req.body.website || undefined,
+        telefone: req.body.telefone || undefined,
+        email: req.body.email || undefined,
+        data_fundacao: req.body.data_fundacao || undefined,
+        cidade: req.body.cidade || undefined,
+        estado: req.body.estado || undefined
       };
+
+      // Adiciona logo se houver upload
+      if (req.file) {
+        updateData.logo_url = req.file.filename;
+      }
+
+      // Remove campos undefined
+      Object.keys(updateData).forEach(key => 
+        updateData[key] === undefined && delete updateData[key]
+      );
 
       const [igreja] = await db
         .update(igrejas)
