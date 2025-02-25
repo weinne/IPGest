@@ -8,6 +8,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Link } from "wouter";
+import { ThemeToggle } from "@/components/theme-toggle"; // Added import
 
 export default function HomePage() {
   const cards = [
@@ -39,7 +40,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <ThemeToggle />
+      <ThemeToggle /> {/* Added ThemeToggle */}
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
