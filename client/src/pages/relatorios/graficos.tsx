@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -39,16 +39,31 @@ export function RelatorioGraficos() {
   });
 
   const contentRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleExportPDF = async () => {
-    if (!contentRef.current) return;
+    if (!contentRef.current || isExporting) return;
 
     try {
+      setIsExporting(true);
+
+      // Wait for charts to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const content = contentRef.current;
       const canvas = await html2canvas(content, {
         scale: 2,
         useCORS: true,
-        logging: false
+        logging: false,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        onclone: (doc) => {
+          // Ensure tooltips are hidden in PDF
+          const tooltips = doc.getElementsByClassName('recharts-tooltip-wrapper');
+          Array.from(tooltips).forEach((tooltip: Element) => {
+            (tooltip as HTMLElement).style.display = 'none';
+          });
+        }
       });
 
       const contentWidth = canvas.width;
@@ -88,6 +103,8 @@ export function RelatorioGraficos() {
       pdf.save('relatorio-grafico.pdf');
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -100,16 +117,23 @@ export function RelatorioGraficos() {
 
   return (
     <div className="space-y-6">
-      <div ref={contentRef}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Análise Gráfica</CardTitle>
-            <Button onClick={handleExportPDF}>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Análise Gráfica</CardTitle>
+          <Button 
+            onClick={handleExportPDF} 
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
               <FileDown className="h-4 w-4 mr-2" />
-              Exportar PDF
-            </Button>
-          </CardHeader>
-          <CardContent>
+            )}
+            {isExporting ? 'Exportando...' : 'Exportar PDF'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div ref={contentRef} className="bg-white p-6 rounded-lg">
             {isLoading ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -251,9 +275,9 @@ export function RelatorioGraficos() {
                 </div>
               </div>
             ) : null}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
