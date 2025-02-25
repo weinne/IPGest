@@ -11,7 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useIgrejaContext } from "@/hooks/use-igreja-context";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Upload } from "lucide-react";
+import { fetchAddressByCep } from "@/lib/cep";
 
 const formatCNPJ = (value: string) => {
   if (!value) return value;
@@ -44,6 +47,8 @@ const igrejaFormSchema = z.object({
   email: z.string().email("Email inválido").optional(),
   logo_url: z.string().optional(),
   data_fundacao: z.string().optional().transform(d => d || null),
+  cidade: z.string().optional(),
+  estado: z.string().optional()
 });
 
 type IgrejaFormValues = z.infer<typeof igrejaFormSchema>;
@@ -53,6 +58,7 @@ export default function ConfiguracoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { igreja, isLoading, error } = useIgrejaContext();
+  const [preview, setPreview] = useState<string | null>(igreja?.logo_url ? `/uploads/${igreja.logo_url}` : null);
 
   const form = useForm<IgrejaFormValues>({
     resolver: zodResolver(igrejaFormSchema),
@@ -69,12 +75,39 @@ export default function ConfiguracoesPage() {
       email: "",
       logo_url: "",
       data_fundacao: "",
+      cidade: "",
+      estado: ""
     },
   });
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCepLookup = async (cep: string) => {
+    try {
+      const address = await fetchAddressByCep(cep);
+      form.setValue('endereco', address.endereco);
+      form.setValue('cidade', address.cidade);
+      form.setValue('estado', address.estado);
+    } catch (error) {
+      toast({
+        title: "Erro ao buscar CEP",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (igreja) {
-      console.log("Setting igreja data in form:", igreja);
       form.reset({
         nome: igreja.nome || "",
         cnpj: igreja.cnpj || "",
@@ -88,16 +121,32 @@ export default function ConfiguracoesPage() {
         email: igreja.email || "",
         logo_url: igreja.logo_url || "",
         data_fundacao: igreja.data_fundacao ? new Date(igreja.data_fundacao).toISOString().split('T')[0] : "",
+        cidade: igreja.cidade || "",
+        estado: igreja.estado || ""
       });
+      setPreview(igreja.logo_url ? `/uploads/${igreja.logo_url}` : null);
     }
   }, [igreja, form]);
 
   const updateIgrejaMutation = useMutation({
-    mutationFn: async (values: IgrejaFormValues) => {
-      console.log("Mutation: sending igreja update with values:", values);
-      const res = await apiRequest("POST", "/api/user/igreja", values);
+    mutationFn: async (values: IgrejaFormValues & { logo?: File }) => {
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          if (key === 'logo' && value instanceof File) {
+            formData.append('logo', value);
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      const res = await fetch("/api/user/igreja", {
+        method: "POST",
+        body: formData,
+      });
+
       const data = await res.json();
-      console.log("Mutation: received response:", data);
       return data;
     },
     onSuccess: () => {
@@ -108,7 +157,6 @@ export default function ConfiguracoesPage() {
       });
     },
     onError: (error: Error) => {
-      console.error("Mutation error:", error);
       toast({
         title: "Erro ao atualizar configurações",
         description: error.message,
@@ -118,7 +166,9 @@ export default function ConfiguracoesPage() {
   });
 
   const onSubmit = (values: IgrejaFormValues) => {
-    updateIgrejaMutation.mutate(values);
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+    const file = fileInput?.files?.[0];
+    updateIgrejaMutation.mutate({ ...values, logo: file });
   };
 
   if (isLoading) {
@@ -163,6 +213,28 @@ export default function ConfiguracoesPage() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="flex flex-col items-center gap-4 mb-4">
+                  <Avatar className="h-24 w-24">
+                    {preview ? (
+                      <AvatarImage src={preview} alt="Logo preview" />
+                    ) : (
+                      <AvatarFallback>
+                        <Upload className="h-12 w-12 text-muted-foreground" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -177,7 +249,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="cnpj"
@@ -185,7 +256,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             {...field}
                             placeholder="00.000.000/0000-00"
                             onChange={(e) => {
@@ -198,7 +269,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="cep"
@@ -206,12 +276,16 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CEP</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             {...field}
                             placeholder="00000-000"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const formatted = formatCEP(e.target.value);
                               field.onChange(formatted || e.target.value);
+
+                              if (formatted && formatted.length === 9) {
+                                await handleCepLookup(formatted);
+                              }
                             }}
                           />
                         </FormControl>
@@ -219,7 +293,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="endereco"
@@ -233,7 +306,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="numero"
@@ -247,7 +319,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="complemento"
@@ -261,7 +332,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="bairro"
@@ -275,7 +345,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="website"
@@ -289,7 +358,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="telefone"
@@ -297,7 +365,7 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             {...field}
                             placeholder="(00) 00000-0000"
                             onChange={(e) => {
@@ -310,7 +378,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="email"
@@ -324,7 +391,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="data_fundacao"
@@ -333,6 +399,32 @@ export default function ConfiguracoesPage() {
                         <FormLabel>Data de Fundação</FormLabel>
                         <FormControl>
                           <Input {...field} type="date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cidade"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cidade</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="estado"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
