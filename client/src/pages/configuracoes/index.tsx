@@ -8,43 +8,37 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useQuery } from "@tanstack/react-query";
 import { Igreja } from "@shared/schema";
 
 const igrejaFormSchema = z.object({
   cnpj: z.string()
     .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/, "CNPJ inválido")
     .optional()
-    .nullable()
-    .transform(c => c === "" ? null : c),
+    .transform(c => c || ""),
   cep: z.string()
     .regex(/^\d{5}-\d{3}$/, "CEP inválido")
     .optional()
-    .nullable()
-    .transform(c => c === "" ? null : c),
-  endereco: z.string().optional().nullable(),
-  numero: z.string().optional().nullable(),
-  complemento: z.string().optional().nullable(),
-  bairro: z.string().optional().nullable(),
+    .transform(c => c || ""),
+  endereco: z.string().optional().transform(v => v || ""),
+  numero: z.string().optional().transform(v => v || ""),
+  complemento: z.string().optional().transform(v => v || ""),
+  bairro: z.string().optional().transform(v => v || ""),
   website: z.string()
     .url("Website inválido")
     .optional()
-    .nullable()
-    .transform(w => w === "" ? null : w),
+    .transform(w => w || ""),
   telefone: z.string()
     .regex(/^\(?[1-9]{2}\)? ?(?:[2-8]|9[1-9])[0-9]{3}\-?[0-9]{4}$/, "Telefone inválido")
     .optional()
-    .nullable()
-    .transform(t => t === "" ? null : t),
+    .transform(t => t || ""),
   email: z.string()
     .email("Email inválido")
     .optional()
-    .nullable()
-    .transform(e => e === "" ? null : e),
-  logo_url: z.string().optional().nullable(),
-  data_fundacao: z.string().optional().nullable(),
+    .transform(e => e || ""),
+  logo_url: z.string().optional().transform(l => l || ""),
+  data_fundacao: z.string().optional().transform(d => d || ""),
 });
 
 type IgrejaFormValues = z.infer<typeof igrejaFormSchema>;
@@ -255,7 +249,6 @@ export default function ConfiguracoesPage() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="logo_url"

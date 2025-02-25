@@ -8,15 +8,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
+import { useCallback } from "react";
 
 const profileFormSchema = z.object({
   nome_completo: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
-  foto_url: z.string().optional(),
+  foto_url: z.string().optional().transform(f => f || ""),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -24,6 +25,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export default function PerfilPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -40,6 +42,7 @@ export default function PerfilPage() {
       return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Perfil atualizado",
         description: "Suas informações foram atualizadas com sucesso.",
@@ -103,20 +106,6 @@ export default function PerfilPage() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="foto_url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL da Foto</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <Button
                     type="submit"
                     disabled={updateProfileMutation.isPending}
@@ -145,6 +134,9 @@ export default function PerfilPage() {
               <p className="text-sm text-muted-foreground text-center">
                 Sua foto será exibida no menu de navegação e em outras áreas do sistema.
               </p>
+              <Button variant="outline" className="w-full">
+                Alterar Foto
+              </Button>
             </CardContent>
           </Card>
         </div>
