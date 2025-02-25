@@ -18,7 +18,8 @@ import {
   liderancas,
   pastores,
   mandatos_liderancas,
-  mandatos_pastores
+  mandatos_pastores,
+  igrejas
 } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
@@ -724,6 +725,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error in /api/reports/graficos:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/igreja/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const igreja = await db.query.igrejas.findFirst({
+        where: eq(igrejas.id, parseInt(req.params.id))
+      });
+
+      if (!igreja) {
+        return res.status(404).json({ message: "Igreja não encontrada" });
+      }
+
+      res.json(igreja);
+    } catch (error) {
+      console.error("Error fetching igreja:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/user/igreja", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const igreja = await db.query.igrejas.update()
+        .set(req.body)
+        .where(eq(igrejas.id, req.user.igreja_id))
+        .returning();
+
+      res.json(igreja[0]);
+    } catch (error) {
+      console.error("Error updating igreja:", error);
       res.status(500).json({ message: (error as Error).message });
     }
   });
