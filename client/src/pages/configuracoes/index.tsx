@@ -145,9 +145,11 @@ export default function ConfiguracoesPage() {
       ];
 
       fields.forEach(field => {
-        formData.append(field, values[field] || '');
+        // Convert null to empty string to ensure the field is always sent
+        formData.append(field, String(values[field] || ''));
       });
 
+      // Then add the file if it exists
       if (values.logo) {
         formData.append('logo', values.logo);
       }
@@ -163,7 +165,7 @@ export default function ConfiguracoesPage() {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message);
+        throw new Error(`${res.status}: ${JSON.stringify(error)}`);
       }
 
       return res.json();

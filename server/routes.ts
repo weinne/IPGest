@@ -766,15 +766,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         website: req.body.website || null,
         telefone: req.body.telefone || null,
         email: req.body.email || null,
+        logo_url: req.file ? req.file.filename : undefined,
         data_fundacao: req.body.data_fundacao || null,
         cidade: req.body.cidade || null,
         estado: req.body.estado || null,
       };
 
-      // Add logo if file was uploaded
-      if (req.file) {
-        updateData.logo_url = req.file.filename;
-      }
+      // Remove undefined values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
+        }
+      });
 
       console.log("Update data:", updateData);
 
