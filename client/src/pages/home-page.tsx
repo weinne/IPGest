@@ -1,6 +1,6 @@
 import Navigation from "@/components/layout/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, UserPlus, UsersRound, ChevronRight } from "lucide-react";
+import { Users, UserPlus, UsersRound, ChevronRight, FileText } from "lucide-react";
 import { Link } from "wouter";
 
 export default function HomePage() {
@@ -22,19 +22,25 @@ export default function HomePage() {
       description: "Controle de pastores, presbíteros e diáconos",
       icon: UserPlus,
       link: "/lideranca"
+    },
+    {
+      title: "Relatórios",
+      description: "Estatísticas, gráficos e relatórios da igreja",
+      icon: FileText,
+      link: "/relatorios"
     }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           Painel de Gestão
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map((card) => {
             const Icon = card.icon;
             return (
