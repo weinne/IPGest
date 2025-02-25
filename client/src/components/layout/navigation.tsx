@@ -36,7 +36,28 @@ export default function Navigation() {
     }
   ] : allRoutes;
 
-  const NavLinks = () => (
+  export function Navigation() {
+  return (
+    <nav className="border-b bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center">
+              <span className="font-semibold text-xl text-blue-600">IPB Gestão</span>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
+              <NavLinks />
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+const NavLinks = () => (
     <>
       {routes.map((route) => {
         const Icon = route.icon;
