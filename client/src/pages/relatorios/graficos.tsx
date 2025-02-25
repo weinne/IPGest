@@ -35,11 +35,13 @@ type GraficosData = {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function RelatorioGraficos() {
-  const { data: graficos, isLoading } = useQuery<GraficosData>({
+  const { igreja, isLoading: isLoadingIgreja } = useIgrejaContext();
+
+  const { data: graficos, isLoading: isLoadingData } = useQuery<GraficosData>({
     queryKey: ["/api/reports/graficos"],
+    enabled: !isLoadingIgreja && !!igreja,
   });
 
-  const { igreja, isLoading: isLoadingIgreja } = useIgrejaContext();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -121,8 +123,8 @@ export function RelatorioGraficos() {
               <CardTitle>Relatório Gráfico</CardTitle>
             </div>
             <Button 
-              onClick={handleExportPDF} 
-              disabled={isExporting}
+              onClick={handleExportPDF}
+              disabled={isExporting || isLoadingData || isLoadingIgreja}
             >
               {isExporting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -133,7 +135,7 @@ export function RelatorioGraficos() {
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading || isLoadingIgreja ? (
+            {isLoadingData || isLoadingIgreja ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
