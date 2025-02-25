@@ -35,7 +35,8 @@ export default function AuthPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+      <ThemeToggle />
       <div className="min-h-screen flex flex-col md:flex-row items-stretch">
         <div className="flex-1 flex items-center justify-center p-4 md:p-8">
           <Card className="w-full max-w-md">
