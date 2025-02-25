@@ -1,4 +1,5 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -20,74 +21,21 @@ import {
 } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-export default function Navigation() {
+export function Navigation() {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
 
   const isAdmin = user?.role === "administrador";
 
-  // Only add the users management route for admins
-  const routes = isAdmin ? [
-    ...allRoutes,
-    {
-      path: "/usuarios",
-      label: "Usuários",
-      icon: UserCog
-    }
-  ] : allRoutes;
+  const routes = isAdmin ? allRoutes : allRoutes.filter(route => !route.adminOnly);
 
-  export function Navigation() {
-  return (
-    <nav className="border-b bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center">
-              <span className="font-semibold text-xl text-blue-600">IPB Gestão</span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-2">
-              <NavLinks />
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-const NavLinks = () => (
-    <>
-      {routes.map((route) => {
-        const Icon = route.icon;
-        return (
-          <Link 
-            key={route.path}
-            href={route.path}
-          >
-            <Button
-              variant="ghost"
-              className={cn(
-                navigationMenuTriggerStyle(),
-                location === route.path && "bg-accent text-accent-foreground"
-              )}
-            >
-              <Icon className="mr-2 h-4 w-4" />
-              {route.label}
-            </Button>
-          </Link>
-        );
-      })}
-    </>
-  );
 
   return (
     <nav className="border-b bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center">
+            <Link to="/" className="flex items-center">
               <span className="font-semibold text-xl text-blue-600">IPB Gestão</span>
             </Link>
 
@@ -133,14 +81,14 @@ const NavLinks = () => (
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {isAdmin && (
-                  <Link href="/configuracoes">
+                  <Link to="/configuracoes">
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
                       Configurações da Igreja
                     </DropdownMenuItem>
                   </Link>
                 )}
-                <Link href="/perfil">
+                <Link to="/perfil">
                   <DropdownMenuItem>
                     <User className="mr-2 h-4 w-4" />
                     Meu Perfil
@@ -159,3 +107,24 @@ const NavLinks = () => (
     </nav>
   );
 }
+
+const NavLinks = () => (
+  <>
+    {routes.map((route) => {
+      const Icon = route.icon;
+      return (
+        <Link
+          key={route.path}
+          to={route.path}
+          className={cn(
+            navigationMenuTriggerStyle(),
+            location === route.path && "bg-accent text-accent-foreground"
+          )}
+        >
+          {Icon && <Icon className="h-4 w-4 mr-2" />}
+          {route.label}
+        </Link>
+      );
+    })}
+  </>
+);
