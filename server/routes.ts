@@ -756,26 +756,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Dados recebidos para nova igreja:", req.body);
       console.log("Arquivo recebido:", req.file);
 
-      const updateData: Record<string, any> = {};
+      const updateData = {
+        nome: req.body.nome,
+        cnpj: req.body.cnpj,
+        cep: req.body.cep,
+        endereco: req.body.endereco,
+        numero: req.body.numero,
+        complemento: req.body.complemento,
+        bairro: req.body.bairro,
+        website: req.body.website,
+        telefone: req.body.telefone,
+        email: req.body.email,
+        data_fundacao: req.body.data_fundacao,
+        cidade: req.body.cidade,
+        estado: req.body.estado,
+      };
 
-      // Adiciona campos do formulário
-      const fields = ['nome', 'cnpj', 'cep', 'endereco', 'numero', 'complemento', 'bairro', 'website', 'telefone', 'email', 'data_fundacao', 'cidade', 'estado'];
-
-      for (const field of fields) {
-        // Inclui o campo mesmo se for string vazia
-        updateData[field] = req.body[field] ?? ''; //Accept empty strings
-      }
-
-      // Adiciona logo se existir
+      // Add logo if file was uploaded
       if (req.file) {
         updateData.logo_url = req.file.filename;
       }
 
-      console.log("Update data after file check:", updateData); 
-
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ message: "Nenhum dado válido para atualizar" });
-      }
+      console.log("Update data:", updateData);
 
       const [igreja] = await db
         .update(igrejas)
