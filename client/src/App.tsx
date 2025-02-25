@@ -14,7 +14,7 @@ import UsuariosPage from "@/pages/usuarios";
 import PerfilPage from "@/pages/perfil";
 import ConfiguracoesPage from "@/pages/configuracoes";
 import { ProtectedRoute } from "./lib/protected-route";
-import Navbar from "@/components/Navbar"; // Added import for Navbar component
+import { Navbar } from "@/components/ui/navbar"; // Fixed import path
 
 function Router() {
   return (
