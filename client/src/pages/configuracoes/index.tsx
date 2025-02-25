@@ -12,33 +12,36 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Igreja } from "@shared/schema";
 
+const formatCNPJ = (value: string) => {
+  if (!value) return value;
+  const digits = value.replace(/\D/g, '');
+  return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+};
+
+const formatCEP = (value: string) => {
+  if (!value) return value;
+  const digits = value.replace(/\D/g, '');
+  return digits.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+};
+
+const formatPhone = (value: string) => {
+  if (!value) return value;
+  const digits = value.replace(/\D/g, '');
+  return digits.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+};
+
 const igrejaFormSchema = z.object({
-  cnpj: z.string()
-    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/, "CNPJ inválido")
-    .optional()
-    .transform(c => c || ""),
-  cep: z.string()
-    .regex(/^\d{5}-\d{3}$/, "CEP inválido")
-    .optional()
-    .transform(c => c || ""),
-  endereco: z.string().optional().transform(v => v || ""),
-  numero: z.string().optional().transform(v => v || ""),
-  complemento: z.string().optional().transform(v => v || ""),
-  bairro: z.string().optional().transform(v => v || ""),
-  website: z.string()
-    .url("Website inválido")
-    .optional()
-    .transform(w => w || ""),
-  telefone: z.string()
-    .regex(/^\(?[1-9]{2}\)? ?(?:[2-8]|9[1-9])[0-9]{3}\-?[0-9]{4}$/, "Telefone inválido")
-    .optional()
-    .transform(t => t || ""),
-  email: z.string()
-    .email("Email inválido")
-    .optional()
-    .transform(e => e || ""),
-  logo_url: z.string().optional().transform(l => l || ""),
-  data_fundacao: z.string().optional().transform(d => d || ""),
+  cnpj: z.string().optional(),
+  cep: z.string().optional(),
+  endereco: z.string().optional(),
+  numero: z.string().optional(),
+  complemento: z.string().optional(),
+  bairro: z.string().optional(),
+  website: z.string().optional(),
+  telefone: z.string().optional(),
+  email: z.string().optional(),
+  logo_url: z.string().optional(),
+  data_fundacao: z.string().optional(),
 });
 
 type IgrejaFormValues = z.infer<typeof igrejaFormSchema>;
@@ -117,7 +120,14 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CNPJ</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="00.000.000/0000-00" />
+                          <Input 
+                            {...field}
+                            placeholder="00.000.000/0000-00"
+                            onChange={(e) => {
+                              const formatted = formatCNPJ(e.target.value);
+                              field.onChange(formatted || e.target.value);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -131,7 +141,14 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>CEP</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="00000-000" />
+                          <Input 
+                            {...field}
+                            placeholder="00000-000"
+                            onChange={(e) => {
+                              const formatted = formatCEP(e.target.value);
+                              field.onChange(formatted || e.target.value);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -215,7 +232,14 @@ export default function ConfiguracoesPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="(00) 00000-0000" />
+                          <Input 
+                            {...field}
+                            placeholder="(00) 00000-0000"
+                            onChange={(e) => {
+                              const formatted = formatPhone(e.target.value);
+                              field.onChange(formatted || e.target.value);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

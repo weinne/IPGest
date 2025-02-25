@@ -5,10 +5,10 @@ import { z } from "zod";
 // Igreja (tenant) - Enhanced with new fields
 export const igrejas = pgTable("igrejas", {
   id: serial("id").primaryKey(),
-  nome: text("nome").notNull(),
-  cidade: text("cidade").notNull(),
-  estado: text("estado").notNull(),
-  presbitero: text("presbitero").notNull(),
+  nome: text("nome").default(""),
+  cidade: text("cidade").default(""),
+  estado: text("estado").default(""),
+  presbitero: text("presbitero").default(""),
   cnpj: text("cnpj").default(null),
   cep: text("cep").default(null),
   endereco: text("endereco").default(null),
@@ -158,30 +158,49 @@ export const mandatos_liderancas = pgTable("mandatos_liderancas", {
 // Schemas para inserção
 export const insertIgrejaSchema = createInsertSchema(igrejas).extend({
   cnpj: z.string()
-    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/, "CNPJ inválido")
+    .regex(/^(\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}|\d{14})$/, "CNPJ inválido")
     .optional()
-    .nullable()
-    .transform(c => c === "" ? null : c),
+    .transform(c => {
+      if (!c) return null;
+      // Remove any non-digit characters
+      const digits = c.replace(/\D/g, '');
+      // Format as XX.XXX.XXX/XXXX-XX
+      return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    }),
   cep: z.string()
-    .regex(/^\d{5}-\d{3}$/, "CEP inválido")
+    .regex(/^(\d{5}\-\d{3}|\d{8})$/, "CEP inválido")
     .optional()
-    .nullable()
-    .transform(c => c === "" ? null : c),
+    .transform(c => {
+      if (!c) return null;
+      const digits = c.replace(/\D/g, '');
+      return digits.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+    }),
+  endereco: z.string().optional().transform(v => v || null),
+  numero: z.string().optional().transform(v => v || null),
+  complemento: z.string().optional().transform(v => v || null),
+  bairro: z.string().optional().transform(v => v || null),
   website: z.string()
     .url("Website inválido")
     .optional()
-    .nullable()
-    .transform(w => w === "" ? null : w),
+    .transform(w => w || null),
+  telefone: z.string()
+    .regex(/^(\(?[1-9]{2}\)? ?(?:[2-8]|9[1-9])[0-9]{3}\-?[0-9]{4}|\d{10,11})$/, "Telefone inválido")
+    .optional()
+    .transform(t => {
+      if (!t) return null;
+      const digits = t.replace(/\D/g, '');
+      return digits.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+    }),
   email: z.string()
     .email("Email inválido")
     .optional()
-    .nullable()
-    .transform(e => e === "" ? null : e),
-  telefone: z.string()
-    .regex(/^\(?[1-9]{2}\)? ?(?:[2-8]|9[1-9])[0-9]{3}\-?[0-9]{4}$/, "Telefone inválido")
-    .optional()
-    .nullable()
-    .transform(t => t === "" ? null : t),
+    .transform(e => e || null),
+  nome: z.string().optional().transform(n => n || null),
+  cidade: z.string().optional().transform(c => c || null),
+  estado: z.string().optional().transform(e => e || null),
+  presbitero: z.string().optional().transform(p => p || null),
+  logo_url: z.string().optional().transform(l => l || null),
+  data_fundacao: z.string().optional().transform(d => d || null),
 });
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
