@@ -752,27 +752,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      console.log("Dados recebidos para nova igreja:", req.body);
-      console.log("Arquivo recebido:", req.file);
+      console.log("Request body:", req.body);
+      console.log("File:", req.file);
 
-      // Remove empty strings, keep actual empty values for update
-      const updateData = {
-        nome: req.body.nome,
-        cnpj: req.body.cnpj === '' ? null : req.body.cnpj,
-        cep: req.body.cep === '' ? null : req.body.cep,
-        endereco: req.body.endereco === '' ? null : req.body.endereco,
-        numero: req.body.numero === '' ? null : req.body.numero,
-        complemento: req.body.complemento === '' ? null : req.body.complemento,
-        bairro: req.body.bairro === '' ? null : req.body.bairro,
-        website: req.body.website === '' ? null : req.body.website,
-        telefone: req.body.telefone === '' ? null : req.body.telefone,
-        email: req.body.email === '' ? null : req.body.email,
-        data_fundacao: req.body.data_fundacao === '' ? null : req.body.data_fundacao,
-        cidade: req.body.cidade === '' ? null : req.body.cidade,
-        estado: req.body.estado === '' ? null : req.body.estado,
-      };
+      const updateData = {} as Record<string, any>;
 
-      // Handle logo separately to avoid undefined
+      // Add form fields that have values
+      Object.entries(req.body).forEach(([key, value]) => {
+        if (value !== '' && value !== undefined && value !== null) {
+          updateData[key] = value;
+        } else {
+          updateData[key] = null;
+        }
+      });
+
+      // Add logo if uploaded
       if (req.file) {
         updateData.logo_url = req.file.filename;
       }
@@ -785,7 +779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(igrejas.id, req.user.igreja_id))
         .returning();
 
-      console.log("Igreja update result:", igreja);
+      console.log("Updated igreja:", igreja);
       res.json(igreja);
     } catch (error) {
       console.error("Error updating igreja:", error);
