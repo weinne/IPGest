@@ -140,8 +140,8 @@ export default function ConfiguracoesPage() {
 
       // First add all the form values
       Object.entries(values).forEach(([key, value]) => {
-        if (key !== 'logo' && value !== undefined) {
-          formData.append(key, value === null ? '' : String(value));
+        if (key !== 'logo') {
+          formData.append(key, value === null || value === undefined ? '' : String(value));
         }
       });
       console.log("FormData entries:");
