@@ -14,7 +14,8 @@ import UsuariosPage from "@/pages/usuarios";
 import PerfilPage from "@/pages/perfil";
 import ConfiguracoesPage from "@/pages/configuracoes";
 import { ProtectedRoute } from "./lib/protected-route";
-import { Navbar } from "@/components/ui/navbar"; // Fixed import path
+import { Navigation } from "@/components/layout/navigation";
+
 
 function Router() {
   return (
@@ -37,7 +38,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Navbar /> {/* Added Navbar component */}
+        <Navigation />
         <Router />
         <Toaster />
       </AuthProvider>
