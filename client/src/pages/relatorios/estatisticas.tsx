@@ -41,7 +41,7 @@ type Estatisticas = {
   };
 };
 
-export function RelatorioEstatisticas() {
+export default function EstatisticasReport() {
   const [filters, setFilters] = useState<Filters>({});
   const form = useForm<Filters>();
 

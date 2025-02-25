@@ -58,7 +58,7 @@ const columns: ColumnDef<Membro>[] = [
   },
 ];
 
-export function RelatorioMembros() {
+export default function MembrosReport() {
   const [filters, setFilters] = useState<Filters>({});
   const form = useForm<Filters>();
 
