@@ -36,8 +36,9 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
-      <div className="min-h-screen flex flex-col md:flex-row items-center justify-center p-4 md:p-8 gap-4 md:gap-8">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex flex-col md:flex-row items-stretch">
+        <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+          <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">
               Sistema de Gestão IPB
@@ -190,8 +191,8 @@ export default function AuthPage() {
             </Tabs>
           </CardContent>
         </Card>
-      </div>
-      <div className="w-full md:flex-1 flex items-center justify-center p-4 md:p-8 bg-green-900/10">
+        </div>
+        <div className="w-full md:w-[40%] flex items-center justify-center p-4 md:p-8 bg-green-900/10">
         <div className="w-full max-w-md text-center">
           <h2 className="text-xl md:text-2xl font-bold text-green-900 mb-2 md:mb-4">Sistema de Gestão IPB</h2>
           <p className="text-sm md:text-base text-green-800">
