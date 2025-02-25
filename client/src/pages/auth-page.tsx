@@ -19,6 +19,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { insertUserSchema, type InsertUser } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 
+// Assuming PageContainer is defined elsewhere and handles theme switching
+// This is a placeholder;  replace with the actual PageContainer component
+const PageContainer = ({ children }) => (
+  <div className="min-h-screen">
+    {children}
+  </div>
+);
+
+
 type LoginData = Pick<InsertUser, "username" | "password">;
 
 export default function AuthPage() {
@@ -45,7 +54,7 @@ export default function AuthPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+    <PageContainer>
       <ThemeToggle />
       <div className="min-h-screen flex flex-col md:flex-row items-stretch">
         <div className="flex-1 flex items-center justify-center p-4 md:p-8">
@@ -224,6 +233,6 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
