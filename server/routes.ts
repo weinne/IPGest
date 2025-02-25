@@ -754,12 +754,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      const igreja = await db.query.igrejas.update()
+      const [igreja] = await db
+        .update(igrejas)
         .set(req.body)
         .where(eq(igrejas.id, req.user.igreja_id))
         .returning();
 
-      res.json(igreja[0]);
+      res.json(igreja);
     } catch (error) {
       console.error("Error updating igreja:", error);
       res.status(500).json({ message: (error as Error).message });
