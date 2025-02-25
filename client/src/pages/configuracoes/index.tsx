@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Igreja } from "@shared/schema";
+import { useEffect } from "react";
 
 const formatCNPJ = (value: string) => {
   if (!value) return value;
@@ -58,19 +59,38 @@ export default function ConfiguracoesPage() {
   const form = useForm<IgrejaFormValues>({
     resolver: zodResolver(igrejaFormSchema),
     defaultValues: {
-      cnpj: igreja?.cnpj || "",
-      cep: igreja?.cep || "",
-      endereco: igreja?.endereco || "",
-      numero: igreja?.numero || "",
-      complemento: igreja?.complemento || "",
-      bairro: igreja?.bairro || "",
-      website: igreja?.website || "",
-      telefone: igreja?.telefone || "",
-      email: igreja?.email || "",
-      logo_url: igreja?.logo_url || "",
-      data_fundacao: igreja?.data_fundacao ? new Date(igreja.data_fundacao).toISOString().split('T')[0] : "",
+      cnpj: "",
+      cep: "",
+      endereco: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      website: "",
+      telefone: "",
+      email: "",
+      logo_url: "",
+      data_fundacao: "",
     },
   });
+
+  // Update form when igreja data is loaded
+  useEffect(() => {
+    if (igreja) {
+      form.reset({
+        cnpj: igreja.cnpj || "",
+        cep: igreja.cep || "",
+        endereco: igreja.endereco || "",
+        numero: igreja.numero || "",
+        complemento: igreja.complemento || "",
+        bairro: igreja.bairro || "",
+        website: igreja.website || "",
+        telefone: igreja.telefone || "",
+        email: igreja.email || "",
+        logo_url: igreja.logo_url || "",
+        data_fundacao: igreja.data_fundacao ? new Date(igreja.data_fundacao).toISOString().split('T')[0] : "",
+      });
+    }
+  }, [igreja, form]);
 
   const updateIgrejaMutation = useMutation({
     mutationFn: async (values: IgrejaFormValues) => {
