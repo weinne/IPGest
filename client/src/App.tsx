@@ -14,8 +14,6 @@ import UsuariosPage from "@/pages/usuarios";
 import PerfilPage from "@/pages/perfil";
 import ConfiguracoesPage from "@/pages/configuracoes";
 import { ProtectedRoute } from "./lib/protected-route";
-import { Navigation } from "@/components/layout/navigation";
-
 
 function Router() {
   return (
@@ -38,7 +36,6 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Navigation />
         <Router />
         <Toaster />
       </AuthProvider>
