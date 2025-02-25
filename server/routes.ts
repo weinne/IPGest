@@ -658,8 +658,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Distribuição por tipo
       const [distribuicaoTipos] = await db
         .select({
-          comungantes: sql<number>`COUNT(CASE WHEN tipo = 'comungante' AND status = 'ativo' THEN 1 END)::int`,
-          nao_comungantes: sql<number>`COUNT(CASE WHEN tipo = 'nao_comungante' AND status = 'ativo' THEN 1 END)::int`
+          comungantes: sql<number>`COALESCE(COUNT(CASE WHEN tipo = 'comungante' AND status = 'ativo' THEN 1 END), 0)::int`,
+          nao_comungantes: sql<number>`COALESCE(COUNT(CASE WHEN tipo = 'nao_comungante' AND status = 'ativo' THEN 1 END), 0)::int`
         })
         .from(membros)
         .where(eq(membros.igreja_id, igreja_id));
@@ -667,9 +667,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Distribuição por idade
       const [distribuicaoIdade] = await db
         .select({
-          jovens: sql<number>`COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) < 30 THEN 1 END)::int`,
-          adultos: sql<number>`COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) BETWEEN 30 AND 59 THEN 1 END)::int`,
-          idosos: sql<number>`COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) >= 60 THEN 1 END)::int`
+          jovens: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) < 30 THEN 1 END), 0)::int`,
+          adultos: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) BETWEEN 30 AND 59 THEN 1 END), 0)::int`,
+          idosos: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) >= 60 THEN 1 END), 0)::int`
         })
         .from(membros)
         .where(eq(membros.igreja_id, igreja_id));
@@ -677,11 +677,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Distribuição por modo de admissão
       const [distribuicaoAdmissao] = await db
         .select({
-          batismo: sql<number>`COUNT(CASE WHEN tipo_admissao = 'batismo' AND status = 'ativo' THEN 1 END)::int`,
-          profissao_fe: sql<number>`COUNT(CASE WHEN tipo_admissao = 'profissao_fe' AND status = 'ativo' THEN 1 END)::int`,
-          transferencia: sql<number>`COUNT(CASE WHEN tipo_admissao = 'transferencia' AND status = 'ativo' THEN 1 END)::int`,
-          reconciliacao: sql<number>`COUNT(CASE WHEN tipo_admissao = 'reconciliacao' AND status = 'ativo' THEN 1 END)::int`,
-          jurisdicao: sql<number>`COUNT(CASE WHEN tipo_admissao = 'jurisdicao' AND status = 'ativo' THEN 1 END)::int`
+          batismo: sql<number>`COALESCE(COUNT(CASE WHEN tipo_admissao = 'batismo' AND status = 'ativo' THEN 1 END), 0)::int`,
+          profissao_fe: sql<number>`COALESCE(COUNT(CASE WHEN tipo_admissao = 'profissao_fe' AND status = 'ativo' THEN 1 END), 0)::int`,
+          transferencia: sql<number>`COALESCE(COUNT(CASE WHEN tipo_admissao = 'transferencia' AND status = 'ativo' THEN 1 END), 0)::int`,
+          reconciliacao: sql<number>`COALESCE(COUNT(CASE WHEN tipo_admissao = 'reconciliacao' AND status = 'ativo' THEN 1 END), 0)::int`,
+          jurisdicao: sql<number>`COALESCE(COUNT(CASE WHEN tipo_admissao = 'jurisdicao' AND status = 'ativo' THEN 1 END), 0)::int`
         })
         .from(membros)
         .where(eq(membros.igreja_id, igreja_id));
@@ -690,7 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const crescimentoMensal = await db
         .select({
           mes: sql<string>`DATE_TRUNC('month', data_admissao)::date`,
-          total: sql<number>`COUNT(*)::int`
+          total: sql<number>`COALESCE(COUNT(*), 0)::int`
         })
         .from(membros)
         .where(
@@ -707,11 +707,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const distribuicaoSociedades = await db
         .select({
           sociedade: grupos.nome,
-          total: sql<number>`COUNT(DISTINCT CASE WHEN m.status = 'ativo' THEN membros_grupos.membro_id END)::int`
+          total: sql<number>`COALESCE(COUNT(DISTINCT CASE WHEN membros.status = 'ativo' THEN membros_grupos.membro_id END), 0)::int`
         })
         .from(grupos)
         .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
-        .leftJoin(membros.as('m'), eq(membros_grupos.membro_id, sql`m.id`))
+        .leftJoin(membros, eq(membros_grupos.membro_id, membros.id))
         .where(eq(grupos.igreja_id, igreja_id))
         .groupBy(grupos.id, grupos.nome);
 
@@ -730,4 +730,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  return httpServer;}
+  return httpServer;
+}
