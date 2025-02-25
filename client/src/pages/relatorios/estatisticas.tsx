@@ -51,9 +51,8 @@ export default function EstatisticasReport() {
   const [isExporting, setIsExporting] = useState(false);
   const { igreja, isLoading: isLoadingIgreja } = useIgrejaContext();
 
-  const { data: estatisticas, isLoading: isLoadingData } = useQuery<Estatisticas>({
+  const { data: estatisticas, isLoading } = useQuery<Estatisticas>({
     queryKey: ["/api/reports/estatisticas", filters],
-    enabled: !isLoadingIgreja && !!igreja,
     queryFn: () => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
@@ -180,7 +179,7 @@ export default function EstatisticasReport() {
             </div>
             <Button 
               onClick={handleExportPDF}
-              disabled={isExporting || isLoadingData || isLoadingIgreja}
+              disabled={isExporting}
             >
               {isExporting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -191,7 +190,7 @@ export default function EstatisticasReport() {
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoadingData || isLoadingIgreja ? (
+            {isLoading || isLoadingIgreja ? (
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>

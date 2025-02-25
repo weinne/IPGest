@@ -1,31 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
-type User = {
-  id: number;
-  igreja_id: number;
-  username: string;
-};
-
-type Igreja = {
-  id: number;
-  nome: string;
-  cidade: string;
-  estado: string;
-  presbitero: string;
-};
-
 export function useIgrejaContext() {
-  const { data: user, isLoading: isLoadingUser } = useQuery<User>({
+  const { data: user } = useQuery({
     queryKey: ["/api/user"],
   });
 
-  const { data: igreja, isLoading: isLoadingIgreja } = useQuery<Igreja>({
+  const { data: igreja } = useQuery({
     queryKey: ["/api/igreja", user?.igreja_id],
     enabled: !!user?.igreja_id,
   });
 
   return {
     igreja,
-    isLoading: isLoadingUser || isLoadingIgreja,
+    isLoading: !igreja,
   };
 }
