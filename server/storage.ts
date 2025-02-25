@@ -1,6 +1,6 @@
 import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, mandatos_pastores, mandatos_liderancas, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor, type MandatoPastor, type InsertMandatoPastor, type MandatoLideranca, type InsertMandatoLideranca } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, gt } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -108,6 +108,11 @@ export interface IStorage {
       idosos: number;
     };
   }>;
+  updateUser(id: number, data: Partial<User>): Promise<User>;
+  updateIgreja(id: number, data: Partial<Igreja>): Promise<Igreja>;
+  updateUserPassword(id: number, newPassword: string): Promise<void>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  setResetToken(userId: number, token: string, expiry: Date): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -668,6 +673,57 @@ export class DatabaseStorage implements IStorage {
       distribuicao_sociedades,
       distribuicao_idade: distribuicaoIdade
     };
+  }
+  async updateUser(id: number, data: Partial<User>): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
+  async updateIgreja(id: number, data: Partial<Igreja>): Promise<Igreja> {
+    const [updatedIgreja] = await db
+      .update(igrejas)
+      .set(data)
+      .where(eq(igrejas.id, id))
+      .returning();
+    return updatedIgreja;
+  }
+
+  async updateUserPassword(id: number, newPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        password: newPassword,
+        reset_token: null,
+        reset_token_expiry: null
+      })
+      .where(eq(users.id, id));
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.reset_token, token),
+          gt(users.reset_token_expiry!, new Date())
+        )
+      );
+    return user;
+  }
+
+  async setResetToken(userId: number, token: string, expiry: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        reset_token: token,
+        reset_token_expiry: expiry
+      })
+      .where(eq(users.id, userId));
   }
 }
 

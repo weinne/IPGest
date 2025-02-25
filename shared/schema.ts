@@ -2,22 +2,38 @@ import { pgTable, text, serial, integer, boolean, date, timestamp } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Igreja (tenant)
+// Igreja (tenant) - Enhanced with new fields
 export const igrejas = pgTable("igrejas", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
   cidade: text("cidade").notNull(),
   estado: text("estado").notNull(),
   presbitero: text("presbitero").notNull(),
+  cnpj: text("cnpj").default(null),
+  cep: text("cep").default(null),
+  endereco: text("endereco").default(null),
+  numero: text("numero").default(null),
+  complemento: text("complemento").default(null),
+  bairro: text("bairro").default(null),
+  website: text("website").default(null),
+  telefone: text("telefone").default(null),
+  email: text("email").default(null),
+  logo_url: text("logo_url").default(null),
+  data_fundacao: date("data_fundacao").default(null),
 });
 
-// Users
+// Users - Enhanced with photo
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   role: text("role", { enum: ["administrador", "comum"] }).notNull().default("comum"),
   igreja_id: integer("igreja_id").references(() => igrejas.id),
+  nome_completo: text("nome_completo").default(null),
+  email: text("email").default(null),
+  foto_url: text("foto_url").default(null),
+  reset_token: text("reset_token").default(null),
+  reset_token_expiry: timestamp("reset_token_expiry").default(null),
 });
 
 // Grupos/Sociedades
@@ -27,7 +43,7 @@ export const grupos = pgTable("grupos", {
   tipo: text("tipo", {
     enum: ["UCP", "UPA", "UMP", "SAF", "UPH", "ESTATISTICA", "DIACONIA", "EVANGELIZACAO", "ENSINO", "COMUNICACAO", "outro"]
   }).notNull(),
-  descricao: text("descricao"),
+  descricao: text("descricao").default(null),
   status: text("status", { enum: ["ativo", "inativo"] }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
@@ -37,34 +53,34 @@ export const membros = pgTable("membros", {
   id: serial("id").primaryKey(),
   numero_rol: integer("numero_rol").notNull(),
   nome: text("nome").notNull(),
-  email: text("email"),
-  telefone: text("telefone"),
+  email: text("email").default(null),
+  telefone: text("telefone").default(null),
   sexo: text("sexo", { enum: ["masculino", "feminino"] }).notNull(),
-  cep: text("cep"),
-  endereco: text("endereco"),
-  numero: text("numero"),
-  cidade_atual: text("cidade_atual"),
-  cpf: text("cpf"),
-  rg: text("rg"),
-  foto: text("foto"),
-  data_nascimento: date("data_nascimento"),
-  cidade_natal: text("cidade_natal"),
+  cep: text("cep").default(null),
+  endereco: text("endereco").default(null),
+  numero: text("numero").default(null),
+  cidade_atual: text("cidade_atual").default(null),
+  cpf: text("cpf").default(null),
+  rg: text("rg").default(null),
+  foto: text("foto").default(null),
+  data_nascimento: date("data_nascimento").default(null),
+  cidade_natal: text("cidade_natal").default(null),
   estado_civil: text("estado_civil", {
     enum: ["solteiro", "casado", "divorciado", "viuvo", "separado"]
-  }),
-  conjuge: text("conjuge"),
-  data_casamento: date("data_casamento"),
-  religiao_anterior: text("religiao_anterior"),
+  }).default(null),
+  conjuge: text("conjuge").default(null),
+  data_casamento: date("data_casamento").default(null),
+  religiao_anterior: text("religiao_anterior").default(null),
   tipo: text("tipo", { enum: ["comungante", "nao_comungante"] }).notNull(),
   status: text("status", { enum: ["ativo", "inativo", "disciplina"] }).notNull().default("ativo"),
   data_admissao: timestamp("data_admissao").notNull(),
   tipo_admissao: text("tipo_admissao", { enum: ["batismo", "profissao_fe", "transferencia"] }).notNull(),
-  data_batismo: date("data_batismo"),
-  data_profissao_fe: date("data_profissao_fe"),
-  data_exclusao: date("data_exclusao"),
+  data_batismo: date("data_batismo").default(null),
+  data_profissao_fe: date("data_profissao_fe").default(null),
+  data_exclusao: date("data_exclusao").default(null),
   motivo_exclusao: text("motivo_exclusao", {
     enum: ["transferencia", "excomunhao", "exclusao", "falecimento", "pedido"]
-  }),
+  }).default(null),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
 
@@ -102,10 +118,10 @@ export const pastores = pgTable("pastores", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
   cpf: text("cpf").notNull(),
-  email: text("email"),
-  telefone: text("telefone"),
-  foto: text("foto"),
-  bio: text("bio"),
+  email: text("email").default(null),
+  telefone: text("telefone").default(null),
+  foto: text("foto").default(null),
+  bio: text("bio").default(null),
   ano_ordenacao: integer("ano_ordenacao").notNull(),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
@@ -116,7 +132,7 @@ export const mandatos_pastores = pgTable("mandatos_pastores", {
   pastor_id: integer("pastor_id").references(() => pastores.id).notNull(),
   data_eleicao: timestamp("data_eleicao").notNull(),
   data_inicio: timestamp("data_inicio").notNull(),
-  data_fim: timestamp("data_fim"),
+  data_fim: timestamp("data_fim").default(null),
   tipo_vinculo: text("tipo_vinculo", {
     enum: ["eleito", "designado"]
   }).notNull(),
@@ -132,7 +148,7 @@ export const mandatos_liderancas = pgTable("mandatos_liderancas", {
   lideranca_id: integer("lideranca_id").references(() => liderancas.id).notNull(),
   data_eleicao: timestamp("data_eleicao").notNull(),
   data_inicio: timestamp("data_inicio").notNull(),
-  data_fim: timestamp("data_fim"),
+  data_fim: timestamp("data_fim").default(null),
   status: text("status", {
     enum: ["ativo", "inativo", "afastado", "emerito", "finalizado"]
   }).notNull().default("ativo"),
@@ -140,7 +156,33 @@ export const mandatos_liderancas = pgTable("mandatos_liderancas", {
 });
 
 // Schemas para inserção
-export const insertIgrejaSchema = createInsertSchema(igrejas);
+export const insertIgrejaSchema = createInsertSchema(igrejas).extend({
+  cnpj: z.string()
+    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}$/, "CNPJ inválido")
+    .optional()
+    .nullable()
+    .transform(c => c === "" ? null : c),
+  cep: z.string()
+    .regex(/^\d{5}-\d{3}$/, "CEP inválido")
+    .optional()
+    .nullable()
+    .transform(c => c === "" ? null : c),
+  website: z.string()
+    .url("Website inválido")
+    .optional()
+    .nullable()
+    .transform(w => w === "" ? null : w),
+  email: z.string()
+    .email("Email inválido")
+    .optional()
+    .nullable()
+    .transform(e => e === "" ? null : e),
+  telefone: z.string()
+    .regex(/^\(?[1-9]{2}\)? ?(?:[2-8]|9[1-9])[0-9]{3}\-?[0-9]{4}$/, "Telefone inválido")
+    .optional()
+    .nullable()
+    .transform(t => t === "" ? null : t),
+});
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -149,6 +191,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   igreja_cidade: z.string().min(3),
   igreja_estado: z.string().length(2),
   igreja_presbitero: z.string().min(3),
+  nome_completo: z.string().min(3).optional(),
+  email: z.string().email("Email inválido").optional(),
 });
 
 export const insertGrupoSchema = createInsertSchema(grupos).omit({

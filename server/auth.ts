@@ -32,6 +32,10 @@ async function comparePasswords(supplied: string, stored: string) {
   return hashedBuf.length === suppliedBuf.length && timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+async function generateResetToken(): Promise<string> {
+  return randomBytes(32).toString("hex");
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -47,25 +51,12 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      console.log("Tentando autenticar usuário:", username);
       const user = await storage.getUserByUsername(username);
-      console.log("Usuário encontrado:", user);
-
-      if (!user) {
-        console.log("Usuário não encontrado");
+      if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
+      } else {
+        return done(null, user);
       }
-
-      const passwordMatch = await comparePasswords(password, user.password);
-      console.log("Senha corresponde:", passwordMatch);
-
-      if (!passwordMatch) {
-        console.log("Senha incorreta");
-        return done(null, false);
-      }
-
-      console.log("Autenticação bem-sucedida");
-      return done(null, user);
     }),
   );
 
@@ -110,5 +101,85 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
+  });
+
+  // New endpoints for user profile management and password reset
+
+  app.post("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const user = await storage.updateUser(req.user!.id, {
+        nome_completo: req.body.nome_completo,
+        email: req.body.email,
+        foto_url: req.body.foto_url,
+      });
+      res.json(user);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/user/igreja", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== "administrador") {
+      return res.sendStatus(401);
+    }
+    try {
+      const igreja = await storage.updateIgreja(req.user!.igreja_id!, {
+        cnpj: req.body.cnpj,
+        cep: req.body.cep,
+        endereco: req.body.endereco,
+        numero: req.body.numero,
+        complemento: req.body.complemento,
+        bairro: req.body.bairro,
+        website: req.body.website,
+        telefone: req.body.telefone,
+        email: req.body.email,
+        logo_url: req.body.logo_url,
+        data_fundacao: req.body.data_fundacao,
+      });
+      res.json(igreja);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { username } = req.body;
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      const token = await generateResetToken();
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 1); // Token valid for 1 hour
+
+      await storage.setResetToken(user.id, token, expiry);
+
+      // In a real application, you would send this token via email
+      // For now, we'll return it in the response
+      res.json({ message: "Reset token generated", token });
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
   });
 }
