@@ -53,12 +53,20 @@ export default function ConfiguracoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: igreja, isLoading } = useQuery<Igreja>({
+  // Query for igreja data
+  const { data: igreja, isLoading, isError } = useQuery<Igreja>({
     queryKey: ["/api/igreja", user?.igreja_id],
-    queryFn: () => apiRequest("GET", `/api/igreja/${user?.igreja_id}`).then(res => res.json()),
+    queryFn: async () => {
+      console.log("Fetching igreja data for ID:", user?.igreja_id);
+      const res = await apiRequest("GET", `/api/igreja/${user?.igreja_id}`);
+      const data = await res.json();
+      console.log("Received igreja data:", data);
+      return data;
+    },
     enabled: !!user?.igreja_id,
   });
 
+  // Form setup
   const form = useForm<IgrejaFormValues>({
     resolver: zodResolver(igrejaFormSchema),
     defaultValues: {
@@ -79,9 +87,9 @@ export default function ConfiguracoesPage() {
 
   // Update form when igreja data is loaded
   useEffect(() => {
+    console.log("useEffect triggered. Igreja data:", igreja);
     if (igreja) {
-      console.log("Loading igreja data:", igreja);
-      form.reset({
+      const formData = {
         nome: igreja.nome || "",
         cnpj: igreja.cnpj || "",
         cep: igreja.cep || "",
@@ -94,13 +102,15 @@ export default function ConfiguracoesPage() {
         email: igreja.email || "",
         logo_url: igreja.logo_url || "",
         data_fundacao: igreja.data_fundacao ? new Date(igreja.data_fundacao).toISOString().split('T')[0] : "",
-      });
+      };
+      console.log("Setting form data:", formData);
+      form.reset(formData);
     }
   }, [igreja, form]);
 
   const updateIgrejaMutation = useMutation({
     mutationFn: async (values: IgrejaFormValues) => {
-      console.log("Submitting values:", values);
+      console.log("Submitting igreja update:", values);
       const res = await apiRequest("POST", "/api/user/igreja", values);
       return res.json();
     },
@@ -131,6 +141,19 @@ export default function ConfiguracoesPage() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center text-red-600">
+            Erro ao carregar dados da igreja
           </div>
         </main>
       </div>
