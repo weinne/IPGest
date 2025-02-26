@@ -158,7 +158,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col"> {/* Added max-height and flex-col */}
         <DialogHeader>
           <DialogTitle>Editar Grupo</DialogTitle>
           <DialogDescription>
@@ -166,7 +166,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1"> {/* Wrapped form content in ScrollArea */}
           {isLoading ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -260,7 +260,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
           )}
         </ScrollArea>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-end gap-2 pt-4 border-t"> {/* Moved save button to the bottom */}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
