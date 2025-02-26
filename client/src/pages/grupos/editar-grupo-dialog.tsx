@@ -120,9 +120,17 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
             <div key={item.membro_id} className="flex items-center gap-2 p-2 border rounded">
               <span>{member?.membro.nome || "Membro não encontrado"}</span>
               <Select
-                defaultValue={item.cargo}
+                value={item.cargo}
                 onValueChange={(cargo) => {
-                  updateMemberCargo.mutate({ membroId: item.membro_id, cargo });
+                  const currentMembers = form.getValues("membros");
+                  const updatedMembers = currentMembers.map((m, i) => 
+                    i === index ? { ...m, cargo } : m
+                  );
+                  form.setValue("membros", updatedMembers, { shouldValidate: true });
+                  updateMemberCargo.mutate({ 
+                    membroId: item.membro_id, 
+                    cargo 
+                  });
                 }}
               >
                 <SelectTrigger>
@@ -141,9 +149,10 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                   const currentMembers = form.getValues("membros");
                   form.setValue(
                     "membros",
-                    currentMembers.filter((_, i) => i !== index)
+                    currentMembers.filter((_, i) => i !== index),
+                    { shouldValidate: true }
                   );
-                  removeMember.mutate(item.membro_id);
+                  removeMember.mutate({ membro_id: item.membro_id });
                 }}
               >
                 <X className="h-4 w-4" />
