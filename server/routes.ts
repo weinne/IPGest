@@ -20,7 +20,8 @@ import {
   pastores,
   mandatos_liderancas,
   mandatos_pastores,
-  igrejas
+  igrejas,
+  users // Assuming 'users' table exists
 } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
@@ -53,6 +54,39 @@ function logAudit(req: Request, operacao: string, tipo: string, id: number) {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   app.use('/uploads', express.static(uploadDir));
+
+  // Special route to initialize superadmin - can only be used if no superadmin exists
+  app.post("/api/init-superadmin", async (req, res) => {
+    try {
+      // Check if superadmin already exists
+      const [existingSuperadmin] = await db
+        .select()
+        .from(users)
+        .where(eq(users.role, "superadmin"))
+        .limit(1);
+
+      if (existingSuperadmin) {
+        return res.status(400).json({ message: "Superadmin already exists" });
+      }
+
+      // Create the superadmin user
+      const [user] = await db
+        .insert(users)
+        .values({
+          username: "admin",
+          password: await hashPassword("123456"),
+          role: "superadmin",
+          email: "admin@ipgest.com.br",
+          nome_completo: "Administrador do Sistema",
+        })
+        .returning();
+
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating superadmin:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
 
   // Register Stripe routes with authentication middleware
   app.use("/api/stripe", (req, res, next) => {
@@ -90,7 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: req.body.username,
         password: await hashPassword(req.body.password),
         role: req.body.role || "comum",
-        igreja_id: req.user.igreja_id
+        igreja_id: req.user.igreja_id,
+        nome_completo: req.body.nome_completo,
+        email: req.body.email,
       });
 
       res.status(201).json(user);
@@ -760,11 +796,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             CASE 
               WHEN data_fim IS NOT NULL THEN ' - Fim do mandato'
               ELSE ' - Início do mandato'
-            END
-          )`
+            END          )`
         })
         .from(mandatos_pastores)
-        .innerJoin(pastores, eq(mandatos_pastores.pastor_id, past.id))
+        .innerJoin(pastores, eq(mandatos_pastores.pastor_id, pastores.id))
         .where(
           and(
             eq(mandatos_pastores.igreja_id, igreja_id),
