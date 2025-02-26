@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, date, timestamp, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, date, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -9,17 +9,17 @@ export const igrejas = pgTable("igrejas", {
   cidade: text("cidade").default(""),
   estado: text("estado").default(""),
   presbitero: text("presbitero").default(""),
-  cnpj: text("cnpj"),
-  cep: text("cep"),
-  endereco: text("endereco"),
-  numero: text("numero"),
-  complemento: text("complemento"),
-  bairro: text("bairro"),
-  website: text("website"),
-  telefone: text("telefone"),
-  email: text("email"),
-  logo_url: text("logo_url"),
-  data_fundacao: date("data_fundacao"),
+  cnpj: text("cnpj").default(null),
+  cep: text("cep").default(null),
+  endereco: text("endereco").default(null),
+  numero: text("numero").default(null),
+  complemento: text("complemento").default(null),
+  bairro: text("bairro").default(null),
+  website: text("website").default(null),
+  telefone: text("telefone").default(null),
+  email: text("email").default(null),
+  logo_url: text("logo_url").default(null),
+  data_fundacao: date("data_fundacao").default(null),
 });
 
 // Users - Enhanced with photo
@@ -29,11 +29,11 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role", { enum: ["administrador", "comum"] }).notNull().default("comum"),
   igreja_id: integer("igreja_id").references(() => igrejas.id),
-  nome_completo: text("nome_completo"),
-  email: text("email"),
-  foto_url: text("foto_url"),
-  reset_token: text("reset_token"),
-  reset_token_expiry: timestamp("reset_token_expiry"),
+  nome_completo: text("nome_completo").default(null),
+  email: text("email").default(null),
+  foto_url: text("foto_url").default(null),
+  reset_token: text("reset_token").default(null),
+  reset_token_expiry: timestamp("reset_token_expiry").default(null),
 });
 
 // Grupos/Sociedades
@@ -153,7 +153,6 @@ export const mandatos_liderancas = pgTable("mandatos_liderancas", {
   }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
 });
-
 
 // Schemas para inserção
 export const insertIgrejaSchema = createInsertSchema(igrejas).extend({
@@ -407,6 +406,7 @@ export const insertMandatoLiderancaSchema = createInsertSchema(mandatos_lideranc
     invalid_type_error: "Status inválido",
   }),
 });
+
 
 // Types
 export type Igreja = typeof igrejas.$inferSelect;

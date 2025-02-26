@@ -6,7 +6,6 @@ import multer from "multer";
 import { join } from "path";
 import { mkdir } from "fs/promises";
 import { canWrite, isAdmin } from "./middleware";
-import stripeRoutes from "./routes/stripe";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import express from "express";
@@ -20,8 +19,7 @@ import {
   pastores,
   mandatos_liderancas,
   mandatos_pastores,
-  igrejas,
-  users // Assuming 'users' table exists
+  igrejas
 } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
@@ -55,62 +53,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   app.use('/uploads', express.static(uploadDir));
 
-  // Special route to initialize superadmin - can only be used if no superadmin exists
-  app.post("/api/init-superadmin", async (req, res) => {
-    try {
-      // Check if superadmin already exists
-      const [existingSuperadmin] = await db
-        .select()
-        .from(users)
-        .where(eq(users.role, "superadmin"))
-        .limit(1);
-
-      if (existingSuperadmin) {
-        return res.status(400).json({ message: "Superadmin already exists" });
-      }
-
-      // Create the superadmin user
-      const [user] = await db
-        .insert(users)
-        .values({
-          username: "admin",
-          password: await hashPassword("123456"),
-          role: "superadmin",
-          email: "admin@ipgest.com.br",
-          nome_completo: "Administrador do Sistema",
-        })
-        .returning();
-
-      res.status(201).json(user);
-    } catch (error) {
-      console.error("Error creating superadmin:", error);
-      res.status(500).json({ message: (error as Error).message });
-    }
-  });
-
-  // Register Stripe routes with authentication middleware
-  app.use("/api/stripe", (req, res, next) => {
-    console.log("Stripe middleware - Authentication state:", {
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user ? {
-        id: req.user.id,
-        username: req.user.username,
-        role: req.user.role,
-        igreja_id: req.user.igreja_id
-      } : null
-    });
-
-    if (!req.isAuthenticated()) {
-      console.log("Stripe middleware - User not authenticated");
-      return res.sendStatus(401);
-    }
-    if (req.user.role !== "superadmin") {
-      console.log("Stripe middleware - User is not a superadmin");
-      return res.sendStatus(403);
-    }
-    next();
-  }, stripeRoutes);
-
   app.post("/api/users", async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
@@ -124,9 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: req.body.username,
         password: await hashPassword(req.body.password),
         role: req.body.role || "comum",
-        igreja_id: req.user.igreja_id,
-        nome_completo: req.body.nome_completo,
-        email: req.body.email,
+        igreja_id: req.user.igreja_id
       });
 
       res.status(201).json(user);
@@ -329,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const grupoId = parseInt(req.params.id);
       console.log("Buscando membros do grupo:", grupoId);
-
+      
       const result = await db
         .select({
           id: membros.id,
@@ -796,7 +736,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             CASE 
               WHEN data_fim IS NOT NULL THEN ' - Fim do mandato'
               ELSE ' - Início do mandato'
-            END          )`
+            END
+          )`
         })
         .from(mandatos_pastores)
         .innerJoin(pastores, eq(mandatos_pastores.pastor_id, pastores.id))

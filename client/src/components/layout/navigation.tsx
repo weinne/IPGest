@@ -10,7 +10,6 @@ import {
   UserCog,
   Settings,
   User,
-  CreditCard,
 } from "lucide-react";
 import { allRoutes } from "@/lib/routes";
 import {
@@ -122,14 +121,6 @@ export default function Navigation() {
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
                       Configurações da Igreja
-                    </DropdownMenuItem>
-                  </Link>
-                )}
-                {user?.role === "superadmin" && (
-                  <Link href="/configuracoes/planos">
-                    <DropdownMenuItem>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Planos de Assinatura
                     </DropdownMenuItem>
                   </Link>
                 )}
