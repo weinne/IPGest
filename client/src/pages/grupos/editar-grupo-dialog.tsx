@@ -158,7 +158,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="sm:max-w-[425px] max-h-[calc(100vh-100px)] flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Editar Grupo</DialogTitle>
           <DialogDescription>
@@ -174,7 +174,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
             </div>
           ) : (
             <Form {...form}>
-              <form id="edit-group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
+              <form id="edit-group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4">
                 <FormField
                   control={form.control}
                   name="nome"
