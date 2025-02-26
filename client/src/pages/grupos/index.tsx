@@ -30,7 +30,7 @@ export default function GruposPage() {
   // Query for group members
   const { data: selectedGrupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery({
     queryKey: ["/api/grupos", selectedGrupoId, "membros"],
-    enabled: selectedGrupoId !== null, //removed && dialogOpen
+    enabled: selectedGrupoId !== null,
     onSuccess: (data) => {
       console.log("=== Group Members Loading ===");
       console.log("Selected Group ID:", selectedGrupoId);

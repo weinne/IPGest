@@ -285,7 +285,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
       const formattedResult = result.map(r => ({
-        membro: r.membro,
+        membro: {
+          id: r.membro.id,
+          nome: r.membro.nome,
+          numero_rol: r.membro.numero_rol
+        },
         cargo: r.cargo
       }));
 
