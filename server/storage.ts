@@ -1,4 +1,4 @@
-import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, mandatos_pastores, mandatos_liderancas, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor, type MandatoPastor, type InsertMandatoPastor, type MandatoLideranca, type InsertMandatoLideranca } from "@shared/schema";
+import { users, igrejas, membros, grupos, membros_grupos, liderancas, pastores, mandatos_pastores, mandatos_liderancas, subscription_plans, subscriptions, type User, type InsertUser, type Igreja, type Membro, type InsertMembro, type Grupo, type InsertGrupo, type Lideranca, type InsertLideranca, type Pastor, type InsertPastor, type MandatoPastor, type InsertMandatoPastor, type MandatoLideranca, type InsertMandatoLideranca, type SubscriptionPlan, type InsertSubscriptionPlan, type Subscription, type InsertSubscription } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, gt } from "drizzle-orm";
 import session from "express-session";
@@ -7,7 +7,6 @@ import { pool } from "./db";
 import { sql } from 'drizzle-orm/sql';
 
 import { drizzle } from "drizzle-orm/neon-serverless";
-import * as schema from "@shared/schema";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -116,6 +115,18 @@ export interface IStorage {
   updateUserPassword(id: number, newPassword: string): Promise<void>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   setResetToken(userId: number, token: string, expiry: Date): Promise<void>;
+
+  // Subscription Plans
+  createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+  getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
+  listSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  updateSubscriptionPlan(id: number, plan: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan>;
+
+  // Subscriptions
+  createSubscription(subscription: InsertSubscription): Promise<Subscription>;
+  getSubscription(id: number): Promise<Subscription | undefined>;
+  getSubscriptionByIgreja(igreja_id: number): Promise<Subscription | undefined>;
+  updateSubscription(id: number, subscription: Partial<InsertSubscription>): Promise<Subscription>;
 }
 
 type cargosGrupo = {
@@ -309,7 +320,7 @@ export class DatabaseStorage implements IStorage {
       membros.map(m => ({
         grupo_id,
         membro_id: m.membro_id,
-        cargo: m.cargo as keyof typeof cargosGrupo,
+        cargo: m.cargo as "presidente" | "vice_presidente" | "secretario" | "segundo_secretario" | "tesoureiro" | "segundo_tesoureiro" | "conselheiro" | "membro",
       }))
     );
   }
@@ -814,6 +825,61 @@ export class DatabaseStorage implements IStorage {
         reset_token_expiry: expiry
       })
       .where(eq(users.id, userId));
+  }
+
+  async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const [newPlan] = await db.insert(subscription_plans).values(plan).returning();
+    return newPlan;
+  }
+
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db.select().from(subscription_plans).where(eq(subscription_plans.id, id));
+    return plan;
+  }
+
+  async listSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select().from(subscription_plans).where(eq(subscription_plans.status, 'active'));
+  }
+
+  async updateSubscriptionPlan(id: number, plan: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan> {
+    const [updatedPlan] = await db
+      .update(subscription_plans)
+      .set({ ...plan, updated_at: new Date() })
+      .where(eq(subscription_plans.id, id))
+      .returning();
+    return updatedPlan;
+  }
+
+  async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
+    const [newSubscription] = await db.insert(subscriptions).values(subscription).returning();
+    return newSubscription;
+  }
+
+  async getSubscription(id: number): Promise<Subscription | undefined> {
+    const [subscription] = await db.select().from(subscriptions).where(eq(subscriptions.id, id));
+    return subscription;
+  }
+
+  async getSubscriptionByIgreja(igreja_id: number): Promise<Subscription | undefined> {
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.igreja_id, igreja_id),
+          eq(subscriptions.status, 'active')
+        )
+      );
+    return subscription;
+  }
+
+  async updateSubscription(id: number, subscription: Partial<InsertSubscription>): Promise<Subscription> {
+    const [updatedSubscription] = await db
+      .update(subscriptions)
+      .set({ ...subscription, updated_at: new Date() })
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return updatedSubscription;
   }
 }
 
