@@ -267,9 +267,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      const membros = await storage.getGrupoMembros(parseInt(req.params.id));
-      res.json(membros);
+      const grupoId = parseInt(req.params.id);
+      console.log("Buscando membros do grupo:", grupoId);
+      
+      const result = await db
+        .select({
+          membro: membros,
+          cargo: membros_grupos.cargo
+        })
+        .from(membros_grupos)
+        .innerJoin(membros, eq(membros.id, membros_grupos.membro_id))
+        .where(
+          and(
+            eq(membros_grupos.grupo_id, grupoId),
+            eq(membros.igreja_id, req.user.igreja_id)
+          )
+        );
+
+      const formattedResult = result.map(r => ({
+        membro: r.membro,
+        cargo: r.cargo
+      }));
+
+      console.log("Membros encontrados:", formattedResult.length);
+      res.json(formattedResult);
     } catch (error) {
+      console.error("Erro ao buscar membros do grupo:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
