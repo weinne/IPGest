@@ -435,22 +435,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const filters = req.query;
-      let query = db
-        .select()
-        .from(membros)
-        .where(eq(membros.igreja_id, req.user.igreja_id));
+      console.log("Filters for membros report:", filters);
+      console.log("Igreja ID:", req.user.igreja_id);
+
+      const query = db.select({
+        id: membros.id,
+        numero_rol: membros.numero_rol,
+        nome: membros.nome,
+        tipo: membros.tipo,
+        sexo: membros.sexo,
+        status: membros.status,
+        data_admissao: membros.data_admissao
+      })
+      .from(membros)
+      .where(eq(membros.igreja_id, req.user.igreja_id));
 
       if (filters.tipo) {
-        query = query.where(eq(membros.tipo, filters.tipo as string));
+        query.where(eq(membros.tipo, filters.tipo as string));
       }
       if (filters.sexo) {
-        query = query.where(eq(membros.sexo, filters.sexo as string));
+        query.where(eq(membros.sexo, filters.sexo as string));
       }
       if (filters.status) {
-        query = query.where(eq(membros.status, filters.status as string));
+        query.where(eq(membros.status, filters.status as string));
       }
       if (filters.data_admissao_inicio && filters.data_admissao_fim) {
-        query = query.where(
+        query.where(
           and(
             gte(membros.data_admissao, new Date(filters.data_admissao_inicio as string)),
             lte(membros.data_admissao, new Date(filters.data_admissao_fim as string))
@@ -459,6 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = await query;
+      console.log("Query result count:", result.length);
       res.json(result);
     } catch (error) {
       console.error("Error in /api/reports/membros:", error);
@@ -473,6 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { data_inicio, data_fim } = req.query;
       const igreja_id = req.user.igreja_id;
+      console.log("Getting statistics for igreja:", igreja_id);
 
       const [admissoesPorTipo] = await db
         .select({
@@ -520,23 +532,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: grupos.id,
           nome: grupos.nome,
           tipo: grupos.tipo,
-          membros_count: sql<number>`COUNT(membros_grupos.membro_id)`
+          membros_count: sql<number>`COUNT(DISTINCT CASE WHEN ${membros.status} = 'ativo' THEN ${membros_grupos.membro_id} END)`
         })
         .from(grupos)
         .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
+        .leftJoin(membros, eq(membros_grupos.membro_id, membros.id))
         .where(eq(grupos.igreja_id, igreja_id))
         .groupBy(grupos.id, grupos.nome, grupos.tipo);
 
       const [liderancasCount] = await db
         .select({
-          pastores: sql<number>`COUNT(DISTINCT pastores.id)`,
-          presbiteros: sql<number>`COUNT(DISTINCT CASE WHEN liderancas.cargo = 'presbitero' THEN liderancas.id END)`,
-          diaconos: sql<number>`COUNT(DISTINCT CASE WHEN liderancas.cargo = 'diacono' THEN liderancas.id END)`
+          pastores: sql<number>`COUNT(DISTINCT CASE WHEN ${pastores.igreja_id} = ${igreja_id} THEN ${pastores.id} END)`,
+          presbiteros: sql<number>`COUNT(DISTINCT CASE WHEN ${liderancas.cargo} = 'presbitero' AND ${liderancas.igreja_id} = ${igreja_id} THEN ${liderancas.id} END)`,
+          diaconos: sql<number>`COUNT(DISTINCT CASE WHEN ${liderancas.cargo} = 'diacono' AND ${liderancas.igreja_id} = ${igreja_id} THEN ${liderancas.id} END)`
         })
         .from(liderancas)
-        .leftJoin(pastores, eq(pastores.igreja_id, igreja_id))
-        .where(eq(liderancas.igreja_id, igreja_id));
+        .leftJoin(pastores, eq(pastores.igreja_id, igreja_id));
 
+      console.log("Statistics compiled for igreja:", igreja_id);
       res.json({
         admissoes: admissoesPorTipo,
         membros: {
@@ -656,7 +669,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const igreja_id = req.user.igreja_id;
 
-      // Distribuição por tipo
       const [distribuicaoTipos] = await db
         .select({
           comungantes: sql<number>`COALESCE(COUNT(CASE WHEN tipo = 'comungante' AND status = 'ativo' THEN 1 END), 0)::int`,
@@ -665,7 +677,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(membros)
         .where(eq(membros.igreja_id, igreja_id));
 
-      // Distribuição por idade
       const [distribuicaoIdade] = await db
         .select({
           jovens: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) < 30 THEN 1 END), 0)::int`,
@@ -675,7 +686,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(membros)
         .where(eq(membros.igreja_id, igreja_id));
 
-      // Distribuição por modo de admissão
       const [distribuicaoAdmissao] = await db
         .select({
           batismo: sql<number>`COALESCE(COUNT(CASE WHEN tipo_admissao = 'batismo' AND status = 'ativo' THEN 1 END), 0)::int`,
@@ -687,7 +697,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(membros)
         .where(eq(membros.igreja_id, igreja_id));
 
-      // Crescimento mensal (últimos 12 meses)
       const crescimentoMensal = await db
         .select({
           mes: sql<string>`DATE_TRUNC('month', data_admissao)::date`,
@@ -700,11 +709,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             gte(membros.data_admissao, sql`CURRENT_DATE - INTERVAL '1 year'`),
             eq(membros.status, 'ativo')
           )
-        )
+                )
         .groupBy(sql`DATE_TRUNC('month', data_admissao)`)
         .orderBy(sql`DATE_TRUNC('month', data_admissao)`);
 
-      // Distribuição por sociedade
       const distribuicaoSociedades = await db
         .select({
           sociedade: grupos.nome,
