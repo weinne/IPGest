@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...req.body,
           foto: req.file ? req.file.filename : null,
           igreja_id: req.user.igreja_id,
-          data_admissao: new Date(), // Definindo data de admissão como data atual
+          data_admissao: req.body.data_admissao ? new Date(req.body.data_admissao) : new Date(), // Usa data do form ou data atual
           data_nascimento: req.body.data_nascimento ? new Date(req.body.data_nascimento) : null,
           data_batismo: req.body.data_batismo ? new Date(req.body.data_batismo) : null,
           data_profissao_fe: req.body.data_profissao_fe ? new Date(req.body.data_profissao_fe) : null,
@@ -743,7 +743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(membros.igreja_id, igreja_id));
 
       const [distribuicaoIdade] = await db        .select({
-          jovens: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) < 30 THEN 1 END), 0)::int`,
+          jovens: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENTDATE, data_nascimento)) < 30 THEN 1 END), 0)::int`,
           adultos: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) BETWEEN 30 AND 59 THEN 1 END), 0)::int`,
           idosos: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) >= 60 THEN 1 END), 0)::int`
         })
