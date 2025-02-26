@@ -15,41 +15,33 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { insertGrupoSchema, type InsertGrupo } from "@shared/schema";
-import { CheckIcon, Loader2, X } from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { useGroupMembers } from "@/hooks/useGroupMembers";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { insertGrupoSchema, type InsertGrupo, type Grupo, type Membro } from "@shared/schema";
+import { Loader2, UserPlus, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import cn from 'classnames';
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface EditarGrupoDialogProps {
-  grupo: {
-    id: number;
-    nome: string;
-    tipo: string;
-    status: string;
-    descricao: string | null;
-  };
+  grupo: Grupo;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialMembers?: Array<{
+    membro: Membro;
+    cargo: string;
+  }>;
 }
 
 const tiposGrupo = {
@@ -77,108 +69,124 @@ const cargosGrupo = {
   membro: "Membro",
 } as const;
 
+type GrupoFormData = {
+  nome: string;
+  tipo: keyof typeof tiposGrupo;
+  status: "ativo" | "inativo";
+  descricao?: string | null;
+  membros: Array<{
+    membro_id: number;
+    cargo: keyof typeof cargosGrupo;
+  }>;
+};
 
-export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDialogProps) {
+export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = [] }: EditarGrupoDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { members, isLoading, addMember, removeMember, updateMemberCargo } = useGroupMembers(grupo.id);
-  const { data: allMembers = [] } = useQuery({
+
+  console.log("\n=== EditarGrupoDialog Render ===");
+  console.log("Group:", grupo.id);
+  console.log("Initial members:", initialMembers);
+
+  // Fetch all members for selection
+  const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
     queryKey: ["/api/membros"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/membros");
-      return response.json();
-    }
+    onSuccess: (data) => {
+      console.log("All members loaded for selection:", data.length, "members");
+    },
   });
 
-  const form = useForm<InsertGrupo>({
+  const form = useForm<GrupoFormData>({
     resolver: zodResolver(insertGrupoSchema),
     defaultValues: {
       nome: grupo.nome,
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: []
-    }
+      membros: [], // Start with empty array, will be populated in useEffect
+    },
   });
 
+  // Update form when initial members change
   useEffect(() => {
-    if (members.length) {
-      const validMembers = members.map(m => ({
-        membro_id: m.membro.id,
-        cargo: m.cargo
-      }));
+    if (initialMembers?.length > 0) {
+      console.log("\n=== Setting Initial Members ===");
+      console.log("Initial members count:", initialMembers.length);
+      
+      const validMembers = initialMembers
+        .filter(m => m.membro && m.membro.id && m.membro.nome)
+        .map(m => ({
+          membro_id: m.membro.id,
+          cargo: m.cargo as keyof typeof cargosGrupo
+        }));
+
+      if (!validMembers.length) {
+        console.warn("Não há membros válidos para exibir.");
+      }
+
       form.setValue("membros", validMembers);
+
+      try {
+        const validMembers = initialMembers
+          .filter(item => {
+            const isValid = item && item.membro && typeof item.membro.id === 'number';
+            if (!isValid) {
+              console.warn("Invalid member found:", item);
+            }
+            return isValid;
+          })
+          .map(({ membro, cargo }) => ({
+            membro_id: membro.id,
+            cargo: cargo as keyof typeof cargosGrupo,
+          }));
+
+        console.log("Valid members to set:", validMembers);
+        form.setValue("membros", validMembers);
+      } catch (error) {
+        console.error("Error setting members:", error);
+      }
     }
-  }, [members, form]);
+  }, [initialMembers, form]);
 
-  function GroupMemberManager() {
-    return (
-      <div className="space-y-2">
-        {form.watch("membros")?.map((item, index) => {
-          const member = members.find(m => m.membro.id === item.membro_id);
-          return (
-            <div key={item.membro_id} className="flex items-center gap-2 p-2 border rounded">
-              <span>{member?.membro.nome || "Membro não encontrado"}</span>
-              <Select
-                value={item.cargo || "membro"}
-                onValueChange={(cargo) => {
-                  updateMemberCargo.mutate({ 
-                    membroId: item.membro_id, 
-                    cargo 
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(cargosGrupo).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  const currentMembers = form.getValues("membros");
-                  form.setValue(
-                    "membros",
-                    currentMembers.filter((_, i) => i !== index),
-                    { shouldValidate: true }
-                  );
-                  removeMember.mutate({ membro_id: item.membro_id });
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
+  const currentMembers = form.watch("membros") || [];
+  console.log("Current members in form:", currentMembers);
 
-  const onSubmit = async (data: InsertGrupo) => {
-    try {
-      await apiRequest("PATCH", `/api/grupos/${grupo.id}`, {
-        body: JSON.stringify(data)
-      });
-
+  const mutation = useMutation({
+    mutationFn: async (data: GrupoFormData) => {
+      console.log("Submitting group update with data:", data);
+      const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/grupos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/grupos", grupo.id, "membros"] });
       toast({
         title: "Grupo atualizado",
-        description: "As alterações foram salvas com sucesso."
+        description: "As informações do grupo foram atualizadas com sucesso.",
       });
       onOpenChange(false);
-    } catch (error) {
+    },
+    onError: (error: Error) => {
+      console.error("Error updating group:", error);
       toast({
-        title: "Erro ao atualizar",
-        description: "Não foi possível salvar as alterações.",
-        variant: "destructive"
+        title: "Erro ao atualizar grupo",
+        description: error.message,
+        variant: "destructive",
       });
-    }
-  };
+    },
+  });
+
+  if (isLoadingMembros) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0 p-0">
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,163 +194,190 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Editar Grupo</DialogTitle>
           <DialogDescription>
-            Atualize os dados do grupo, incluindo os membros.
+            Atualize as informações do grupo ou sociedade interna.
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-6 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Carregando membros...</span>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form id="edit-group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="nome"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Grupo</FormLabel>
+          <Form {...form}>
+            <form
+              id="edit-group-form"
+              onSubmit={form.handleSubmit((data) => {
+                console.log("Form submitted with data:", data);
+                mutation.mutate(data);
+              })}
+              className="space-y-4 py-4"
+            >
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tipo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tipo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
+                      <SelectContent>
+                        {Object.entries(tiposGrupo).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ativo">Ativo</SelectItem>
+                        <SelectItem value="inativo">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="membros"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Membros do Grupo</FormLabel>
+                    <Card>
+                      <CardContent className="p-4 space-y-4">
+                        <div className="flex flex-col gap-2">
+                          {field.value?.map((membro, index) => {
+                            const membroData = membros.find(m => m.id === membro.membro_id);
+                            if (!membroData) return null;
+
+                            return (
+                              <div key={membro.membro_id} className="flex items-center gap-2 p-2 border rounded">
+                                <span className="flex-1">{membroData.nome}</span>
+                                <Select
+                                  defaultValue={membro.cargo}
+                                  onValueChange={(cargo) => {
+                                    const newValue = [...field.value];
+                                    newValue[index] = {
+                                      ...newValue[index],
+                                      cargo: cargo as keyof typeof cargosGrupo,
+                                    };
+                                    form.setValue("membros", newValue);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[150px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Object.entries(cargosGrupo).map(([value, label]) => (
+                                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const newValue = field.value.filter((_, i) => i !== index);
+                                    form.setValue("membros", newValue);
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <Select
+                          onValueChange={(value) => {
+                            const membroId = parseInt(value);
+                            if (!field.value.some(m => m.membro_id === membroId)) {
+                              form.setValue("membros", [
+                                ...field.value,
+                                { membro_id: membroId, cargo: "membro" }
+                              ]);
+                            }
+                          }}
+                        >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
+                            <div className="flex items-center gap-2">
+                              <UserPlus className="h-4 w-4" />
+                              <span>Adicionar membro</span>
+                            </div>
                           </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(tiposGrupo).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="ativo">Ativo</SelectItem>
-                          <SelectItem value="inativo">Inativo</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="descricao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="membros"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Membros do Grupo</FormLabel>
-                      <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className="w-full justify-between"
-                            >
-                              Adicionar membros
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0" side="top">
-                            <Command>
-                              <CommandInput placeholder="Procurar membro..." />
-                              <CommandEmpty>Nenhum membro encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                <ScrollArea className="h-[200px]">
-                                  {allMembers.map((member) => {
-                                    const isSelected = field.value?.some(
-                                      (item) => item.membro_id === member.id
-                                    );
-                                    return (
-                                      <CommandItem
-                                        key={member.id}
-                                        onSelect={() => {
-                                          if (!isSelected) {
-                                            const current = field.value || [];
-                                            form.setValue("membros", [...current, { membro_id: member.id, cargo: "membro" }], {
-                                              shouldValidate: true,
-                                            });
-                                            addMember.mutate({ membro_id: member.id, cargo: "membro" });
-                                          }
-                                        }}
-                                        className="flex items-center justify-between py-2"
-                                      >
-                                        <div className="flex items-center">
-                                          <CheckIcon
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              isSelected ? "opacity-100" : "opacity-0"
-                                            )}
-                                          />
-                                          <span>{member.nome}</span>
-                                        </div>
-                                      </CommandItem>
-                                    );
-                                  })}
-                                </ScrollArea>
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <GroupMemberManager />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
-          )}
+                          <SelectContent>
+                            {membros
+                              .filter(membro => !field.value.some(m => m.membro_id === membro.id))
+                              .map(membro => (
+                                <SelectItem key={membro.id} value={membro.id.toString()}>
+                                  {membro.nome}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </CardContent>
+                    </Card>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </ScrollArea>
 
-        <div className="flex justify-end px-6 py-4 border-t mt-auto">
-          <Button 
-            form="edit-group-form"
-            type="submit" 
-            className="w-full"
-          >
+        <div className="flex justify-end gap-2 px-6 py-4 border-t mt-auto">
+          <Button form="edit-group-form" type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
             Salvar
           </Button>
         </div>
