@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { UsersRound, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
-import { Grupo } from "@shared/schema";
+import { Grupo, type Membro } from "@shared/schema";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,6 +97,11 @@ const columns = [
         },
       });
 
+      const { data: grupoMembros = [] } = useQuery({
+        queryKey: ["/api/grupos", grupo.id, "membros"],
+        enabled: open,
+      });
+
       return (
         <>
           <DropdownMenu>
@@ -124,7 +129,12 @@ const columns = [
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <EditarGrupoDialog grupo={grupo} open={open} onOpenChange={setOpen} />
+          <EditarGrupoDialog 
+            grupo={grupo} 
+            open={open} 
+            onOpenChange={setOpen} 
+            initialMembers={grupoMembros}
+          />
         </>
       );
     },

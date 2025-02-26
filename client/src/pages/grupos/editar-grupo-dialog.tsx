@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { insertGrupoSchema, type InsertGrupo, type Grupo, type Membro } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -50,6 +50,10 @@ interface EditarGrupoDialogProps {
   grupo: Grupo;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialMembers: Array<{
+    membro: Membro;
+    cargo: string;
+  }>;
 }
 
 interface GrupoMembro {
@@ -93,18 +97,15 @@ type GrupoFormData = {
   }>;
 };
 
-export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDialogProps) {
+export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }: EditarGrupoDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
+  const { data: membros = [] } = useQuery<Membro[]>({
     queryKey: ["/api/membros"],
   });
 
-  const { data: grupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery<GrupoMembro[]>({
-    queryKey: ["/api/grupos", grupo.id, "membros"],
-    enabled: open,
-  });
+  console.log("Initial members:", initialMembers);
 
   const form = useForm<GrupoFormData>({
     resolver: zodResolver(insertGrupoSchema),
@@ -113,15 +114,18 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: [],
+      membros: initialMembers?.map(({ membro, cargo }) => ({
+        membro_id: membro.id,
+        cargo: cargo as keyof typeof cargosGrupo,
+      })) || [],
     },
   });
 
-  // Update form when group members are loaded
+  // Update form when initial members change
   useEffect(() => {
-    if (grupoMembros?.length > 0) {
-      console.log("Setting group members in form:", grupoMembros);
-      const membrosData = grupoMembros
+    if (initialMembers?.length > 0) {
+      console.log("Setting initial members in form:", initialMembers);
+      const membrosData = initialMembers
         .filter(item => item?.membro && item.membro.id)
         .map(({ membro, cargo }) => ({
           membro_id: membro.id,
@@ -129,7 +133,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
         }));
       form.setValue("membros", membrosData);
     }
-  }, [grupoMembros, form]);
+  }, [initialMembers, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: GrupoFormData) => {
@@ -201,7 +205,14 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
         <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
-            <form id="edit-group-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4 py-4">
+            <form 
+              id="edit-group-form" 
+              onSubmit={form.handleSubmit((data) => {
+                console.log("Submitting form with data:", data);
+                mutation.mutate(data);
+              })} 
+              className="space-y-4 py-4"
+            >
               <FormField
                 control={form.control}
                 name="nome"
