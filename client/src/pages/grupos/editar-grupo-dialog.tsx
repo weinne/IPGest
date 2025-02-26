@@ -111,39 +111,26 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
   useEffect(() => {
     if (initialMembers?.length > 0) {
       console.log("\n=== Setting Initial Members ===");
-      console.log("Initial members count:", initialMembers.length);
-      
-      const validMembers = initialMembers
-        .filter(m => m.membro && m.membro.id && m.membro.nome)
-        .map(m => ({
-          membro_id: m.membro.id,
-          cargo: m.cargo as keyof typeof cargosGrupo
-        }));
-
-      if (!validMembers.length) {
-        console.warn("Não há membros válidos para exibir.");
-      }
-
-      form.setValue("membros", validMembers);
+      console.log("Initial members:", initialMembers);
 
       try {
         const validMembers = initialMembers
           .filter(item => {
-            const isValid = item && item.membro && typeof item.membro.id === 'number';
-            if (!isValid) {
-              console.warn("Invalid member found:", item);
+            if (!item?.membro?.id) {
+              console.warn("Membro inválido:", item);
+              return false;
             }
-            return isValid;
+            return true;
           })
-          .map(({ membro, cargo }) => ({
-            membro_id: membro.id,
-            cargo: cargo as keyof typeof cargosGrupo,
+          .map(item => ({
+            membro_id: item.membro.id,
+            cargo: item.cargo
           }));
 
-        console.log("Valid members to set:", validMembers);
+        console.log("Membros válidos:", validMembers);
         form.setValue("membros", validMembers);
       } catch (error) {
-        console.error("Error setting members:", error);
+        console.error("Erro ao definir membros:", error);
       }
     }
   }, [initialMembers, form]);
