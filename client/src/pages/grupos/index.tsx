@@ -31,8 +31,11 @@ export default function GruposPage() {
     queryKey: ["/api/grupos", selectedGrupoId, "membros"],
     enabled: selectedGrupoId !== null && dialogOpen,
     onSuccess: (data) => {
-      console.log("Loaded members for group:", selectedGrupoId, data);
+      console.log("Loaded members for group:", selectedGrupoId, "Members data:", data);
     },
+    onError: (error) => {
+      console.error("Error loading group members:", error);
+    }
   });
 
   const deleteMutation = useMutation({
@@ -150,6 +153,7 @@ export default function GruposPage() {
                 grupo={grupo} 
                 open={dialogOpen} 
                 onOpenChange={(open) => {
+                  console.log("Dialog change:", { open, selectedGrupoId, membersData: selectedGrupoMembros });
                   if (!open) {
                     setSelectedGrupoId(null);
                   }

@@ -84,13 +84,13 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  console.log("Initial members received:", initialMembers);
+  console.log("EditarGrupoDialog mounted with grupo:", grupo.id, "initialMembers:", initialMembers);
 
   // Fetch all members for selection
   const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
     queryKey: ["/api/membros"],
     onSuccess: (data) => {
-      console.log("All members loaded:", data);
+      console.log("All members loaded for selection:", data.length, "members");
     },
   });
 
@@ -101,21 +101,33 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: [],
+      membros: initialMembers?.map(({ membro, cargo }) => {
+        console.log("Mapping initial member:", membro.id, membro.nome, cargo);
+        return {
+          membro_id: membro.id,
+          cargo: cargo as keyof typeof cargosGrupo,
+        };
+      }) || [],
     },
   });
 
   useEffect(() => {
     if (initialMembers?.length > 0) {
-      console.log("Setting initial members in form:", initialMembers);
+      console.log("Setting initial members in form, count:", initialMembers.length);
       const validMembers = initialMembers
-        .filter(item => item?.membro && item.membro.id)
+        .filter(item => {
+          const isValid = item?.membro && item.membro.id;
+          if (!isValid) {
+            console.warn("Invalid member in initialMembers:", item);
+          }
+          return isValid;
+        })
         .map(({ membro, cargo }) => ({
           membro_id: membro.id,
           cargo: cargo as keyof typeof cargosGrupo,
         }));
 
-      console.log("Valid members to set:", validMembers);
+      console.log("Setting valid members in form:", validMembers);
       form.setValue("membros", validMembers);
     }
   }, [initialMembers, form]);
@@ -172,12 +184,12 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
 
         <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
-            <form 
-              id="edit-group-form" 
+            <form
+              id="edit-group-form"
               onSubmit={form.handleSubmit((data) => {
                 console.log("Form submitted with data:", data);
                 mutation.mutate(data);
-              })} 
+              })}
               className="space-y-4 py-4"
             >
               <FormField

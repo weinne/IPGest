@@ -316,6 +316,15 @@ export class DatabaseStorage implements IStorage {
 
   async getGrupoMembros(grupo_id: number): Promise<Array<{ membro: Membro; cargo: string }>> {
     console.log("Getting members for group:", grupo_id);
+
+    // First verify if the grupo_id exists in membros_grupos
+    const memberCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(membros_grupos)
+      .where(eq(membros_grupos.grupo_id, grupo_id));
+
+    console.log("Found member associations count:", memberCount[0]?.count);
+
     const result = await db
       .select({
         membro: membros,
@@ -326,15 +335,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(membros_grupos.grupo_id, grupo_id))
       .orderBy(membros.nome);
 
-    console.log("Found group members:", result);
+    console.log("Raw database result:", result);
 
     // Ensure we only return results where membro exists and properly format the response
-    return result
+    const formattedResult = result
       .filter(r => r.membro !== null)
       .map(r => ({
         membro: r.membro,
         cargo: r.cargo as string
       }));
+
+    console.log("Formatted group members result:", formattedResult);
+    return formattedResult;
   }
   async deleteMandatoLideranca(id: number): Promise<void> {
     await db.delete(mandatos_liderancas).where(eq(mandatos_liderancas.id, id));
@@ -784,8 +796,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .where(
-        and(
-          eq(users.reset_token, token),
+        and(          eq(users.reset_token, token),
           gt(users.reset_token_expiry!, new Date())
         )
       );
