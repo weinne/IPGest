@@ -315,9 +315,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGrupoMembros(grupo_id: number): Promise<Array<{ membro: Membro; cargo: string }>> {
-    console.log("Getting members for group:", grupo_id);
+    console.log("\n=== Getting Members for Group ===");
+    console.log("Group ID:", grupo_id);
 
-    // First verify if the grupo_id exists in membros_grupos
+    // First verify if the grupo exists and has members
     const memberCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(membros_grupos)
@@ -335,7 +336,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(membros_grupos.grupo_id, grupo_id))
       .orderBy(membros.nome);
 
-    console.log("Raw database result:", result);
+    console.log("Raw database result:", JSON.stringify(result, null, 2));
 
     // Ensure we only return results where membro exists and properly format the response
     const formattedResult = result
@@ -345,7 +346,9 @@ export class DatabaseStorage implements IStorage {
         cargo: r.cargo as string
       }));
 
-    console.log("Formatted group members result:", formattedResult);
+    console.log("Formatted group members result:", JSON.stringify(formattedResult, null, 2));
+    console.log("=== End of Group Members Query ===\n");
+
     return formattedResult;
   }
   async deleteMandatoLideranca(id: number): Promise<void> {

@@ -27,14 +27,23 @@ export default function GruposPage() {
     queryKey: ["/api/grupos"],
   });
 
+  // Query for group members
   const { data: selectedGrupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery({
     queryKey: ["/api/grupos", selectedGrupoId, "membros"],
-    enabled: selectedGrupoId !== null && dialogOpen,
+    enabled: selectedGrupoId !== null, //removed && dialogOpen
     onSuccess: (data) => {
-      console.log("Loaded members for group:", selectedGrupoId, "Members data:", data);
+      console.log("=== Group Members Loading ===");
+      console.log("Selected Group ID:", selectedGrupoId);
+      console.log("Loaded members data:", data);
+      console.log("=========================");
     },
     onError: (error) => {
       console.error("Error loading group members:", error);
+      toast({
+        title: "Erro ao carregar membros",
+        description: "Não foi possível carregar os membros do grupo.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -147,12 +156,17 @@ export default function GruposPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {selectedGrupoId === grupo.id && !isLoadingGrupoMembros && (
+            {selectedGrupoId === grupo.id && (
               <EditarGrupoDialog 
                 grupo={grupo} 
                 open={dialogOpen} 
                 onOpenChange={(open) => {
-                  console.log("Dialog change:", { open, selectedGrupoId, membersData: selectedGrupoMembros });
+                  console.log("Dialog state change:", {
+                    open,
+                    selectedGrupoId,
+                    membersCount: selectedGrupoMembros?.length,
+                    membersData: selectedGrupoMembros
+                  });
                   if (!open) {
                     setSelectedGrupoId(null);
                   }

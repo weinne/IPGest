@@ -84,7 +84,9 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  console.log("EditarGrupoDialog mounted with grupo:", grupo.id, "initialMembers:", initialMembers);
+  console.log("\n=== EditarGrupoDialog Render ===");
+  console.log("Group:", grupo.id);
+  console.log("Initial members:", initialMembers);
 
   // Fetch all members for selection
   const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
@@ -101,55 +103,37 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: [], // This line is changed
+      membros: [], // Start with empty array, will be populated in useEffect
     },
   });
 
+  // Update form when initial members change
   useEffect(() => {
     if (initialMembers?.length > 0) {
-      console.log("Setting initial members in form, count:", initialMembers.length);
-      const validMembers = initialMembers
-        .filter(item => {
-          const isValid = item?.membro && item.membro.id;
-          if (!isValid) {
-            console.warn("Invalid member in initialMembers:", item);
-          }
-          return isValid;
-        })
-        .map(({ membro, cargo }) => ({
-          membro_id: membro.id,
-          cargo: cargo as keyof typeof cargosGrupo,
-        }));
+      console.log("\n=== Setting Initial Members ===");
+      console.log("Initial members count:", initialMembers.length);
 
-      console.log("Setting valid members in form:", validMembers);
-      form.setValue("membros", validMembers);
+      try {
+        const validMembers = initialMembers
+          .filter(item => {
+            const isValid = item && item.membro && typeof item.membro.id === 'number';
+            if (!isValid) {
+              console.warn("Invalid member found:", item);
+            }
+            return isValid;
+          })
+          .map(({ membro, cargo }) => ({
+            membro_id: membro.id,
+            cargo: cargo as keyof typeof cargosGrupo,
+          }));
+
+        console.log("Valid members to set:", validMembers);
+        form.setValue("membros", validMembers);
+      } catch (error) {
+        console.error("Error setting members:", error);
+      }
     }
   }, [initialMembers, form]);
-
-  const mutation = useMutation({
-    mutationFn: async (data: GrupoFormData) => {
-      console.log("Submitting group update with data:", data);
-      const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/grupos"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/grupos", grupo.id, "membros"] });
-      toast({
-        title: "Grupo atualizado",
-        description: "As informações do grupo foram atualizadas com sucesso.",
-      });
-      onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      console.error("Error updating group:", error);
-      toast({
-        title: "Erro ao atualizar grupo",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const currentMembers = form.watch("membros") || [];
   console.log("Current members in form:", currentMembers);
