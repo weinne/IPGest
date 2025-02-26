@@ -117,10 +117,12 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
     },
   });
 
+  // Update form when group members are loaded
   useEffect(() => {
     if (grupoMembros?.length > 0) {
+      console.log("Setting group members in form:", grupoMembros);
       const membrosData = grupoMembros
-        .filter(item => item?.membro)
+        .filter(item => item?.membro && item.membro.id)
         .map(({ membro, cargo }) => ({
           membro_id: membro.id,
           cargo: cargo as keyof typeof cargosGrupo,
@@ -131,11 +133,13 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
   const mutation = useMutation({
     mutationFn: async (data: GrupoFormData) => {
+      console.log("Updating group with data:", data);
       const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/grupos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/grupos", grupo.id, "membros"] });
       toast({
         title: "Grupo atualizado",
         description: "As informações do grupo foram atualizadas com sucesso.",
