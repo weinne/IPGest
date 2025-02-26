@@ -35,7 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useGroupMembers } from "@/hooks/useGroupMembers";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
