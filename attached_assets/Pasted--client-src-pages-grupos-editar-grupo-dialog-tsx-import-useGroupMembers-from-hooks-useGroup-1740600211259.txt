@@ -1,0 +1,103 @@
+// client/src/pages/grupos/editar-grupo-dialog.tsx
+import { useGroupMembers } from "@/hooks/useGroupMembers";
+// ... outros imports
+
+export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDialogProps) {
+  const { members, isLoading, addMember, removeMember } = useGroupMembers(grupo.id);
+  const form = useForm<GrupoFormData>({
+    resolver: zodResolver(insertGrupoSchema),
+    defaultValues: {
+      nome: grupo.nome,
+      tipo: grupo.tipo,
+      status: grupo.status,
+      descricao: grupo.descricao || "",
+      membros: [],
+    },
+  });
+
+  // Sempre que os membros forem carregados, atualiza o formulário
+  useEffect(() => {
+    if (members.length) {
+      const validMembers = members.map(m => ({ membro_id: m.id, cargo: "membro" }));
+      form.setValue("membros", validMembers);
+    }
+  }, [members, form]);
+
+  // Exemplo de subcomponente para gerenciar a lista
+  function GroupMemberManager() {
+    return (
+      <div>
+        {form.watch("membros").map((item, index) => (
+          <div key={item.membro_id} className="flex items-center gap-2 p-2 border rounded">
+            <span>
+              {members.find(m => m.id === item.membro_id)?.nome || "Membro não encontrado"}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const newMembers = form.getValues("membros").filter((_, i) => i !== index);
+                form.setValue("membros", newMembers);
+                removeMember.mutate(item.membro_id);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        {/* Botão para adicionar membro (pode abrir um seletor) */}
+        <Button
+          variant="outline"
+          onClick={() => {
+            // Exemplo de adicionar membro com ID fixo para ilustração:
+            addMember.mutate({ membro_id: 123, cargo: "membro" });
+          }}
+        >
+          Adicionar Membro
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Editar Grupo</DialogTitle>
+          <DialogDescription>Atualize os dados do grupo, incluindo os membros.</DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            Carregando membros...
+          </div>
+        ) : (
+          <>
+            <Form {...form}>
+              <form id="edit-group-form" onSubmit={form.handleSubmit((data) => {
+                // Envio dos dados do grupo junto com a lista de membros
+                console.log("Dados submetidos:", data);
+                // Chamada à API para atualização...
+              })} className="space-y-4 py-4">
+                {/* Outros campos do grupo */}
+                <FormField
+                  control={form.control}
+                  name="membros"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Membros do Grupo</FormLabel>
+                      <GroupMemberManager />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button form="edit-group-form" type="submit">
+                  Salvar
+                </Button>
+              </form>
+            </Form>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
