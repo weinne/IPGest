@@ -115,6 +115,14 @@ export interface IStorage {
   setResetToken(userId: number, token: string, expiry: Date): Promise<void>;
 }
 
+type cargosGrupo = {
+  lider: string,
+  secretario: string,
+  tesoureiro: string,
+  membro: string
+}
+
+
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
@@ -258,13 +266,7 @@ export class DatabaseStorage implements IStorage {
     const [novoGrupo] = await db.insert(grupos).values(grupoData).returning();
 
     if (membrosData && membrosData.length > 0) {
-      await db.insert(membros_grupos).values(
-        membrosData.map(m => ({
-          grupo_id: novoGrupo.id,
-          membro_id: m.membro_id,
-          cargo: m.cargo
-        }))
-      );
+      await this.addMembrosToGrupo(novoGrupo.id, membrosData);
     }
 
     return novoGrupo;
@@ -275,7 +277,7 @@ export class DatabaseStorage implements IStorage {
       membros.map(m => ({
         grupo_id,
         membro_id: m.membro_id,
-        cargo: m.cargo,
+        cargo: m.cargo as keyof typeof cargosGrupo,
       }))
     );
   }
@@ -381,13 +383,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(membros_grupos).where(eq(membros_grupos.grupo_id, id));
       // Add new members if any
       if (membrosData.length > 0) {
-        await db.insert(membros_grupos).values(
-          membrosData.map(m => ({
-            grupo_id: id,
-            membro_id: m.membro_id,
-            cargo: m.cargo
-          }))
-        );
+        await this.addMembrosToGrupo(id, membrosData);
       }
     }
 

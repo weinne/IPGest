@@ -86,9 +86,8 @@ export const membros = pgTable("membros", {
 
 // Membros-grupos
 export const membros_grupos = pgTable("membros_grupos", {
-  id: serial("id").primaryKey(),
-  membro_id: integer("membro_id").references(() => membros.id),
-  grupo_id: integer("grupo_id").references(() => grupos.id),
+  membro_id: integer("membro_id").references(() => membros.id).notNull(),
+  grupo_id: integer("grupo_id").references(() => grupos.id).notNull(),
   cargo: text("cargo", {
     enum: [
       "presidente",
@@ -100,7 +99,7 @@ export const membros_grupos = pgTable("membros_grupos", {
       "conselheiro",
       "membro"
     ]
-  }).default("membro"),
+  }).notNull().default("membro"),
 });
 
 // Lideranças
