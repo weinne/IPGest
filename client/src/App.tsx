@@ -13,6 +13,7 @@ import RelatoriosPage from "@/pages/relatorios";
 import UsuariosPage from "@/pages/usuarios";
 import PerfilPage from "@/pages/perfil";
 import ConfiguracoesPage from "@/pages/configuracoes";
+import ConfiguracoesPlanosPage from "@/pages/configuracoes/planos";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
       <ProtectedRoute path="/usuarios" component={UsuariosPage} />
       <ProtectedRoute path="/perfil" component={PerfilPage} />
       <ProtectedRoute path="/configuracoes" component={ConfiguracoesPage} />
+      <ProtectedRoute path="/configuracoes/planos" component={ConfiguracoesPlanosPage} />
       <Route component={NotFound} />
     </Switch>
   );
