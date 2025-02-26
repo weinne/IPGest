@@ -141,7 +141,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMembros(igreja_id: number): Promise<Membro[]> {
-    return await db.select().from(membros).where(eq(membros.igreja_id, igreja_id));
+    console.log("Getting members for igreja:", igreja_id);
+    const result = await db
+      .select()
+      .from(membros)
+      .where(eq(membros.igreja_id, igreja_id))
+      .orderBy(membros.nome);
+    console.log("Found members:", result.length);
+    return result;
   }
 
   async getGrupos(igreja_id: number): Promise<Grupo[]> {
@@ -204,11 +211,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMembro(membro: InsertMembro & { igreja_id: number }): Promise<Membro> {
-    const [novoMembro] = await db.insert(membros).values({
-      ...membro,
-      data_admissao: new Date(),
-      data_nascimento: membro.data_nascimento ? new Date(membro.data_nascimento) : null,
-    }).returning();
+    console.log("Creating member for igreja:", membro.igreja_id);
+    const [novoMembro] = await db
+      .insert(membros)
+      .values({
+        ...membro,
+        data_admissao: new Date(), // Automatically set data_admissao to current date
+      })
+      .returning();
+    console.log("Created member:", novoMembro);
     return novoMembro;
   }
 
@@ -335,14 +346,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateMembro(id: number, membro: Partial<InsertMembro> & { igreja_id: number }): Promise<Membro> {
+    console.log("Updating member:", id, "for igreja:", membro.igreja_id);
     const [updatedMembro] = await db
       .update(membros)
       .set({
         ...membro,
         data_nascimento: membro.data_nascimento ? new Date(membro.data_nascimento) : undefined,
       })
-      .where(eq(membros.id, id))
+      .where(and(
+        eq(membros.id, id),
+        eq(membros.igreja_id, membro.igreja_id)
+      ))
       .returning();
+    console.log("Updated member:", updatedMembro);
     return updatedMembro;
   }
 
