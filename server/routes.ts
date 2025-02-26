@@ -303,6 +303,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/grupos/:id/membros", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const grupoId = parseInt(req.params.id);
+      const { membro_id, cargo } = req.body;
+
+      const [result] = await db
+        .insert(membros_grupos)
+        .values({
+          grupo_id: grupoId,
+          membro_id,
+          cargo
+        })
+        .returning();
+
+      res.json(result);
+    } catch (error) {
+      console.error("Erro ao adicionar membro ao grupo:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.patch("/api/grupos/:id/membros/:membroId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const grupoId = parseInt(req.params.id);
+      const membroId = parseInt(req.params.membroId);
+      const { cargo } = req.body;
+
+      const [result] = await db
+        .update(membros_grupos)
+        .set({ cargo })
+        .where(
+          and(
+            eq(membros_grupos.grupo_id, grupoId),
+            eq(membros_grupos.membro_id, membroId)
+          )
+        )
+        .returning();
+
+      res.json(result);
+    } catch (error) {
+      console.error("Erro ao atualizar cargo do membro:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/grupos/:id/membros/:membroId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const grupoId = parseInt(req.params.id);
+      const membroId = parseInt(req.params.membroId);
+
+      await db
+        .delete(membros_grupos)
+        .where(
+          and(
+            eq(membros_grupos.grupo_id, grupoId),
+            eq(membros_grupos.membro_id, membroId)
+          )
+        );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erro ao remover membro do grupo:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   app.get("/api/liderancas", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
