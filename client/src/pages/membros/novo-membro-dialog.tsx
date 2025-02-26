@@ -80,7 +80,7 @@ export function NovoMembroDialog() {
       tipo: "comungante",
       tipo_admissao: "profissao_fe",
       numero_rol: undefined,
-      data_admissao: new Date().toISOString().split('T')[0], // Pre-filled with current date
+      data_admissao: new Date().toISOString().split('T')[0], // Pré-preenchido com data atual
       data_exclusao: null,
       motivo_exclusao: null,
     },
@@ -236,24 +236,6 @@ export function NovoMembroDialog() {
 
                   <FormField
                     control={form.control}
-                    name="numero_rol"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número no Rol</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="nome"
                     render={({ field }) => (
                       <FormItem>
@@ -266,22 +248,6 @@ export function NovoMembroDialog() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="data_admissao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Admissão</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                   <FormField
                     control={form.control}
                     name="status"
@@ -596,6 +562,41 @@ export function NovoMembroDialog() {
                 </TabsContent>
 
                 <TabsContent value="church" className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="numero_rol"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número no Rol</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="data_admissao"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Admissão</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="tipo"
