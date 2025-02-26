@@ -154,6 +154,10 @@ export default function MembrosPage() {
     enabled: !!user?.igreja_id, // Only fetch when igreja_id is available
   });
 
+  // Log para debug
+  console.log("Membros retornados da API:", membros);
+  console.log("Membros inativos:", membros.filter(m => m.status === "inativo"));
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navigation />
@@ -172,7 +176,17 @@ export default function MembrosPage() {
             {isLoading ? (
               <div className="text-center py-4">Carregando...</div>
             ) : (
-              <DataTable columns={columns} data={membros} searchColumn="nome" />
+              <>
+                {/* Log antes de renderizar a tabela */}
+                <div className="hidden">
+                  Total de membros: {membros.length}
+                  Membros por status: {JSON.stringify(membros.reduce((acc, m) => {
+                    acc[m.status] = (acc[m.status] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>))}
+                </div>
+                <DataTable columns={columns} data={membros} searchColumn="nome" />
+              </>
             )}
           </CardContent>
         </Card>
