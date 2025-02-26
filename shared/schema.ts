@@ -27,7 +27,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role", { enum: ["administrador", "comum"] }).notNull().default("comum"),
+  role: text("role", { enum: ["superadmin", "administrador", "comum"] }).notNull().default("comum"),
   igreja_id: integer("igreja_id").references(() => igrejas.id),
   nome_completo: text("nome_completo").default(null),
   email: text("email").default(null),

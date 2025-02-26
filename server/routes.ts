@@ -70,12 +70,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Stripe middleware - User not authenticated");
       return res.sendStatus(401);
     }
-    if (!req.user?.igreja_id) {
-      console.log("Stripe middleware - User has no igreja_id");
-      return res.sendStatus(403);
-    }
-    if (req.user.role !== "administrador") {
-      console.log("Stripe middleware - User is not an administrator");
+    if (req.user.role !== "superadmin") {
+      console.log("Stripe middleware - User is not a superadmin");
       return res.sendStatus(403);
     }
     next();
@@ -768,7 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )`
         })
         .from(mandatos_pastores)
-        .innerJoin(pastores, eq(mandatos_pastores.pastor_id, pastores.id))
+        .innerJoin(pastores, eq(mandatos_pastores.pastor_id, past.id))
         .where(
           and(
             eq(mandatos_pastores.igreja_id, igreja_id),

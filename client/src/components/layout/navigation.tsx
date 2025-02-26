@@ -118,20 +118,20 @@ export default function Navigation() {
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {isAdmin && (
-                  <>
-                    <Link href="/configuracoes">
-                      <DropdownMenuItem>
-                        <Settings className="mr-2 h-4 w-4" />
-                        Configurações da Igreja
-                      </DropdownMenuItem>
-                    </Link>
-                    <Link href="/configuracoes/planos">
-                      <DropdownMenuItem>
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Planos de Assinatura
-                      </DropdownMenuItem>
-                    </Link>
-                  </>
+                  <Link href="/configuracoes">
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configurações da Igreja
+                    </DropdownMenuItem>
+                  </Link>
+                )}
+                {user?.role === "superadmin" && (
+                  <Link href="/configuracoes/planos">
+                    <DropdownMenuItem>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Planos de Assinatura
+                    </DropdownMenuItem>
+                  </Link>
                 )}
                 <Link href="/perfil">
                   <DropdownMenuItem>
