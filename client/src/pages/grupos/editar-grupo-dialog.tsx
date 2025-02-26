@@ -96,10 +96,10 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       tipo: grupo.tipo as keyof typeof tiposGrupo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: initialMembers.map(item => ({
+      membros: Array.isArray(initialMembers) ? initialMembers.map(item => ({
         membro_id: item.membro.id,
         cargo: item.cargo,
-      })),
+      })) : [],
     },
   });
 
@@ -251,11 +251,11 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
                                 <span className="flex-1">{membroData.nome}</span>
                                 <Select
                                   defaultValue={membro.cargo}
-                                  onValueChange={(cargo) => {
+                                  onValueChange={(newCargo: keyof typeof cargosGrupo) => {
                                     const newValue = [...field.value];
                                     newValue[index] = {
                                       ...newValue[index],
-                                      cargo: cargo,
+                                      cargo: newCargo,
                                     };
                                     form.setValue("membros", newValue);
                                   }}
