@@ -159,10 +159,6 @@ export default function GruposPage() {
             {selectedGrupoId === grupo.id && (
               <EditarGrupoDialog 
                 grupo={grupo}
-                initialMembers={selectedGrupoMembros?.map(m => ({
-                  membro: m.membro,
-                  cargo: m.cargo
-                }))}
                 open={dialogOpen} 
                 onOpenChange={(open) => {
                   console.log("Dialog state change:", {
@@ -176,7 +172,6 @@ export default function GruposPage() {
                   }
                   setDialogOpen(open);
                 }} 
-                initialMembers={selectedGrupoMembros}
               />
             )}
           </>

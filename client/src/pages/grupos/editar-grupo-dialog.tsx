@@ -124,7 +124,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
         console.warn("Não há membros válidos para exibir.");
       }
 
-      form.setValue("membros", validMembers);Members.length);
+      form.setValue("membros", validMembers);
 
       try {
         const validMembers = initialMembers
