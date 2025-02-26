@@ -89,6 +89,8 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
     queryKey: ["/api/membros"],
   });
 
+  console.log("Initial Members:", initialMembers);
+
   // Validar e transformar os membros iniciais
   const validInitialMembers = Array.isArray(initialMembers) 
     ? initialMembers
@@ -98,6 +100,8 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
         cargo: item.cargo
       }))
     : [];
+
+  console.log("Valid Initial Members:", validInitialMembers);
 
   const form = useForm<GrupoFormData>({
     resolver: zodResolver(insertGrupoSchema),
@@ -111,9 +115,11 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
   });
 
   const currentMembers = form.watch("membros") || [];
+  console.log("Current Members in Form:", currentMembers);
 
   const mutation = useMutation({
     mutationFn: async (data: GrupoFormData) => {
+      console.log("Submitting data:", data);
       const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
       return res.json();
     },
