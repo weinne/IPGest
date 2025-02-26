@@ -89,19 +89,6 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
     queryKey: ["/api/membros"],
   });
 
-  console.log("Initial Members:", initialMembers);
-
-  // Validar e transformar os membros iniciais
-  const validInitialMembers = Array.isArray(initialMembers) 
-    ? initialMembers
-      .filter(item => item && item.membro && typeof item.membro.id === 'number' && item.cargo)
-      .map(item => ({
-        membro_id: item.membro.id,
-        cargo: item.cargo
-      }))
-    : [];
-
-  console.log("Valid Initial Members:", validInitialMembers);
 
   const form = useForm<GrupoFormData>({
     resolver: zodResolver(insertGrupoSchema),
@@ -110,22 +97,23 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       tipo: grupo.tipo as keyof typeof tiposGrupo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: validInitialMembers,
+      membros: initialMembers.map(item => ({
+        membro_id: item.membro.id,
+        cargo: item.cargo,
+      })),
     },
   });
 
   const currentMembers = form.watch("membros") || [];
-  console.log("Current Members in Form:", currentMembers);
 
   const mutation = useMutation({
     mutationFn: async (data: GrupoFormData) => {
-      console.log("Submitting data:", data);
       const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/grupos"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/grupos", grupo.id, "membros"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/grupos/${grupo.id}/membros`] });
       toast({
         title: "Grupo atualizado",
         description: "As informações do grupo foram atualizadas com sucesso.",

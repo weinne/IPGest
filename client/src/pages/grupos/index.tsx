@@ -44,19 +44,8 @@ export default function GruposPage() {
   });
 
   const { data: selectedGrupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery<GrupoMembro[]>({
-    queryKey: ["/api/grupos", selectedGrupoId, "membros"],
-    enabled: selectedGrupoId !== null,
-    onSuccess: (data) => {
-      console.log("Membros carregados:", data);
-    },
-    onError: (error) => {
-      console.error("Erro ao carregar membros:", error);
-      toast({
-        title: "Erro ao carregar membros",
-        description: "Não foi possível carregar os membros do grupo.",
-        variant: "destructive",
-      });
-    }
+    queryKey: [`/api/grupos/${selectedGrupoId}/membros`],
+    enabled: selectedGrupoId !== null && dialogOpen,
   });
 
   const deleteMutation = useMutation({
