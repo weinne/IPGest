@@ -27,9 +27,9 @@ export function useGroupMembers(groupId: number | null) {
   });
 
   const addMember = useMutation({
-    mutationFn: async (params: AddMemberParams) => {
+    mutationFn: async ({ membro_id, cargo = "membro" }: AddMemberParams) => {
       const response = await apiRequest("POST", `/api/grupos/${groupId}/membros`, {
-        body: JSON.stringify(params)
+        body: JSON.stringify({ membro_id, cargo })
       });
       return response.json();
     },

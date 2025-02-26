@@ -120,13 +120,8 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
             <div key={item.membro_id} className="flex items-center gap-2 p-2 border rounded">
               <span>{member?.membro.nome || "Membro não encontrado"}</span>
               <Select
-                value={item.cargo}
+                value={item.cargo || "membro"}
                 onValueChange={(cargo) => {
-                  const currentMembers = form.getValues("membros");
-                  const updatedMembers = currentMembers.map((m, i) => 
-                    i === index ? { ...m, cargo } : m
-                  );
-                  form.setValue("membros", updatedMembers, { shouldValidate: true });
                   updateMemberCargo.mutate({ 
                     membroId: item.membro_id, 
                     cargo 
