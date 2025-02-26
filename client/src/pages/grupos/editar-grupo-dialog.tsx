@@ -112,15 +112,16 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
     if (initialMembers?.length > 0) {
       console.log("\n=== Setting Initial Members ===");
       console.log("Initial members:", initialMembers);
+      console.log("Member structure example:", initialMembers[0]);
 
       try {
         const validMembers = initialMembers
           .filter(item => {
-            if (!item?.membro?.id) {
+            const isValid = item && item.membro && typeof item.membro.id === 'number';
+            if (!isValid) {
               console.warn("Membro inválido:", item);
-              return false;
             }
-            return true;
+            return isValid;
           })
           .map(item => ({
             membro_id: item.membro.id,
