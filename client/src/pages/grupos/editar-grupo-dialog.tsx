@@ -44,13 +44,18 @@ import {
 } from "@/components/ui/popover";
 import { CheckIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect } from 'react';
 
-type GrupoFormData = Omit<InsertGrupo, 'membros'> & {
-  membros: Array<{
-    membro_id: number;
-    cargo: 'presidente' | 'vice_presidente' | 'secretario' | 'segundo_secretario' | 'tesoureiro' | 'segundo_tesoureiro' | 'conselheiro' | 'membro';
-  }>;
-};
+interface EditarGrupoDialogProps {
+  grupo: Grupo;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+interface GrupoMembro {
+  membro: Membro;
+  cargo: keyof typeof cargosGrupo;
+}
 
 const tiposGrupo = {
   UCP: "União de Crianças Presbiterianas",
@@ -77,16 +82,16 @@ const cargosGrupo = {
   membro: "Membro",
 } as const;
 
-interface EditarGrupoDialogProps {
-  grupo: Grupo;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-interface GrupoMembro {
-  membro: Membro;
-  cargo: keyof typeof cargosGrupo;
-}
+type GrupoFormData = {
+  nome: string;
+  tipo: keyof typeof tiposGrupo;
+  status: "ativo" | "inativo";
+  descricao?: string | null;
+  membros: Array<{
+    membro_id: number;
+    cargo: keyof typeof cargosGrupo;
+  }>;
+};
 
 export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDialogProps) {
   const { toast } = useToast();
@@ -108,14 +113,21 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: grupoMembros
-        ?.filter(item => item.membro && item.membro.id) // Ensure membro exists and has an id
-        ?.map(({ membro, cargo }) => ({
-          membro_id: membro.id,
-          cargo: cargo as GrupoFormData['membros'][number]['cargo'],
-        })) || [],
+      membros: [],
     },
   });
+
+  useEffect(() => {
+    if (grupoMembros?.length > 0) {
+      const membrosData = grupoMembros
+        .filter(item => item?.membro)
+        .map(({ membro, cargo }) => ({
+          membro_id: membro.id,
+          cargo: cargo as keyof typeof cargosGrupo,
+        }));
+      form.setValue("membros", membrosData);
+    }
+  }, [grupoMembros, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: GrupoFormData) => {

@@ -6,6 +6,11 @@ import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { sql } from 'drizzle-orm/sql';
 
+import { drizzle } from "drizzle-orm/neon-serverless";
+import * as schema from "@shared/schema";
+//import { Membro, Grupo, GrupoMembro, Pastor, Lideranca, MandatoPastor, MandatoLideranca } from "@shared/schema"; //These imports are already present in the original code.
+
+
 const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
@@ -266,7 +271,18 @@ export class DatabaseStorage implements IStorage {
     const [novoGrupo] = await db.insert(grupos).values(grupoData).returning();
 
     if (membrosData && membrosData.length > 0) {
-      await this.addMembrosToGrupo(novoGrupo.id, membrosData);
+      console.log("Adding members to group:", {
+        grupo_id: novoGrupo.id,
+        membros: membrosData
+      });
+
+      await db.insert(membros_grupos).values(
+        membrosData.map(m => ({
+          grupo_id: novoGrupo.id,
+          membro_id: m.membro_id,
+          cargo: m.cargo
+        }))
+      );
     }
 
     return novoGrupo;
@@ -283,14 +299,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGrupoMembros(grupo_id: number): Promise<Array<{ membro: Membro; cargo: string }>> {
+    console.log("Getting members for group:", grupo_id);
     const result = await db
       .select({
         membro: membros,
         cargo: membros_grupos.cargo,
       })
       .from(membros_grupos)
-      .leftJoin(membros, eq(membros.id, membros_grupos.membro_id))
+      .innerJoin(membros, eq(membros.id, membros_grupos.membro_id))
       .where(eq(membros_grupos.grupo_id, grupo_id));
+
+    console.log("Found group members:", result);
 
     // Ensure we only return results where membro exists
     return result
@@ -382,11 +401,24 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     if (membrosData !== undefined) {
+      console.log("Updating group members:", {
+        grupo_id: id,
+        new_membros: membrosData
+      });
+
       // Delete existing members
-      await db.delete(membros_grupos).where(eq(membros_grupos.grupo_id, id));
+      await db.delete(membros_grupos)
+        .where(eq(membros_grupos.grupo_id, id));
+
       // Add new members if any
       if (membrosData.length > 0) {
-        await this.addMembrosToGrupo(id, membrosData);
+        await db.insert(membros_grupos).values(
+          membrosData.map(m => ({
+            grupo_id: id,
+            membro_id: m.membro_id,
+            cargo: m.cargo
+          }))
+        );
       }
     }
 
