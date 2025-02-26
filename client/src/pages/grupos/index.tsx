@@ -17,9 +17,20 @@ import { EditarGrupoDialog } from "./editar-grupo-dialog";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
+const cargosGrupo = {
+  presidente: "Presidente",
+  vice_presidente: "Vice-Presidente",
+  secretario: "Secretário",
+  segundo_secretario: "2º Secretário",
+  tesoureiro: "Tesoureiro",
+  segundo_tesoureiro: "2º Tesoureiro",
+  conselheiro: "Conselheiro",
+  membro: "Membro",
+} as const;
+
 type GrupoMembro = {
   membro: Membro;
-  cargo: string;
+  cargo: keyof typeof cargosGrupo;
 };
 
 export default function GruposPage() {

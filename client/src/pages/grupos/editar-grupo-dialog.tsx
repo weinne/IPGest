@@ -33,18 +33,6 @@ import cn from 'classnames';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 
-type GrupoMembro = {
-  membro: Membro;
-  cargo: keyof typeof cargosGrupo;
-};
-
-interface EditarGrupoDialogProps {
-  grupo: Grupo;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  initialMembers?: GrupoMembro[];
-}
-
 const tiposGrupo = {
   UCP: "União de Crianças Presbiterianas",
   UPA: "União Presbiteriana de Adolescentes",
@@ -70,6 +58,18 @@ const cargosGrupo = {
   membro: "Membro",
 } as const;
 
+type GrupoMembro = {
+  membro: Membro;
+  cargo: keyof typeof cargosGrupo;
+};
+
+interface EditarGrupoDialogProps {
+  grupo: Grupo;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialMembers?: GrupoMembro[];
+}
+
 type GrupoFormData = {
   nome: string;
   tipo: keyof typeof tiposGrupo;
@@ -93,12 +93,12 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
     resolver: zodResolver(insertGrupoSchema),
     defaultValues: {
       nome: grupo.nome,
-      tipo: grupo.tipo,
+      tipo: grupo.tipo as keyof typeof tiposGrupo,
       status: grupo.status,
       descricao: grupo.descricao || "",
       membros: initialMembers.map(item => ({
         membro_id: item.membro.id,
-        cargo: item.cargo as keyof typeof cargosGrupo,
+        cargo: item.cargo,
       })),
     },
   });
@@ -255,7 +255,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
                                     const newValue = [...field.value];
                                     newValue[index] = {
                                       ...newValue[index],
-                                      cargo: cargo as keyof typeof cargosGrupo,
+                                      cargo: cargo,
                                     };
                                     form.setValue("membros", newValue);
                                   }}
