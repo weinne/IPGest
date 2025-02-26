@@ -158,7 +158,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[calc(100vh-100px)] flex flex-col p-0">
+      <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Editar Grupo</DialogTitle>
           <DialogDescription>
@@ -166,7 +166,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 px-6 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -174,7 +174,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
             </div>
           ) : (
             <Form {...form}>
-              <form id="edit-group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4">
+              <form id="edit-group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                 <FormField
                   control={form.control}
                   name="nome"
@@ -260,11 +260,12 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
           )}
         </ScrollArea>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button form="edit-group-form" type="submit">
+        <div className="flex justify-end px-6 py-4 border-t mt-auto">
+          <Button 
+            form="edit-group-form"
+            type="submit" 
+            className="w-full"
+          >
             Salvar
           </Button>
         </div>
