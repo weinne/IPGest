@@ -1,0 +1,31 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+grupos:1 A soft navigation has been detected: https://b40dcaec-1062-452c-a480-439a0d90313f-00-2cfd4lhh82sfe.kirk.replit.dev/grupos
+index.tsx:138 Opening edit dialog for group: 10
+editar-grupo-dialog.tsx:87 
+=== EditarGrupoDialog Render ===
+editar-grupo-dialog.tsx:88 Group: 10
+editar-grupo-dialog.tsx:89 Initial members: Array(0)length: 0[[Prototype]]: Array(0)at: ƒ at()concat: ƒ concat()constructor: ƒ Array()copyWithin: ƒ copyWithin()entries: ƒ entries()every: ƒ every()fill: ƒ fill()filter: ƒ filter()find: ƒ find()findIndex: ƒ findIndex()findLast: ƒ findLast()findLastIndex: ƒ findLastIndex()flat: ƒ flat()flatMap: ƒ flatMap()forEach: ƒ forEach()includes: ƒ includes()indexOf: ƒ indexOf()join: ƒ join()keys: ƒ keys()lastIndexOf: ƒ lastIndexOf()length: 0map: ƒ map()pop: ƒ pop()push: ƒ push()reduce: ƒ reduce()reduceRight: ƒ reduceRight()reverse: ƒ reverse()shift: ƒ shift()slice: ƒ slice()some: ƒ some()sort: ƒ sort()splice: ƒ splice()toLocaleString: ƒ toLocaleString()toReversed: ƒ toReversed()toSorted: ƒ toSorted()toSpliced: ƒ toSpliced()toString: ƒ toString()unshift: ƒ unshift()values: ƒ values()with: ƒ with()Symbol(Symbol.iterator): ƒ values()Symbol(Symbol.unscopables): {at: true, copyWithin: true, entries: true, fill: true, find: true, …}[[Prototype]]: Object
+editar-grupo-dialog.tsx:139 Current members in form: Array(0)length: 0[[Prototype]]: Array(0)
+editar-grupo-dialog.tsx:87 
+=== EditarGrupoDialog Render ===
+editar-grupo-dialog.tsx:88 Group: 10
+editar-grupo-dialog.tsx:89 Initial members: Array(2)
+editar-grupo-dialog.tsx:139 Current members in form: Array(0)
+editar-grupo-dialog.tsx:113 
+=== Setting Initial Members ===
+editar-grupo-dialog.tsx:114 Initial members count: 2
+editar-grupo-dialog.tsx:121 Invalid member found: Object
+(anonymous) @ editar-grupo-dialog.tsx:121
+editar-grupo-dialog.tsx:121 Invalid member found: Object
+(anonymous) @ editar-grupo-dialog.tsx:121
+editar-grupo-dialog.tsx:130 Valid members to set: Array(0)
+editar-grupo-dialog.tsx:87 
+=== EditarGrupoDialog Render ===
+editar-grupo-dialog.tsx:88 Group: 10
+editar-grupo-dialog.tsx:89 Initial members: Array(2)
+editar-grupo-dialog.tsx:139 Current members in form: Array(0)
+editar-grupo-dialog.tsx:87 
+=== EditarGrupoDialog Render ===
+editar-grupo-dialog.tsx:88 Group: 10
+editar-grupo-dialog.tsx:89 Initial members: Array(2)0: descricao: ""id: 10igreja_id: 3membros_count: "3"nome: "UPA Mairiporã"status: "ativo"tipo: "UPA"[[Prototype]]: Object1: {id: 9, nome: 'UPH Mairiporã', tipo: 'UPH', status: 'ativo', descricao: '', …}descricao: ""id: 9igreja_id: 3membros_count: "3"nome: "UPH Mairiporã"status: "ativo"tipo: "UPH"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()length: 2[[Prototype]]: Array(0)at: ƒ at()concat: ƒ concat()constructor: ƒ Array()copyWithin: ƒ copyWithin()entries: ƒ entries()every: ƒ every()fill: ƒ fill()filter: ƒ filter()find: ƒ find()findIndex: ƒ findIndex()findLast: ƒ findLast()findLastIndex: ƒ findLastIndex()flat: ƒ flat()flatMap: ƒ flatMap()forEach: ƒ forEach()includes: ƒ includes()indexOf: ƒ indexOf()join: ƒ join()keys: ƒ keys()lastIndexOf: ƒ lastIndexOf()length: 0map: ƒ map()pop: ƒ pop()push: ƒ push()reduce: ƒ reduce()reduceRight: ƒ reduceRight()reverse: ƒ reverse()shift: ƒ shift()slice: ƒ slice()some: ƒ some()sort: ƒ sort()splice: ƒ splice()toLocaleString: ƒ toLocaleString()toReversed: ƒ toReversed()toSorted: ƒ toSorted()toSpliced: ƒ toSpliced()toString: ƒ toString()unshift: ƒ unshift()values: ƒ values()with: ƒ with()Symbol(Symbol.iterator): ƒ values()Symbol(Symbol.unscopables): {at: true, copyWithin: true, entries: true, fill: true, find: true, …}[[Prototype]]: Object
+editar-grupo-dialog.tsx:139 Current members in form: Array(0)
