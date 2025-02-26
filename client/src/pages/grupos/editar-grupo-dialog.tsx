@@ -82,6 +82,13 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { members, isLoading, addMember, removeMember, updateMemberCargo } = useGroupMembers(grupo.id);
+  const { data: allMembers = [] } = useQuery({
+    queryKey: ["/api/membros"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/membros");
+      return response.json();
+    }
+  });
 
   const form = useForm<InsertGrupo>({
     resolver: zodResolver(insertGrupoSchema),
@@ -115,7 +122,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
               <Select
                 defaultValue={item.cargo}
                 onValueChange={(cargo) => {
-                  updateMemberCargo.mutate({ membro_id: item.membro_id, cargo });
+                  updateMemberCargo.mutate({ membroId: item.membro_id, cargo });
                 }}
               >
                 <SelectTrigger>
@@ -280,7 +287,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                               <CommandEmpty>Nenhum membro encontrado.</CommandEmpty>
                               <CommandGroup>
                                 <ScrollArea className="h-[200px]">
-                                  {members.map((member) => {
+                                  {allMembers.map((member) => {
                                     const isSelected = field.value?.some(
                                       (item) => item.membro_id === member.membro.id
                                     );
