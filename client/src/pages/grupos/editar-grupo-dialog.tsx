@@ -112,6 +112,19 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
     if (initialMembers?.length > 0) {
       console.log("\n=== Setting Initial Members ===");
       console.log("Initial members count:", initialMembers.length);
+      
+      const validMembers = initialMembers
+        .filter(m => m.membro && m.membro.id && m.membro.nome)
+        .map(m => ({
+          membro_id: m.membro.id,
+          cargo: m.cargo as keyof typeof cargosGrupo
+        }));
+
+      if (!validMembers.length) {
+        console.warn("Não há membros válidos para exibir.");
+      }
+
+      form.setValue("membros", validMembers);Members.length);
 
       try {
         const validMembers = initialMembers
