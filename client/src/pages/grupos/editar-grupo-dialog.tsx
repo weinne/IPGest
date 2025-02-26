@@ -108,10 +108,12 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: grupoMembros?.map(({ membro, cargo }) => ({
-        membro_id: membro.id,
-        cargo,
-      })) || [],
+      membros: grupoMembros
+        ?.filter(item => item.membro && item.membro.id) // Ensure membro exists and has an id
+        ?.map(({ membro, cargo }) => ({
+          membro_id: membro.id,
+          cargo: cargo as GrupoFormData['membros'][number]['cargo'],
+        })) || [],
     },
   });
 

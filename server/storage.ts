@@ -289,13 +289,16 @@ export class DatabaseStorage implements IStorage {
         cargo: membros_grupos.cargo,
       })
       .from(membros_grupos)
-      .innerJoin(membros, eq(membros.id, membros_grupos.membro_id))
+      .leftJoin(membros, eq(membros.id, membros_grupos.membro_id))
       .where(eq(membros_grupos.grupo_id, grupo_id));
 
-    return result.map(r => ({
-      membro: r.membro,
-      cargo: r.cargo || "membro" // Default to "membro" if cargo is null
-    }));
+    // Ensure we only return results where membro exists
+    return result
+      .filter(r => r.membro !== null)
+      .map(r => ({
+        membro: r.membro,
+        cargo: r.cargo || "membro"
+      }));
   }
   async deleteMandatoLideranca(id: number): Promise<void> {
     await db.delete(mandatos_liderancas).where(eq(mandatos_liderancas.id, id));
