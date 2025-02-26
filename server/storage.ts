@@ -8,6 +8,12 @@ import { sql } from 'drizzle-orm/sql';
 
 import { drizzle } from "drizzle-orm/neon-serverless";
 import * as schema from "@shared/schema";
+import { 
+  planos_assinatura, assinaturas, historico_pagamentos,
+  type PlanoAssinatura, type InsertPlanoAssinatura,
+  type Assinatura, type InsertAssinatura,
+  type HistoricoPagamento, type InsertHistoricoPagamento
+} from "@shared/schema";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -116,6 +122,22 @@ export interface IStorage {
   updateUserPassword(id: number, newPassword: string): Promise<void>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   setResetToken(userId: number, token: string, expiry: Date): Promise<void>;
+
+  // Subscription Plan Methods
+  createPlanoAssinatura(plano: InsertPlanoAssinatura): Promise<PlanoAssinatura>;
+  getPlanoAssinatura(id: number): Promise<PlanoAssinatura | undefined>;
+  getPlanoAssinaturas(active_only?: boolean): Promise<PlanoAssinatura[]>;
+  updatePlanoAssinatura(id: number, plano: Partial<InsertPlanoAssinatura>): Promise<PlanoAssinatura>;
+
+  // Subscription Methods
+  createAssinatura(assinatura: InsertAssinatura & { igreja_id: number }): Promise<Assinatura>;
+  getAssinatura(id: number): Promise<Assinatura | undefined>;
+  getAssinaturaByIgreja(igreja_id: number): Promise<Assinatura | undefined>;
+  updateAssinatura(id: number, assinatura: Partial<InsertAssinatura>): Promise<Assinatura>;
+
+  // Payment History Methods
+  createHistoricoPagamento(pagamento: InsertHistoricoPagamento): Promise<HistoricoPagamento>;
+  getHistoricoPagamentos(assinatura_id: number): Promise<HistoricoPagamento[]>;
 }
 
 type cargosGrupo = {
@@ -760,7 +782,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       crescimento_mensal,
-      distribuicao_tipos: distribuicaoTipos,
+      distribuicao_tipos:distribuicaoTipos,
       distribuicao_sociedades,
       distribuicao_idade: distribuicaoIdade
     };
@@ -814,6 +836,90 @@ export class DatabaseStorage implements IStorage {
         reset_token_expiry: expiry
       })
       .where(eq(users.id, userId));
+  }
+
+  // Implement Subscription Plan Methods
+  async createPlanoAssinatura(plano: InsertPlanoAssinatura): Promise<PlanoAssinatura> {
+    const [novoPlano] = await db.insert(planos_assinatura).values(plano).returning();
+    return novoPlano;
+  }
+
+  async getPlanoAssinatura(id: number): Promise<PlanoAssinatura | undefined> {
+    const [plano] = await db.select().from(planos_assinatura).where(eq(planos_assinatura.id, id));
+    return plano;
+  }
+
+  async getPlanoAssinaturas(active_only: boolean = false): Promise<PlanoAssinatura[]> {
+    let query = db.select().from(planos_assinatura);
+    if (active_only) {
+      query = query.where(eq(planos_assinatura.ativo, true));
+    }
+    return await query.orderBy(planos_assinatura.preco);
+  }
+
+  async updatePlanoAssinatura(id: number, plano: Partial<InsertPlanoAssinatura>): Promise<PlanoAssinatura> {
+    const [updatedPlano] = await db
+      .update(planos_assinatura)
+      .set({
+        ...plano,
+        updated_at: new Date(),
+      })
+      .where(eq(planos_assinatura.id, id))
+      .returning();
+    return updatedPlano;
+  }
+
+  // Implement Subscription Methods
+  async createAssinatura(assinatura: InsertAssinatura & { igreja_id: number }): Promise<Assinatura> {
+    const [novaAssinatura] = await db.insert(assinaturas).values({
+      ...assinatura,
+      data_inicio: new Date(),
+    }).returning();
+    return novaAssinatura;
+  }
+
+  async getAssinatura(id: number): Promise<Assinatura | undefined> {
+    const [assinatura] = await db.select().from(assinaturas).where(eq(assinaturas.id, id));
+    return assinatura;
+  }
+
+  async getAssinaturaByIgreja(igreja_id: number): Promise<Assinatura | undefined> {
+    const [assinatura] = await db
+      .select()
+      .from(assinaturas)
+      .where(
+        and(
+          eq(assinaturas.igreja_id, igreja_id),
+          eq(assinaturas.status, "ativa")
+        )
+      );
+    return assinatura;
+  }
+
+  async updateAssinatura(id: number, assinatura: Partial<InsertAssinatura>): Promise<Assinatura> {
+    const [updatedAssinatura] = await db
+      .update(assinaturas)
+      .set({
+        ...assinatura,
+        updated_at: new Date(),
+      })
+      .where(eq(assinaturas.id, id))
+      .returning();
+    return updatedAssinatura;
+  }
+
+  // Implement Payment History Methods
+  async createHistoricoPagamento(pagamento: InsertHistoricoPagamento): Promise<HistoricoPagamento> {
+    const [novoPagamento] = await db.insert(historico_pagamentos).values(pagamento).returning();
+    return novoPagamento;
+  }
+
+  async getHistoricoPagamentos(assinatura_id: number): Promise<HistoricoPagamento[]> {
+    return await db
+      .select()
+      .from(historico_pagamentos)
+      .where(eq(historico_pagamentos.assinatura_id, assinatura_id))
+      .orderBy(sql`${historico_pagamentos.data_pagamento} DESC`);
   }
 }
 

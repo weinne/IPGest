@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, date, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, date, timestamp, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -152,6 +152,55 @@ export const mandatos_liderancas = pgTable("mandatos_liderancas", {
     enum: ["ativo", "inativo", "afastado", "emerito", "finalizado"]
   }).notNull().default("ativo"),
   igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
+});
+
+// Subscription Plans
+export const planos_assinatura = pgTable("planos_assinatura", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  descricao: text("descricao").default(""),
+  preco: numeric("preco").notNull(),
+  intervalo: text("intervalo", {
+    enum: ["mensal", "trimestral", "semestral", "anual"]
+  }).notNull(),
+  stripe_price_id: text("stripe_price_id").notNull(),
+  stripe_product_id: text("stripe_product_id").notNull(),
+  caracteristicas: text("caracteristicas").array().default([]),
+  ativo: boolean("ativo").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Church Subscriptions
+export const assinaturas = pgTable("assinaturas", {
+  id: serial("id").primaryKey(),
+  igreja_id: integer("igreja_id").references(() => igrejas.id).notNull(),
+  plano_id: integer("plano_id").references(() => planos_assinatura.id).notNull(),
+  status: text("status", {
+    enum: ["ativa", "cancelada", "aguardando_pagamento", "inadimplente"]
+  }).notNull().default("aguardando_pagamento"),
+  stripe_subscription_id: text("stripe_subscription_id").notNull(),
+  stripe_customer_id: text("stripe_customer_id").notNull(),
+  data_inicio: timestamp("data_inicio").notNull(),
+  data_fim: timestamp("data_fim"),
+  data_cancelamento: timestamp("data_cancelamento"),
+  motivo_cancelamento: text("motivo_cancelamento"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Payment History
+export const historico_pagamentos = pgTable("historico_pagamentos", {
+  id: serial("id").primaryKey(),
+  assinatura_id: integer("assinatura_id").references(() => assinaturas.id).notNull(),
+  valor: numeric("valor").notNull(),
+  status: text("status", {
+    enum: ["sucesso", "falha", "reembolsado", "pendente"]
+  }).notNull(),
+  stripe_payment_intent_id: text("stripe_payment_intent_id").notNull(),
+  stripe_invoice_id: text("stripe_invoice_id"),
+  data_pagamento: timestamp("data_pagamento").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 // Schemas para inserção
@@ -407,6 +456,44 @@ export const insertMandatoLiderancaSchema = createInsertSchema(mandatos_lideranc
   }),
 });
 
+// Insert schemas for new tables
+export const insertPlanoAssinaturaSchema = createInsertSchema(planos_assinatura).extend({
+  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  preco: z.number().positive("Preço deve ser positivo"),
+  intervalo: z.enum(["mensal", "trimestral", "semestral", "anual"], {
+    required_error: "Selecione o intervalo",
+    invalid_type_error: "Intervalo inválido",
+  }),
+  caracteristicas: z.array(z.string()).optional().default([]),
+});
+
+export const insertAssinaturaSchema = createInsertSchema(assinaturas).omit({
+  igreja_id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  plano_id: z.number().positive("ID do plano inválido"),
+});
+
+export const insertHistoricoPagamentoSchema = createInsertSchema(historico_pagamentos).omit({
+  created_at: true,
+}).extend({
+  valor: z.number().positive("Valor deve ser positivo"),
+  status: z.enum(["sucesso", "falha", "reembolsado", "pendente"], {
+    required_error: "Selecione o status",
+    invalid_type_error: "Status inválido",
+  }),
+});
+
+// Export types for new tables
+export type PlanoAssinatura = typeof planos_assinatura.$inferSelect;
+export type InsertPlanoAssinatura = z.infer<typeof insertPlanoAssinaturaSchema>;
+
+export type Assinatura = typeof assinaturas.$inferSelect;
+export type InsertAssinatura = z.infer<typeof insertAssinaturaSchema>;
+
+export type HistoricoPagamento = typeof historico_pagamentos.$inferSelect;
+export type InsertHistoricoPagamento = z.infer<typeof insertHistoricoPagamentoSchema>;
 
 // Types
 export type Igreja = typeof igrejas.$inferSelect;

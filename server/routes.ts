@@ -6,6 +6,7 @@ import multer from "multer";
 import { join } from "path";
 import { mkdir } from "fs/promises";
 import { canWrite, isAdmin } from "./middleware";
+import stripeRoutes from "./routes/stripe";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import express from "express";
@@ -52,6 +53,14 @@ function logAudit(req: Request, operacao: string, tipo: string, id: number) {
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   app.use('/uploads', express.static(uploadDir));
+
+  // Register Stripe routes with authentication middleware
+  app.use("/api/stripe", (req, res, next) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+    if (req.user.role !== "administrador") return res.sendStatus(403);
+    next();
+  }, stripeRoutes);
 
   app.post("/api/users", async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
@@ -269,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const grupoId = parseInt(req.params.id);
       console.log("Buscando membros do grupo:", grupoId);
-      
+
       const result = await db
         .select({
           id: membros.id,
