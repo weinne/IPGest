@@ -19,7 +19,20 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { insertGrupoSchema, type InsertGrupo } from "@shared/schema";
-import { Loader2, X } from "lucide-react";
+import { CheckIcon, Loader2, X } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useGroupMembers } from "@/hooks/useGroupMembers";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQueryClient } from "@tanstack/react-query";
@@ -247,9 +260,62 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                 <FormField
                   control={form.control}
                   name="membros"
-                  render={() => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Membros do Grupo</FormLabel>
+                      <FormControl>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between"
+                            >
+                              Adicionar membros
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0" side="top">
+                            <Command>
+                              <CommandInput placeholder="Procurar membro..." />
+                              <CommandEmpty>Nenhum membro encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                <ScrollArea className="h-[200px]">
+                                  {members.map((member) => {
+                                    const isSelected = field.value?.some(
+                                      (item) => item.membro_id === member.membro.id
+                                    );
+                                    return (
+                                      <CommandItem
+                                        key={member.membro.id}
+                                        onSelect={() => {
+                                          if (!isSelected) {
+                                            const current = field.value || [];
+                                            form.setValue("membros", [...current, { membro_id: member.membro.id, cargo: "membro" }], {
+                                              shouldValidate: true,
+                                            });
+                                            addMember.mutate({ membro_id: member.membro.id, cargo: "membro" });
+                                          }
+                                        }}
+                                        className="flex items-center justify-between py-2"
+                                      >
+                                        <div className="flex items-center">
+                                          <CheckIcon
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              isSelected ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          <span>{member.membro.nome}</span>
+                                        </div>
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </ScrollArea>
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </FormControl>
                       <GroupMemberManager />
                       <FormMessage />
                     </FormItem>
