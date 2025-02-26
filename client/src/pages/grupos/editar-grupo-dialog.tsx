@@ -158,15 +158,15 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col"> {/* Added max-height and flex-col */}
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>Editar Grupo</DialogTitle>
           <DialogDescription>
             Atualize os dados do grupo, incluindo os membros.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1"> {/* Wrapped form content in ScrollArea */}
+        <ScrollArea className="flex-1">
           {isLoading ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -260,7 +260,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
           )}
         </ScrollArea>
 
-        <div className="flex justify-end gap-2 pt-4 border-t"> {/* Moved save button to the bottom */}
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
