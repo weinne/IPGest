@@ -138,6 +138,31 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
   const currentMembers = form.watch("membros") || [];
   console.log("Current members in form:", currentMembers);
 
+  const mutation = useMutation({
+    mutationFn: async (data: GrupoFormData) => {
+      console.log("Submitting group update with data:", data);
+      const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/grupos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/grupos", grupo.id, "membros"] });
+      toast({
+        title: "Grupo atualizado",
+        description: "As informações do grupo foram atualizadas com sucesso.",
+      });
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      console.error("Error updating group:", error);
+      toast({
+        title: "Erro ao atualizar grupo",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoadingMembros) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
