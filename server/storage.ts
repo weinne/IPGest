@@ -254,11 +254,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createGrupo(grupo: InsertGrupo & { igreja_id: number }): Promise<Grupo> {
-    const { membros, ...grupoData } = grupo;
+    const { membros: membrosData, ...grupoData } = grupo;
     const [novoGrupo] = await db.insert(grupos).values(grupoData).returning();
 
-    if (membros && membros.length > 0) {
-      await this.addMembrosToGrupo(novoGrupo.id, membros);
+    if (membrosData && membrosData.length > 0) {
+      await db.insert(membros_grupos).values(
+        membrosData.map(m => ({
+          grupo_id: novoGrupo.id,
+          membro_id: m.membro_id,
+          cargo: m.cargo
+        }))
+      );
     }
 
     return novoGrupo;
@@ -286,7 +292,7 @@ export class DatabaseStorage implements IStorage {
 
     return result.map(r => ({
       membro: r.membro,
-      cargo: r.cargo,
+      cargo: r.cargo || "membro" // Default to "membro" if cargo is null
     }));
   }
   async deleteMandatoLideranca(id: number): Promise<void> {
@@ -370,12 +376,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(grupos.id, id))
       .returning();
 
-    if (membrosData) {
+    if (membrosData !== undefined) {
       // Delete existing members
       await db.delete(membros_grupos).where(eq(membros_grupos.grupo_id, id));
-      // Add new members
+      // Add new members if any
       if (membrosData.length > 0) {
-        await this.addMembrosToGrupo(id, membrosData);
+        await db.insert(membros_grupos).values(
+          membrosData.map(m => ({
+            grupo_id: id,
+            membro_id: m.membro_id,
+            cargo: m.cargo
+          }))
+        );
       }
     }
 

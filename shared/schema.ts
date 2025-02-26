@@ -229,6 +229,21 @@ export const insertGrupoSchema = createInsertSchema(grupos).omit({
     invalid_type_error: "Status inválido",
   }),
   descricao: z.string().optional().nullable(),
+  membros: z.array(
+    z.object({
+      membro_id: z.number(),
+      cargo: z.enum([
+        "presidente",
+        "vice_presidente",
+        "secretario",
+        "segundo_secretario",
+        "tesoureiro",
+        "segundo_tesoureiro",
+        "conselheiro",
+        "membro"
+      ])
+    })
+  ).optional().default([]),
 });
 
 export const insertMembroSchema = createInsertSchema(membros).omit({

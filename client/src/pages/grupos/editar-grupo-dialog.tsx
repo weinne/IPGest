@@ -45,6 +45,13 @@ import {
 import { CheckIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+type GrupoFormData = Omit<InsertGrupo, 'membros'> & {
+  membros: Array<{
+    membro_id: number;
+    cargo: 'presidente' | 'vice_presidente' | 'secretario' | 'segundo_secretario' | 'tesoureiro' | 'segundo_tesoureiro' | 'conselheiro' | 'membro';
+  }>;
+};
+
 const tiposGrupo = {
   UCP: "União de Crianças Presbiterianas",
   UPA: "União Presbiteriana de Adolescentes",
@@ -94,15 +101,14 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
     enabled: open,
   });
 
-  // Apenas configure o form quando todos os dados necessários estiverem carregados
-  const form = useForm<InsertGrupo>({
+  const form = useForm<GrupoFormData>({
     resolver: zodResolver(insertGrupoSchema),
     defaultValues: {
       nome: grupo.nome,
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: grupoMembros?.filter(item => item?.membro)?.map(({ membro, cargo }) => ({
+      membros: grupoMembros?.map(({ membro, cargo }) => ({
         membro_id: membro.id,
         cargo,
       })) || [],
@@ -110,7 +116,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: InsertGrupo) => {
+    mutationFn: async (data: GrupoFormData) => {
       const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
       return res.json();
     },
@@ -153,7 +159,6 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
     },
   });
 
-  // Se ainda estiver carregando os dados, mostre um indicador de loading
   if (isLoadingMembros || isLoadingGrupoMembros) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -287,15 +292,16 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                                   const isSelected = field.value?.some(
                                     (item) => item.membro_id === membro.id
                                   );
+                                  const selectedMember = field.value?.find(
+                                    (item) => item.membro_id === membro.id
+                                  );
                                   return (
                                     <CommandItem
                                       key={membro.id}
                                       onSelect={() => {
                                         if (!isSelected) {
                                           const current = field.value || [];
-                                          form.setValue("membros", [...current, { membro_id: membro.id, cargo: "membro" as keyof typeof cargosGrupo }], {
-                                            shouldValidate: true,
-                                          });
+                                          form.setValue("membros", [...current, { membro_id: membro.id, cargo: "membro" }]);
                                         }
                                       }}
                                       className="flex items-center justify-between py-2"
@@ -312,9 +318,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                                       {isSelected && (
                                         <div className="flex items-center gap-2">
                                           <Select
-                                            defaultValue={field.value.find(
-                                              (item) => item.membro_id === membro.id
-                                            )?.cargo || "membro"}
+                                            defaultValue={selectedMember?.cargo}
                                             onValueChange={(cargo) => {
                                               const current = field.value || [];
                                               const newValue = current.map((item) =>
@@ -322,9 +326,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                                                   ? { ...item, cargo: cargo as keyof typeof cargosGrupo }
                                                   : item
                                               );
-                                              form.setValue("membros", newValue, {
-                                                shouldValidate: true,
-                                              });
+                                              form.setValue("membros", newValue);
                                             }}
                                           >
                                             <SelectTrigger className="h-8 w-[130px]">
@@ -348,8 +350,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                                                 "membros",
                                                 current.filter(
                                                   (item) => item.membro_id !== membro.id
-                                                ),
-                                                { shouldValidate: true }
+                                                )
                                               );
                                             }}
                                           >
