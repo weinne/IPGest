@@ -89,7 +89,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
   console.log("Initial members:", initialMembers);
 
   // Fetch all members for selection
-  const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
+  const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[], Error>({
     queryKey: ["/api/membros"],
     onSuccess: (data) => {
       console.log("All members loaded for selection:", data.length, "members");
