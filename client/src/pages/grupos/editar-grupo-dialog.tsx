@@ -289,18 +289,18 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                                 <ScrollArea className="h-[200px]">
                                   {allMembers.map((member) => {
                                     const isSelected = field.value?.some(
-                                      (item) => item.membro_id === member.membro.id
+                                      (item) => item.membro_id === member.id
                                     );
                                     return (
                                       <CommandItem
-                                        key={member.membro.id}
+                                        key={member.id}
                                         onSelect={() => {
                                           if (!isSelected) {
                                             const current = field.value || [];
-                                            form.setValue("membros", [...current, { membro_id: member.membro.id, cargo: "membro" }], {
+                                            form.setValue("membros", [...current, { membro_id: member.id, cargo: "membro" }], {
                                               shouldValidate: true,
                                             });
-                                            addMember.mutate({ membro_id: member.membro.id, cargo: "membro" });
+                                            addMember.mutate({ membro_id: member.id, cargo: "membro" });
                                           }
                                         }}
                                         className="flex items-center justify-between py-2"
@@ -312,7 +312,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange }: EditarGrupoDial
                                               isSelected ? "opacity-100" : "opacity-0"
                                             )}
                                           />
-                                          <span>{member.membro.nome}</span>
+                                          <span>{member.nome}</span>
                                         </div>
                                       </CommandItem>
                                     );
