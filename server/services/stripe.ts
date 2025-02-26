@@ -6,7 +6,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16', // Use latest stable version
+  apiVersion: '2023-10-16', // Latest supported version by Stripe
 });
 
 export class StripeService {
@@ -18,7 +18,7 @@ export class StripeService {
     // Create a product in Stripe
     const product = await stripe.products.create({
       name: plano.nome,
-      description: plano.descricao,
+      description: plano.descricao || undefined,
       metadata: {
         intervalo: plano.intervalo,
       },
@@ -44,7 +44,7 @@ export class StripeService {
     if (plano.nome || plano.descricao) {
       await stripe.products.update(stripeProductId, {
         name: plano.nome,
-        description: plano.descricao,
+        description: plano.descricao || undefined,
       });
     }
   }

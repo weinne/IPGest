@@ -56,9 +56,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register Stripe routes with authentication middleware
   app.use("/api/stripe", (req, res, next) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-    if (req.user.role !== "administrador") return res.sendStatus(403);
+    console.log("Stripe middleware - Authentication state:", {
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user ? {
+        id: req.user.id,
+        username: req.user.username,
+        role: req.user.role,
+        igreja_id: req.user.igreja_id
+      } : null
+    });
+
+    if (!req.isAuthenticated()) {
+      console.log("Stripe middleware - User not authenticated");
+      return res.sendStatus(401);
+    }
+    if (!req.user?.igreja_id) {
+      console.log("Stripe middleware - User has no igreja_id");
+      return res.sendStatus(403);
+    }
+    if (req.user.role !== "administrador") {
+      console.log("Stripe middleware - User is not an administrator");
+      return res.sendStatus(403);
+    }
     next();
   }, stripeRoutes);
 
