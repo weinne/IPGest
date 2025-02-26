@@ -31,17 +31,18 @@ import { Loader2, UserPlus, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import cn from 'classnames';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
+
+type GrupoMembro = {
+  membro: Membro;
+  cargo: keyof typeof cargosGrupo;
+};
 
 interface EditarGrupoDialogProps {
   grupo: Grupo;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialMembers?: Array<{
-    membro: Membro;
-    cargo: string;
-  }>;
+  initialMembers?: GrupoMembro[];
 }
 
 const tiposGrupo = {
@@ -84,16 +85,8 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  console.log("\n=== EditarGrupoDialog Render ===");
-  console.log("Group:", grupo.id);
-  console.log("Initial members:", initialMembers);
-
-  // Fetch all members for selection
   const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
     queryKey: ["/api/membros"],
-    onSuccess: (data) => {
-      console.log("All members loaded for selection:", data.length, "members");
-    },
   });
 
   const form = useForm<GrupoFormData>({
@@ -103,45 +96,17 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: [], // Start with empty array, will be populated in useEffect
+      membros: initialMembers.map(item => ({
+        membro_id: item.membro.id,
+        cargo: item.cargo as keyof typeof cargosGrupo,
+      })),
     },
   });
 
-  // Update form when initial members change
-  useEffect(() => {
-    if (initialMembers?.length > 0) {
-      console.log("\n=== Setting Initial Members ===");
-      console.log("Initial members:", initialMembers);
-      console.log("Member structure example:", initialMembers[0]);
-
-      try {
-        const validMembers = initialMembers
-          .filter(item => {
-            const isValid = item && item.membro && typeof item.membro.id === 'number';
-            if (!isValid) {
-              console.warn("Membro inválido:", item);
-            }
-            return isValid;
-          })
-          .map(item => ({
-            membro_id: item.membro.id,
-            cargo: item.cargo
-          }));
-
-        console.log("Membros válidos:", validMembers);
-        form.setValue("membros", validMembers);
-      } catch (error) {
-        console.error("Erro ao definir membros:", error);
-      }
-    }
-  }, [initialMembers, form]);
-
   const currentMembers = form.watch("membros") || [];
-  console.log("Current members in form:", currentMembers);
 
   const mutation = useMutation({
     mutationFn: async (data: GrupoFormData) => {
-      console.log("Submitting group update with data:", data);
       const res = await apiRequest("PATCH", `/api/grupos/${grupo.id}`, data);
       return res.json();
     },
@@ -155,7 +120,6 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       onOpenChange(false);
     },
     onError: (error: Error) => {
-      console.error("Error updating group:", error);
       toast({
         title: "Erro ao atualizar grupo",
         description: error.message,
@@ -190,10 +154,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
           <Form {...form}>
             <form
               id="edit-group-form"
-              onSubmit={form.handleSubmit((data) => {
-                console.log("Form submitted with data:", data);
-                mutation.mutate(data);
-              })}
+              onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
               className="space-y-4 py-4"
             >
               <FormField
@@ -281,7 +242,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
                     <Card>
                       <CardContent className="p-4 space-y-4">
                         <div className="flex flex-col gap-2">
-                          {field.value?.map((membro, index) => {
+                          {currentMembers.map((membro, index) => {
                             const membroData = membros.find(m => m.id === membro.membro_id);
                             if (!membroData) return null;
 

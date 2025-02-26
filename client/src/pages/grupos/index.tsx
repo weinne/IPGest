@@ -17,6 +17,11 @@ import { EditarGrupoDialog } from "./editar-grupo-dialog";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
+type GrupoMembro = {
+  membro: Membro;
+  cargo: string;
+};
+
 export default function GruposPage() {
   const { toast } = useToast();
   const [selectedGrupoId, setSelectedGrupoId] = useState<number | null>(null);
@@ -27,24 +32,9 @@ export default function GruposPage() {
     queryKey: ["/api/grupos"],
   });
 
-  // Query for group members
-  const { data: selectedGrupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery({
+  const { data: selectedGrupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery<GrupoMembro[]>({
     queryKey: ["/api/grupos", selectedGrupoId, "membros"],
     enabled: selectedGrupoId !== null,
-    onSuccess: (data) => {
-      console.log("=== Group Members Loading ===");
-      console.log("Selected Group ID:", selectedGrupoId);
-      console.log("Loaded members data:", data);
-      console.log("=========================");
-    },
-    onError: (error) => {
-      console.error("Error loading group members:", error);
-      toast({
-        title: "Erro ao carregar membros",
-        description: "Não foi possível carregar os membros do grupo.",
-        variant: "destructive",
-      });
-    }
   });
 
   const deleteMutation = useMutation({
@@ -135,7 +125,6 @@ export default function GruposPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem 
                   onClick={() => {
-                    console.log("Opening edit dialog for group:", grupo.id);
                     setSelectedGrupoId(grupo.id);
                     setDialogOpen(true);
                   }}
@@ -161,17 +150,12 @@ export default function GruposPage() {
                 grupo={grupo}
                 open={dialogOpen} 
                 onOpenChange={(open) => {
-                  console.log("Dialog state change:", {
-                    open,
-                    selectedGrupoId,
-                    membersCount: selectedGrupoMembros?.length,
-                    membersData: selectedGrupoMembros
-                  });
                   if (!open) {
                     setSelectedGrupoId(null);
                   }
                   setDialogOpen(open);
-                }} 
+                }}
+                initialMembers={selectedGrupoMembros}
               />
             )}
           </>
