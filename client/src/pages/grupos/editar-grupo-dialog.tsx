@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertGrupoSchema, type InsertGrupo, type Grupo, type Membro } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -54,11 +54,6 @@ interface EditarGrupoDialogProps {
     membro: Membro;
     cargo: string;
   }>;
-}
-
-interface GrupoMembro {
-  membro: Membro;
-  cargo: keyof typeof cargosGrupo;
 }
 
 const tiposGrupo = {
@@ -101,7 +96,8 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }:
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: membros = [] } = useQuery<Membro[]>({
+  // Fetch all members for the member selection
+  const { data: membros = [], isLoading: isLoadingMembros } = useQuery<Membro[]>({
     queryKey: ["/api/membros"],
   });
 
@@ -121,17 +117,13 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }:
     },
   });
 
-  // Update form when initial members change
   useEffect(() => {
     if (initialMembers?.length > 0) {
       console.log("Setting initial members in form:", initialMembers);
-      const membrosData = initialMembers
-        .filter(item => item?.membro && item.membro.id)
-        .map(({ membro, cargo }) => ({
-          membro_id: membro.id,
-          cargo: cargo as keyof typeof cargosGrupo,
-        }));
-      form.setValue("membros", membrosData);
+      form.setValue("membros", initialMembers.map(({ membro, cargo }) => ({
+        membro_id: membro.id,
+        cargo: cargo as keyof typeof cargosGrupo,
+      })));
     }
   }, [initialMembers, form]);
 
@@ -181,7 +173,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }:
     },
   });
 
-  if (isLoadingMembros || isLoadingGrupoMembros) {
+  if (isLoadingMembros) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="min-h-[200px] max-h-[85vh] flex flex-col gap-0 p-0">
@@ -205,14 +197,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }:
 
         <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
-            <form 
-              id="edit-group-form" 
-              onSubmit={form.handleSubmit((data) => {
-                console.log("Submitting form with data:", data);
-                mutation.mutate(data);
-              })} 
-              className="space-y-4 py-4"
-            >
+            <form id="edit-group-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4 py-4">
               <FormField
                 control={form.control}
                 name="nome"
@@ -413,9 +398,9 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }:
                 deleteMutation.mutate();
               }
             }}
-            disabled={deleteMutation.isPending}
+            disabled={mutation.isPending}
           >
-            {deleteMutation.isPending ? (
+            {mutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
             Excluir
