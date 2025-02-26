@@ -27,9 +27,12 @@ export default function GruposPage() {
     queryKey: ["/api/grupos"],
   });
 
-  const { data: selectedGrupoMembros = [] } = useQuery({
+  const { data: selectedGrupoMembros = [], isLoading: isLoadingGrupoMembros } = useQuery({
     queryKey: ["/api/grupos", selectedGrupoId, "membros"],
     enabled: selectedGrupoId !== null && dialogOpen,
+    onSuccess: (data) => {
+      console.log("Loaded members for group:", selectedGrupoId, data);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -119,10 +122,13 @@ export default function GruposPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => {
-                  setSelectedGrupoId(grupo.id);
-                  setDialogOpen(true);
-                }}>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    console.log("Opening edit dialog for group:", grupo.id);
+                    setSelectedGrupoId(grupo.id);
+                    setDialogOpen(true);
+                  }}
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
@@ -139,11 +145,16 @@ export default function GruposPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {selectedGrupoId === grupo.id && (
+            {selectedGrupoId === grupo.id && !isLoadingGrupoMembros && (
               <EditarGrupoDialog 
                 grupo={grupo} 
                 open={dialogOpen} 
-                onOpenChange={setDialogOpen} 
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setSelectedGrupoId(null);
+                  }
+                  setDialogOpen(open);
+                }} 
                 initialMembers={selectedGrupoMembros}
               />
             )}
