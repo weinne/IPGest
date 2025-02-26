@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Membro } from "@shared/schema";
 import { Pencil, Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,7 @@ import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { UserCircle } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle"; // Added import
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const columns = [
   {
@@ -81,6 +82,7 @@ const columns = [
       const [open, setOpen] = useState(false);
       const queryClient = useQueryClient();
       const { toast } = useToast();
+      const { user } = useAuth();
 
       const deleteMutation = useMutation({
         mutationFn: async () => {
@@ -88,7 +90,8 @@ const columns = [
           return res.json();
         },
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/membros"] });
+          // Include igreja_id in the query key for proper cache invalidation
+          queryClient.invalidateQueries({ queryKey: ["/api/membros", user?.igreja_id] });
           toast({
             title: "Membro excluído",
             description: "O membro foi excluído com sucesso.",
@@ -105,7 +108,7 @@ const columns = [
 
       return (
         <>
-          <ThemeToggle /> {/* Added ThemeToggle */}
+          <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
@@ -144,9 +147,11 @@ const columns = [
 
 export default function MembrosPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: membros = [], isLoading } = useQuery<Membro[]>({
-    queryKey: ["/api/membros"],
+    queryKey: ["/api/membros", user?.igreja_id], // Include igreja_id in the query key
+    enabled: !!user?.igreja_id, // Only fetch when igreja_id is available
   });
 
   return (
