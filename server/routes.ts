@@ -272,11 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await db
         .select({
-          membro: {
-            id: membros.id,
-            nome: membros.nome,
-            numero_rol: membros.numero_rol
-          },
+          membro: membros,
           cargo: membros_grupos.cargo
         })
         .from(membros_grupos)
@@ -289,11 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
       const formattedResult = result.map(r => ({
-        membro: {
-          id: r.membro.id,
-          nome: r.membro.nome,
-          numero_rol: r.membro.numero_rol
-        },
+        membro: r.membro,
         cargo: r.cargo
       }));
 
