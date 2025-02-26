@@ -16,7 +16,6 @@ import { NovoGrupoDialog } from "./novo-grupo-dialog";
 import { EditarGrupoDialog } from "./editar-grupo-dialog";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
-import { ThemeToggle } from "@/components/theme-toggle"; // Added import
 
 const columns = [
   {
@@ -57,6 +56,19 @@ const columns = [
     },
   },
   {
+    accessorKey: "membros_count",
+    header: "Membros",
+    cell: ({ row }: { row: any }) => {
+      const count = row.getValue("membros_count") as number;
+      return (
+        <div className="flex items-center">
+          <UsersRound className="mr-2 h-4 w-4" />
+          {count || 0}
+        </div>
+      );
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }: { row: any }) => {
       const grupo = row.original as Grupo;
@@ -87,7 +99,6 @@ const columns = [
 
       return (
         <>
-          <ThemeToggle /> {/* Added ThemeToggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">

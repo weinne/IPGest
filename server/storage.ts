@@ -8,8 +8,6 @@ import { sql } from 'drizzle-orm/sql';
 
 import { drizzle } from "drizzle-orm/neon-serverless";
 import * as schema from "@shared/schema";
-//import { Membro, Grupo, GrupoMembro, Pastor, Lideranca, MandatoPastor, MandatoLideranca } from "@shared/schema"; //These imports are already present in the original code.
-
 
 const PostgresSessionStore = connectPg(session);
 
@@ -165,7 +163,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGrupos(igreja_id: number): Promise<Grupo[]> {
-    return await db.select().from(grupos).where(eq(grupos.igreja_id, igreja_id));
+    console.log("Getting groups for igreja:", igreja_id);
+    const result = await db
+      .select({
+        id: grupos.id,
+        nome: grupos.nome,
+        tipo: grupos.tipo,
+        status: grupos.status,
+        descricao: grupos.descricao,
+        igreja_id: grupos.igreja_id,
+        membros_count: sql<number>`COUNT(DISTINCT ${membros_grupos.membro_id})`
+      })
+      .from(grupos)
+      .leftJoin(membros_grupos, eq(grupos.id, membros_grupos.grupo_id))
+      .where(eq(grupos.igreja_id, igreja_id))
+      .groupBy(grupos.id)
+      .orderBy(grupos.nome);
+
+    console.log("Found groups:", result);
+    return result;
   }
 
   async getLiderancas(igreja_id: number): Promise<Lideranca[]> {
@@ -307,16 +323,17 @@ export class DatabaseStorage implements IStorage {
       })
       .from(membros_grupos)
       .innerJoin(membros, eq(membros.id, membros_grupos.membro_id))
-      .where(eq(membros_grupos.grupo_id, grupo_id));
+      .where(eq(membros_grupos.grupo_id, grupo_id))
+      .orderBy(membros.nome);
 
     console.log("Found group members:", result);
 
-    // Ensure we only return results where membro exists
+    // Ensure we only return results where membro exists and properly format the response
     return result
       .filter(r => r.membro !== null)
       .map(r => ({
         membro: r.membro,
-        cargo: r.cargo || "membro"
+        cargo: r.cargo as string
       }));
   }
   async deleteMandatoLideranca(id: number): Promise<void> {
