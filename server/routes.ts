@@ -95,7 +95,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await db
         .select()
         .from(membros)
-        .where(eq(membros.igreja_id, req.user.igreja_id));
+        .where(eq(membros.igreja_id, req.user.igreja_id))
+        .orderBy(membros.nome);
 
       console.log("Membros encontrados:", result.length);
       res.json(result);
@@ -503,29 +504,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Filters for membros report:", filters);
       console.log("Igreja ID:", req.user.igreja_id);
 
-      const query = db.select({
-        id: membros.id,
-        numero_rol: membros.numero_rol,
-        nome: membros.nome,
-        tipo: membros.tipo,
-        sexo: membros.sexo,
-        status: membros.status,
-        data_admissao: membros.data_admissao
-      })
-      .from(membros)
-      .where(eq(membros.igreja_id, req.user.igreja_id));
+      let query = db
+        .select({
+          id: membros.id,
+          numero_rol: membros.numero_rol,
+          nome: membros.nome,
+          tipo: membros.tipo,
+          sexo: membros.sexo,
+          status: membros.status,
+          data_admissao: membros.data_admissao
+        })
+        .from(membros)
+        .where(eq(membros.igreja_id, req.user.igreja_id));
 
       if (filters.tipo) {
-        query.where(eq(membros.tipo, filters.tipo as string));
+        query = query.where(eq(membros.tipo, filters.tipo as string));
       }
       if (filters.sexo) {
-        query.where(eq(membros.sexo, filters.sexo as string));
+        query = query.where(eq(membros.sexo, filters.sexo as string));
       }
       if (filters.status) {
-        query.where(eq(membros.status, filters.status as string));
+        query = query.where(eq(membros.status, filters.status as string));
       }
       if (filters.data_admissao_inicio && filters.data_admissao_fim) {
-        query.where(
+        query = query.where(
           and(
             gte(membros.data_admissao, new Date(filters.data_admissao_inicio as string)),
             lte(membros.data_admissao, new Date(filters.data_admissao_fim as string))
@@ -739,8 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           comungantes: sql<number>`COALESCE(COUNT(CASE WHEN tipo = 'comungante' AND status = 'ativo' THEN 1 END), 0)::int`,
           nao_comungantes: sql<number>`COALESCE(COUNT(CASE WHEN tipo = 'nao_comungante' AND status = 'ativo' THEN 1 END), 0)::int`
         })
-        .from(membros)
-        .where(eq(membros.igreja_id, igreja_id));
+        .from(membros)        .where(eq(membros.igreja_id, igreja_id));
 
       const [distribuicaoIdade] = await db        .select({
           jovens: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENTDATE, data_nascimento)) < 30 THEN 1 END), 0)::int`,
