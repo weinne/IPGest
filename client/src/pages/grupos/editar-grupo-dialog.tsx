@@ -89,6 +89,16 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
     queryKey: ["/api/membros"],
   });
 
+  // Validar e transformar os membros iniciais
+  const validInitialMembers = Array.isArray(initialMembers) 
+    ? initialMembers
+      .filter(item => item && item.membro && typeof item.membro.id === 'number' && item.cargo)
+      .map(item => ({
+        membro_id: item.membro.id,
+        cargo: item.cargo
+      }))
+    : [];
+
   const form = useForm<GrupoFormData>({
     resolver: zodResolver(insertGrupoSchema),
     defaultValues: {
@@ -96,10 +106,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       tipo: grupo.tipo as keyof typeof tiposGrupo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: Array.isArray(initialMembers) ? initialMembers.map(item => ({
-        membro_id: item.membro.id,
-        cargo: item.cargo,
-      })) : [],
+      membros: validInitialMembers,
     },
   });
 
