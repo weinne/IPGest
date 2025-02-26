@@ -90,21 +90,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
-    const membros = await storage.getMembros(req.user.igreja_id);
-    res.json(membros);
+    try {
+      console.log("Buscando membros para igreja:", req.user.igreja_id);
+      const result = await db
+        .select()
+        .from(membros)
+        .where(eq(membros.igreja_id, req.user.igreja_id));
+
+      console.log("Membros encontrados:", result.length);
+      res.json(result);
+    } catch (error) {
+      console.error("Erro ao buscar membros:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
   });
 
   app.post("/api/membros", upload.single('foto'), canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
     try {
-      const novoMembro = await storage.createMembro({
-        ...req.body,
-        foto: req.file ? req.file.filename : null,
-        igreja_id: req.user.igreja_id,
-      });
-      res.status(201).json(novoMembro);
+      console.log("Criando novo membro para igreja:", req.user.igreja_id);
+      const novoMembro = await db
+        .insert(membros)
+        .values({
+          ...req.body,
+          foto: req.file ? req.file.filename : null,
+          igreja_id: req.user.igreja_id,
+        })
+        .returning();
+
+      console.log("Novo membro criado:", novoMembro);
+      res.status(201).json(novoMembro[0]);
     } catch (error) {
+      console.error("Erro ao criar membro:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
@@ -114,10 +132,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const membroId = parseInt(req.params.id);
-      await storage.deleteMembro(membroId);
+
+      // Primeiro verifica se o membro pertence à igreja do usuário
+      const membroExistente = await db
+        .select()
+        .from(membros)
+        .where(and(
+          eq(membros.id, membroId),
+          eq(membros.igreja_id, req.user.igreja_id)
+        ))
+        .limit(1);
+
+      if (!membroExistente.length) {
+        return res.status(404).json({ message: "Membro não encontrado" });
+      }
+
+      await db
+        .delete(membros)
+        .where(and(
+          eq(membros.id, membroId),
+          eq(membros.igreja_id, req.user.igreja_id)
+        ));
+
       logAudit(req, "EXCLUSÃO", "membro", membroId);
       res.json({ success: true });
     } catch (error) {
+      console.error("Erro ao deletar membro:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
@@ -127,19 +167,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const membroId = parseInt(req.params.id);
-      const updateData = {
-        ...req.body,
-        igreja_id: req.user.igreja_id,
-      };
 
-      if (req.file) {
-        updateData.foto = req.file.filename;
+      // Primeiro verifica se o membro pertence à igreja do usuário
+      const membroExistente = await db
+        .select()
+        .from(membros)
+        .where(and(
+          eq(membros.id, membroId),
+          eq(membros.igreja_id, req.user.igreja_id)
+        ))
+        .limit(1);
+
+      if (!membroExistente.length) {
+        return res.status(404).json({ message: "Membro não encontrado" });
       }
 
-      const membro = await storage.updateMembro(membroId, updateData);
+      const updateData = {
+        ...req.body,
+        foto: req.file ? req.file.filename : undefined,
+      };
+
+      const [membro] = await db
+        .update(membros)
+        .set(updateData)
+        .where(and(
+          eq(membros.id, membroId),
+          eq(membros.igreja_id, req.user.igreja_id)
+        ))
+        .returning();
+
+      console.log("Membro atualizado:", membro);
       logAudit(req, "EDIÇÃO", "membro", membroId);
       res.json(membro);
     } catch (error) {
+      console.error("Erro ao atualizar membro:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
@@ -681,7 +742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .select({
           jovens: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) < 30 THEN 1 END), 0)::int`,
           adultos: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) BETWEEN 30 AND 59 THEN 1 END), 0)::int`,
-          idosos: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, data_nascimento)) >= 60 THEN 1 END), 0)::int`
+          idosos: sql<number>`COALESCE(COUNT(CASE WHEN status = 'ativo' AND EXTRACT(YEARFROM AGE(CURRENT_DATE, data_nascimento)) >= 60 THEN 1 END), 0)::int`
         })
         .from(membros)
         .where(eq(membros.igreja_id, igreja_id));
@@ -709,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             gte(membros.data_admissao, sql`CURRENT_DATE - INTERVAL '1 year'`),
             eq(membros.status, 'ativo')
           )
-                )
+        )
         .groupBy(sql`DATE_TRUNC('month', data_admissao)`)
         .orderBy(sql`DATE_TRUNC('month', data_admissao)`);
 
