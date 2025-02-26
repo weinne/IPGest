@@ -114,7 +114,6 @@ export default function GruposPage() {
       id: "actions",
       cell: ({ row }: { row: any }) => {
         const grupo = row.original as Grupo;
-
         return (
           <>
             <DropdownMenu>

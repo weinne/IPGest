@@ -101,13 +101,7 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = 
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: initialMembers?.map(({ membro, cargo }) => {
-        console.log("Mapping initial member:", membro.id, membro.nome, cargo);
-        return {
-          membro_id: membro.id,
-          cargo: cargo as keyof typeof cargosGrupo,
-        };
-      }) || [],
+      membros: [], // This line is changed
     },
   });
 
