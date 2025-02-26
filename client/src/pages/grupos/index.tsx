@@ -158,7 +158,8 @@ export default function GruposPage() {
             </DropdownMenu>
             {selectedGrupoId === grupo.id && (
               <EditarGrupoDialog 
-                grupo={grupo} 
+                grupo={grupo}
+                initialMembers={selectedGrupoMembros}
                 open={dialogOpen} 
                 onOpenChange={(open) => {
                   console.log("Dialog state change:", {
