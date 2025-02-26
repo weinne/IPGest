@@ -50,7 +50,7 @@ interface EditarGrupoDialogProps {
   grupo: Grupo;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialMembers: Array<{
+  initialMembers?: Array<{
     membro: Membro;
     cargo: string;
   }>;
@@ -92,7 +92,7 @@ type GrupoFormData = {
   }>;
 };
 
-export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }: EditarGrupoDialogProps) {
+export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers = [] }: EditarGrupoDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -110,20 +110,20 @@ export function EditarGrupoDialog({ grupo, open, onOpenChange, initialMembers }:
       tipo: grupo.tipo,
       status: grupo.status,
       descricao: grupo.descricao || "",
-      membros: initialMembers?.map(({ membro, cargo }) => ({
-        membro_id: membro.id,
-        cargo: cargo as keyof typeof cargosGrupo,
-      })) || [],
+      membros: [],
     },
   });
 
   useEffect(() => {
     if (initialMembers?.length > 0) {
       console.log("Setting initial members in form:", initialMembers);
-      form.setValue("membros", initialMembers.map(({ membro, cargo }) => ({
-        membro_id: membro.id,
-        cargo: cargo as keyof typeof cargosGrupo,
-      })));
+      const validMembers = initialMembers.filter(item => item?.membro && item.membro.id);
+      if (validMembers.length > 0) {
+        form.setValue("membros", validMembers.map(({ membro, cargo }) => ({
+          membro_id: membro.id,
+          cargo: cargo as keyof typeof cargosGrupo,
+        })));
+      }
     }
   }, [initialMembers, form]);
 
