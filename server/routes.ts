@@ -19,8 +19,11 @@ import {
   pastores,
   mandatos_liderancas,
   mandatos_pastores,
-  igrejas
+  igrejas,
+  subscription_plans,
+  subscriptions
 } from "@shared/schema";
+import { stripe, createCustomer, createSubscription, cancelSubscription, updateSubscription, getSubscription } from "./stripe";
 
 const scryptAsync = promisify(scrypt);
 
@@ -47,6 +50,10 @@ const upload = multer({
 
 function logAudit(req: Request, operacao: string, tipo: string, id: number) {
   console.log(`AUDIT: usuário ${req.user?.username} (${req.user?.id}) realizou ${operacao} em ${tipo} #${id} às ${new Date().toISOString()}`);
+}
+
+function logSubscriptionOp(req: Request, operation: string, details: any) {
+  console.log(`[Subscription ${operation}] User: ${req.user?.username} (${req.user?.id}) Igreja: ${req.user?.igreja_id} Details:`, details);
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -269,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const grupoId = parseInt(req.params.id);
       console.log("Buscando membros do grupo:", grupoId);
-      
+
       const result = await db
         .select({
           id: membros.id,
@@ -892,7 +899,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
+  // Subscription Plans Management
+  app.get("/api/subscription-plans", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
 
+    try {
+      console.log(`[Subscription Plans] Fetching plans for user: ${req.user?.username}`);
+      const plans = await storage.listSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("[Subscription Plans] Error fetching plans:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/subscription-plans", isAdmin, async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
+
+    try {
+      logSubscriptionOp(req, "Create Plan", req.body);
+
+      // First create the product in Stripe
+      const product = await stripe.products.create({
+        name: req.body.name,
+        description: req.body.description,
+      });
+      console.log("[Stripe] Product created:", product.id);
+
+      // Create the price in Stripe
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: Math.round(req.body.price * 100), // Convert to cents and ensure integer
+        currency: 'brl',
+        recurring: {
+          interval: 'month',
+        },
+      });
+      console.log("[Stripe] Price created:", price.id);
+
+      // Create the plan in our database
+      const plan = await storage.createSubscriptionPlan({
+        name: req.body.name,
+        description: req.body.description,
+        stripe_price_id: price.id,
+        stripe_product_id: product.id,
+        features: req.body.features,
+        status: 'active',
+      });
+
+      logSubscriptionOp(req, "Plan Created", plan);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error("[Subscription Plans] Error creating plan:", error);
+      res.status(400).json({ 
+        message: "Erro ao criar plano de assinatura",
+        details: (error as Error).message 
+      });
+    }
+  });
+
+  // Church Subscription Management
+  app.post("/api/subscriptions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
+    if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não identificada" });
+
+    try {
+      logSubscriptionOp(req, "Create Subscription Request", req.body);
+
+      // Get igreja details
+      const igreja = await db.query.igrejas.findFirst({
+        where: eq(igrejas.id, req.user.igreja_id),
+      });
+
+      if (!igreja) {
+        return res.status(404).json({ message: "Igreja não encontrada" });
+      }
+
+      // Create or get Stripe customer
+      console.log("[Stripe] Creating customer for igreja:", igreja.id);
+      const customer = await createCustomer(igreja);
+      console.log("[Stripe] Customer created:", customer.id);
+
+      // Create the subscription
+      console.log("[Stripe] Creating subscription for customer:", customer.id);
+      const subscription = await createSubscription(
+        customer.id,
+        req.body.stripe_price_id
+      );
+      console.log("[Stripe] Subscription created:", subscription.id);
+
+      // Store subscription in our database
+      const dbSubscription = await storage.createSubscription({
+        igreja_id: req.user.igreja_id,
+        plan_id: req.body.plan_id,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: customer.id,
+        status: subscription.status as any,
+        current_period_start: new Date(subscription.current_period_start * 1000),
+        current_period_end: new Date(subscription.current_period_end * 1000),
+      });
+
+      logSubscriptionOp(req, "Subscription Created", dbSubscription);
+      res.status(201).json({
+        subscription: dbSubscription,
+        client_secret: (subscription.latest_invoice as any).payment_intent?.client_secret,
+      });
+    } catch (error) {
+      console.error("[Subscriptions] Error creating subscription:", error);
+      res.status(400).json({ 
+        message: "Erro ao criar assinatura",
+        details: (error as Error).message 
+      });
+    }
+  });
+
+  app.get("/api/subscriptions/current", async (req, res) => {
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const subscription = await storage.getSubscriptionByIgreja(req.user.igreja_id);
+      if (!subscription) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+
+      // Get the latest status from Stripe
+      const stripeSubscription = await getSubscription(subscription.stripe_subscription_id);
+
+      // Update our database if status changed
+      if (stripeSubscription.status !== subscription.status) {
+        await storage.updateSubscription(subscription.id, {
+          status: stripeSubscription.status as any,
+        });
+      }
+
+      res.json({
+        ...subscription,
+        status: stripeSubscription.status,
+      });
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.post("/api/subscriptions/cancel", async (req, res) => {
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    try {
+      const subscription = await storage.getSubscriptionByIgreja(req.user.igreja_id);
+      if (!subscription) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+
+      await cancelSubscription(subscription.stripe_subscription_id);
+
+      await storage.updateSubscription(subscription.id, {
+        status: "canceled",
+        canceled_at: new Date(),
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error canceling subscription:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  // Stripe Webhook Handler
+  app.post("/api/webhooks/stripe", express.raw({type: 'application/json'}), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+
+    try {
+      if (!process.env.STRIPE_WEBHOOK_SECRET) {
+        throw new Error("Stripe webhook secret not configured");
+      }
+
+      console.log("[Stripe Webhook] Received event");
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig as string,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+
+      console.log("[Stripe Webhook] Event type:", event.type);
+
+      // Handle the event
+      switch (event.type) {
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object;
+          console.log("[Stripe Webhook] Processing subscription update:", subscription.id);
+
+          // Find and update the subscription in our database
+          const [dbSubscription] = await db
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.stripe_subscription_id, subscription.id));
+
+          if (dbSubscription) {
+            await storage.updateSubscription(dbSubscription.id, {
+              status: subscription.status as any,
+              current_period_start: new Date(subscription.current_period_start * 1000),
+              current_period_end: new Date(subscription.current_period_end * 1000),
+              cancel_at_period_end: subscription.cancel_at_period_end,
+              canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,
+            });
+            console.log("[Stripe Webhook] Subscription updated in database");
+          } else {
+            console.warn("[Stripe Webhook] Subscription not found in database:", subscription.id);
+          }
+          break;
+        }
+      }
+
+      res.json({received: true});
+    } catch (err) {
+      console.error('[Stripe Webhook] Error:', err);
+      res.status(400).send(`Webhook Error: ${(err as Error).message}`);
+    }
+  });
+
+  const httpServer = createServer(app);
   return httpServer;
 }
