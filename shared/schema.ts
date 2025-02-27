@@ -20,6 +20,7 @@ export const igrejas = pgTable("igrejas", {
   email: text("email"),
   logo_url: text("logo_url"),
   data_fundacao: date("data_fundacao"),
+  stripe_customer_id: text("stripe_customer_id"), // Added field for Stripe customer
 });
 
 // Users - Enhanced with photo
@@ -232,6 +233,7 @@ export const insertIgrejaSchema = createInsertSchema(igrejas).extend({
   presbitero: z.string().optional().transform(p => p || null),
   logo_url: z.string().optional().transform(l => l || null),
   data_fundacao: z.string().optional().transform(d => d || null),
+  stripe_customer_id: z.string().optional().transform(id => id || null), // Added for Stripe customer ID
 });
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,

@@ -1053,9 +1053,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Igreja não encontrada" });
       }
 
+      let stripeCustomerId = igreja.stripe_customer_id;
+
+      // If no Stripe customer exists, create one
+      if (!stripeCustomerId) {
+        console.log("[Stripe] Creating customer for igreja:", igreja.id);
+        const customer = await stripe.customers.create({
+          name: igreja.nome,
+          email: igreja.email,
+          metadata: {
+            igreja_id: igreja.id.toString(),
+          },
+        });
+        stripeCustomerId = customer.id;
+
+        // Update igreja with the new customer ID
+        await db
+          .update(igrejas)
+          .set({ stripe_customer_id: customer.id })
+          .where(eq(igrejas.id, igreja.id));
+
+        console.log("[Stripe] Customer created and saved:", customer.id);
+      }
+
       // Create Stripe Billing Portal session
       const session = await stripe.billingPortal.sessions.create({
-        customer: igreja.stripe_customer_id,
+        customer: stripeCustomerId,
         return_url: `${req.protocol}://${req.get('host')}/assinaturas`,
       });
 
