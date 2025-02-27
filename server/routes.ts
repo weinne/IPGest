@@ -757,7 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
       const ocorrencias = [
-        ...membrosOOcorrencias,
+        ...membrosOcorrencias,
         ...liderancasOcorrencias,
         ...pastoresOcorrencias
       ].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
@@ -905,6 +905,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log(`[Subscription Plans] Fetching plans for user: ${req.user?.username}`);
+      console.log("[Stripe] Using API key:", process.env.STRIPE_SECRET_KEY?.substring(0, 8) + "...");
 
       // Get products from Stripe
       const products = await stripe.products.list({
@@ -912,24 +913,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expand: ['data.default_price'],
       });
 
-      console.log("[Stripe] Products response:", JSON.stringify(products, null, 2));
+      console.log("[Stripe] Raw products response:", JSON.stringify(products, null, 2));
 
       // Format the response
-      const plans = products.data.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        features: product.features?.map(f => f.name) || [],
-        price_id: (product.default_price as any)?.id,
-        unit_amount: ((product.default_price as any)?.unit_amount || 0) / 100,
-        currency: (product.default_price as any)?.currency,
-      }));
+      const plans = products.data.map(product => {
+        console.log("[Stripe] Processing product:", product.id, {
+          name: product.name,
+          default_price: product.default_price,
+        });
+
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          features: product.features || [],
+          price_id: (product.default_price as any)?.id,
+          unit_amount: ((product.default_price as any)?.unit_amount || 0) / 100,
+          currency: (product.default_price as any)?.currency,
+        };
+      });
 
       console.log("[Stripe] Formatted plans:", JSON.stringify(plans, null, 2));
       res.json(plans);
     } catch (error) {
       console.error("[Subscription Plans] Error fetching plans from Stripe:", error);
-      res.status(500).json({ message: (error as Error).message });
+      res.status(500).json({ 
+        message: "Erro ao buscar planos",
+        details: (error as Error).message,
+        stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
+      });
     }
   });
 
@@ -959,14 +971,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[Stripe] Creating subscription for customer:", customer.id);
       const subscription = await createSubscription(
         customer.id,
-        req.body.price_id // Changed from stripe_price_id to price_id to match frontend
+        req.body.price_id
       );
       console.log("[Stripe] Subscription created:", subscription.id);
 
       // Store subscription in our database
       const dbSubscription = await storage.createSubscription({
         igreja_id: req.user.igreja_id,
-        plan_id: subscription.id, // Using Stripe subscription ID as plan_id
+        plan_id: subscription.id,
         stripe_subscription_id: subscription.id,
         stripe_customer_id: customer.id,
         status: subscription.status as any,
@@ -1047,14 +1059,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não identificada" });
 
     try {
+      console.log("[Billing Portal] Creating session for igreja:", req.user.igreja_id);
+
       // Get igreja details
       const igreja = await db.query.igrejas.findFirst({
         where: eq(igrejas.id, req.user.igreja_id),
       });
 
       if (!igreja) {
+        console.log("[Billing Portal] Igreja not found:", req.user.igreja_id);
         return res.status(404).json({ message: "Igreja não encontrada" });
       }
+
+      console.log("[Billing Portal] Igreja details:", {
+        id: igreja.id,
+        nome: igreja.nome,
+        stripe_customer_id: igreja.stripe_customer_id
+      });
 
       let stripeCustomerId = igreja.stripe_customer_id;
 
@@ -1062,8 +1083,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!stripeCustomerId) {
         console.log("[Stripe] Creating customer for igreja:", igreja.id);
         const customer = await stripe.customers.create({
-          name: igreja.nome,
-          email: igreja.email,
+          name: igreja.nome || `Igreja #${igreja.id}`,
+          email: igreja.email || undefined,
           metadata: {
             igreja_id: igreja.id.toString(),
           },
@@ -1079,18 +1100,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Stripe] Customer created and saved:", customer.id);
       }
 
+      console.log("[Stripe] Creating billing portal session for customer:", stripeCustomerId);
+
       // Create Stripe Billing Portal session
       const session = await stripe.billingPortal.sessions.create({
         customer: stripeCustomerId,
         return_url: `${req.protocol}://${req.get('host')}/assinaturas`,
       });
 
+      console.log("[Stripe] Billing portal session created:", session.url);
+
       res.json({ url: session.url });
     } catch (error) {
-      console.error("[Billing Portal] Error creating session:", error);
+      console.error("[Billing Portal] Error:", error);
       res.status(500).json({ 
         message: "Erro ao criar sessão do portal de assinaturas",
-        details: (error as Error).message 
+        details: (error as Error).message,
+        stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
       });
     }
   });
