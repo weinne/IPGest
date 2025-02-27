@@ -69,28 +69,43 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     const customer = await stripe.customers.retrieve(customerId);
     console.log('[Stripe] Customer verified:', customer.id);
 
-    // Create the portal session
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: returnUrl,
-      // Ensure portal shows all available subscriptions and configuration options
-      configuration_data: {
+    // Get or create portal configuration
+    let configuration;
+    const configurations = await stripe.billingPortal.configurations.list({ limit: 1 });
+
+    if (configurations.data.length > 0) {
+      configuration = configurations.data[0];
+      console.log('[Stripe] Using existing portal configuration:', configuration.id);
+    } else {
+      console.log('[Stripe] Creating new portal configuration');
+      configuration = await stripe.billingPortal.configurations.create({
         features: {
-          subscription_cancel: { enabled: true },
-          subscription_pause: { enabled: false },
-          customer_update: { 
-            enabled: true,
+          customer_update: {
             allowed_updates: ['email', 'address', 'phone'],
+            enabled: true,
           },
           invoice_history: { enabled: true },
           payment_method_update: { enabled: true },
+          subscription_cancel: { enabled: true },
+          subscription_pause: { enabled: false },
           subscription_update: {
             enabled: true,
-            products: 'all', // Show all available products
+            products: 'all',
             proration_behavior: 'create_prorations',
           },
         },
-      },
+        business_profile: {
+          headline: 'Gerenciar sua assinatura',
+        },
+      });
+      console.log('[Stripe] Created new portal configuration:', configuration.id);
+    }
+
+    // Create the portal session with the configuration
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+      configuration: configuration.id,
     });
 
     console.log('[Stripe] Portal session created:', session.url);
