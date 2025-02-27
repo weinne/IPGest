@@ -1148,16 +1148,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Stripe] Customer created and saved:", customer.id);
       }
 
-      console.log("[Stripe] Creating portal session for customer:", stripeCustomerId);
+      // Use the pre-configured portal URL
+      const portalUrl = "https://billing.stripe.com/p/login/test_9AQ0232SybDC5P2144";
+      console.log("[Stripe] Redirecting to portal:", portalUrl);
 
-      // Create portal session with minimal configuration
-      const session = await createPortalSession(
-        stripeCustomerId,
-        `${req.protocol}://${req.get('host')}/assinaturas`
-      );
-
-      console.log("[Stripe] Portal session created:", session.url);
-      res.json({ url: session.url });
+      res.json({ url: portalUrl });
     } catch (error) {
       console.error("[Portal] Error:", error);
       res.status(500).json({ 
