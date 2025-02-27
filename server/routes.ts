@@ -1169,6 +1169,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não encontrada" });
 
     try {
+      console.log("[Checkout] Iniciando sessão para igreja:", req.user.igreja_id);
+
       // Get igreja details
       const igreja = await db.query.igrejas.findFirst({
         where: eq(igrejas.id, req.user.igreja_id)
@@ -1196,7 +1198,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ stripe_customer_id: stripeCustomerId })
           .where(eq(igrejas.id, igreja.id));
 
-        console.log("[Stripe] Customer created and saved:", customer.id);
+        console.log("[Stripe] Customer created and saved:", stripeCustomerId);
+      } else {
+        console.log("[Stripe] Using existing customer:", stripeCustomerId);
       }
 
       // Create Checkout session
@@ -1214,6 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         billing_address_collection: 'required',
         payment_method_types: ['card'],
         allow_promotion_codes: true,
+        locale: 'pt-BR', // Adiciona suporte ao português
       });
 
       console.log("[Stripe] Checkout session created:", session.url);
