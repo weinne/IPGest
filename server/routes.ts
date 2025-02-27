@@ -752,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           and(
             eq(mandatos_pastores.igreja_id, igreja_id),
             data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
-            data_fim ? lte(mandatos_pastores.data_fim, new Date(datafim as string)) : undefined
+            data_fim ? lte(mandatos_pastores.data_fim, new Date(data_fim as string)) : undefined
           )
         );
 
@@ -1130,12 +1130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If no Stripe customer exists, create one
       if (!stripeCustomerId) {
         console.log("[Stripe] Creating customer for igreja:", igreja.id);
-        const customer = await stripe.customers.create({
-          name: igreja.nome || `Igreja #${igreja.id}`,
-          email: igreja.email || undefined,
-          metadata: {
-            igreja_id: igreja.id.toString(),
-          },
+        const customer = await createCustomer({
+          id: igreja.id,
+          nome: igreja.nome || `Igreja #${igreja.id}`,
+          email: igreja.email
         });
         stripeCustomerId = customer.id;
 
@@ -1148,11 +1146,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Stripe] Customer created and saved:", customer.id);
       }
 
-      // Use the pre-configured portal URL
-      const portalUrl = "https://billing.stripe.com/p/login/test_9AQ0232SybDC5P2144";
-      console.log("[Stripe] Redirecting to portal:", portalUrl);
+      // Create portal session using the helper function
+      console.log("[Stripe] Creating portal session for customer:", stripeCustomerId);
+      const session = await createPortalSession(
+        stripeCustomerId,
+        `${req.protocol}://${req.get('host')}/assinaturas`
+      );
 
-      res.json({ url: portalUrl });
+      console.log("[Stripe] Portal session created:", session.url);
+      res.json({ url: session.url });
     } catch (error) {
       console.error("[Portal] Error:", error);
       res.status(500).json({ 
