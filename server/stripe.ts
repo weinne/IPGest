@@ -73,6 +73,24 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl,
+      // Ensure portal shows all available subscriptions and configuration options
+      configuration_data: {
+        features: {
+          subscription_cancel: { enabled: true },
+          subscription_pause: { enabled: false },
+          customer_update: { 
+            enabled: true,
+            allowed_updates: ['email', 'address', 'phone'],
+          },
+          invoice_history: { enabled: true },
+          payment_method_update: { enabled: true },
+          subscription_update: {
+            enabled: true,
+            products: 'all', // Show all available products
+            proration_behavior: 'create_prorations',
+          },
+        },
+      },
     });
 
     console.log('[Stripe] Portal session created:', session.url);
