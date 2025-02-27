@@ -14,7 +14,6 @@ export async function listActiveProducts() {
   console.log('[Stripe] API Key:', process.env.STRIPE_SECRET_KEY?.substring(0, 8) + '...');
 
   try {
-    // Get all active prices with their products
     const prices = await stripe.prices.list({
       active: true,
       expand: ['data.product'],
@@ -23,7 +22,6 @@ export async function listActiveProducts() {
 
     console.log('[Stripe] Raw prices response:', JSON.stringify(prices, null, 2));
 
-    // Map prices to products with pricing information
     const products = prices.data.map(price => {
       const product = price.product as Stripe.Product;
       return {
@@ -69,43 +67,10 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     const customer = await stripe.customers.retrieve(customerId);
     console.log('[Stripe] Customer verified:', customer.id);
 
-    // Get all active products first
-    const products = await stripe.products.list({
-      active: true,
-      limit: 100,
-    });
-
-    console.log('[Stripe] Active products:', products.data.map(p => p.id));
-
-    // Create portal configuration
-    console.log('[Stripe] Creating portal configuration');
-    const configuration = await stripe.billingPortal.configurations.create({
-      features: {
-        customer_update: {
-          allowed_updates: ['email', 'address', 'phone'],
-          enabled: true,
-        },
-        invoice_history: { enabled: true },
-        payment_method_update: { enabled: true },
-        subscription_cancel: { enabled: true },
-        subscription_pause: { enabled: false },
-        subscription_update: {
-          enabled: true,
-          default_allowed_updates: ['price', 'quantity'],
-          proration_behavior: 'create_prorations',
-          products: products.data,
-        },
-      },
-      business_profile: {
-        headline: 'Gerenciar sua assinatura',
-      },
-    });
-
-    // Create the portal session with the configuration
+    // Create basic portal session without custom configuration
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl,
-      configuration: configuration.id,
     });
 
     console.log('[Stripe] Portal session created:', session.url);
