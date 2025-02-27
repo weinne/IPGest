@@ -1185,13 +1185,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Stripe] Creating customer for igreja:", igreja.id);
         const customer = await createCustomer({
           id: igreja.id,
-          nome: igreja.nome,
+          nome: igreja.nome || `Igreja #${igreja.id}`,
           email: igreja.email
         });
         stripeCustomerId = customer.id;
 
         // Save Stripe customer ID
-        await db.update(igrejas)
+        await db
+          .update(igrejas)
           .set({ stripe_customer_id: stripeCustomerId })
           .where(eq(igrejas.id, igreja.id));
 
@@ -1210,8 +1211,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mode: 'subscription',
         success_url: `${req.protocol}://${req.get('host')}/assinaturas?success=true`,
         cancel_url: `${req.protocol}://${req.get('host')}/assinaturas?canceled=true`,
+        billing_address_collection: 'required',
+        payment_method_types: ['card'],
+        allow_promotion_codes: true,
       });
 
+      console.log("[Stripe] Checkout session created:", session.url);
       res.json({ url: session.url });
     } catch (error) {
       console.error("[Checkout] Error:", error);
