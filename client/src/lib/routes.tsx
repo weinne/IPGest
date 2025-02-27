@@ -1,4 +1,4 @@
-import { Home, Users, Boxes, UserCog, FileText } from "lucide-react";
+import { Home, Users, Boxes, UserCog, FileText, CreditCard } from "lucide-react";
 
 export const allRoutes = [
   {
@@ -20,5 +20,10 @@ export const allRoutes = [
     path: "/relatorios",
     label: "Relatórios",
     icon: FileText,
+  },
+  {
+    path: "/assinaturas",
+    label: "Assinaturas",
+    icon: CreditCard,
   },
 ];
