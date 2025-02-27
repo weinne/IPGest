@@ -69,6 +69,14 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     const customer = await stripe.customers.retrieve(customerId);
     console.log('[Stripe] Customer verified:', customer.id);
 
+    // Get all active products first
+    const products = await stripe.products.list({
+      active: true,
+      limit: 100,
+    });
+
+    console.log('[Stripe] Active products:', products.data.map(p => p.id));
+
     // Create portal configuration
     console.log('[Stripe] Creating portal configuration');
     const configuration = await stripe.billingPortal.configurations.create({
@@ -85,7 +93,7 @@ export async function createPortalSession(customerId: string, returnUrl: string)
           enabled: true,
           default_allowed_updates: ['price', 'quantity'],
           proration_behavior: 'create_prorations',
-          products: await listActiveProductIds(),
+          products: products.data,
         },
       },
       business_profile: {
@@ -106,15 +114,6 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     console.error('[Stripe] Error creating portal session:', error);
     throw error;
   }
-}
-
-// Helper function to get all active product IDs
-async function listActiveProductIds() {
-  const products = await stripe.products.list({
-    active: true,
-    limit: 100,
-  });
-  return products.data.map(product => product.id);
 }
 
 export async function createSubscription(customerId: string, priceId: string) {
