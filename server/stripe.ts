@@ -14,32 +14,40 @@ export async function listActiveProducts() {
   console.log('[Stripe] API Key:', process.env.STRIPE_SECRET_KEY?.substring(0, 8) + '...');
 
   try {
-    // Primeiro, vamos buscar o produto específico
-    const product = await stripe.products.retrieve('prod_Rqd8mXTzFJQCVh');
-    console.log('[Stripe] Product:', product);
-
-    // Agora, vamos buscar os preços associados a este produto
-    const prices = await stripe.prices.list({
-      product: 'prod_Rqd8mXTzFJQCVh',
+    // Listar todos os produtos ativos
+    const products = await stripe.products.list({
       active: true,
-      type: 'recurring',
+      limit: 100,
     });
 
-    console.log('[Stripe] Raw prices response:', JSON.stringify(prices, null, 2));
+    console.log('[Stripe] Products found:', products.data.length);
 
-    // Formatar a resposta
-    const formattedProduct = {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      features: product.features || [],
-      price_id: prices.data[0]?.id, // Pega o primeiro preço ativo
-      unit_amount: prices.data[0]?.unit_amount ? prices.data[0].unit_amount / 100 : 0,
-      currency: prices.data[0]?.currency || 'brl',
-    };
+    // Para cada produto, buscar seus preços
+    const productsWithPrices = await Promise.all(
+      products.data.map(async (product) => {
+        const prices = await stripe.prices.list({
+          product: product.id,
+          active: true,
+          type: 'recurring',
+          limit: 1,
+        });
 
-    console.log('[Stripe] Formatted product:', formattedProduct);
-    return { data: [formattedProduct] };
+        console.log(`[Stripe] Prices for product ${product.id}:`, prices.data.length);
+
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          features: product.features || [],
+          price_id: prices.data[0]?.id,
+          unit_amount: prices.data[0]?.unit_amount ? prices.data[0].unit_amount / 100 : 0,
+          currency: prices.data[0]?.currency || 'brl',
+        };
+      })
+    );
+
+    console.log('[Stripe] Products with prices:', productsWithPrices);
+    return { data: productsWithPrices };
   } catch (error) {
     console.error('[Stripe] Error listing products:', error);
     throw error;
