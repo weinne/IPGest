@@ -23,7 +23,7 @@ import {
   subscription_plans,
   subscriptions
 } from "@shared/schema";
-import { stripe, createCustomer, createSubscription, cancelSubscription, updateSubscription, getSubscription } from "./stripe";
+import { stripe, createCustomer, createSubscription, cancelSubscription, updateSubscription, getSubscription, listActiveProducts, createPortalSession } from "./stripe";
 
 const scryptAsync = promisify(scrypt);
 
@@ -750,7 +750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(pastores, eq(mandatos_pastores.pastor_id, pastores.id))
         .where(
           and(
-            eq(mandatos_pastores.igreja_id, igreja_id),
+            eqmandatos_pastores.igreja_id, igreja_id),
             data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
             data_fim ? lte(mandatos_pastores.data_fim, new Date(data_fim as string)) : undefined
           )
@@ -908,28 +908,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[Stripe] Using API key:", process.env.STRIPE_SECRET_KEY?.substring(0, 8) + "...");
 
       // Get products from Stripe
-      const products = await stripe.products.list({
-        active: true,
-        expand: ['data.default_price'],
-      });
+      const products = await listActiveProducts();
 
       console.log("[Stripe] Raw products response:", JSON.stringify(products, null, 2));
 
       // Format the response
       const plans = products.data.map(product => {
-        console.log("[Stripe] Processing product:", product.id, {
-          name: product.name,
-          default_price: product.default_price,
-        });
-
+        const price = product.default_price as Stripe.Price;
         return {
           id: product.id,
           name: product.name,
           description: product.description,
-          features: product.features || [],
-          price_id: (product.default_price as any)?.id,
-          unit_amount: ((product.default_price as any)?.unit_amount || 0) / 100,
-          currency: (product.default_price as any)?.currency,
+          features: Array.isArray(product.features) ? product.features : [],
+          price_id: price?.id,
+          unit_amount: (price?.unit_amount || 0) / 100,
+          currency: price?.currency || 'brl',
         };
       });
 
@@ -1082,13 +1075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If no Stripe customer exists, create one
       if (!stripeCustomerId) {
         console.log("[Stripe] Creating customer for igreja:", igreja.id);
-        const customer = await stripe.customers.create({
-          name: igreja.nome || `Igreja #${igreja.id}`,
-          email: igreja.email || undefined,
-          metadata: {
-            igreja_id: igreja.id.toString(),
-          },
-        });
+        const customer = await createCustomer(igreja);
         stripeCustomerId = customer.id;
 
         // Update igreja with the new customer ID
@@ -1100,15 +1087,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Stripe] Customer created and saved:", customer.id);
       }
 
-      console.log("[Stripe] Creating billing portal session for customer:", stripeCustomerId);
-
-      // Create Stripe Billing Portal session
-      const session = await stripe.billingPortal.sessions.create({
-        customer: stripeCustomerId,
-        return_url: `${req.protocol}://${req.get('host')}/assinaturas`,
-      });
-
-      console.log("[Stripe] Billing portal session created:", session.url);
+      // Create portal session
+      const returnUrl = `${req.protocol}://${req.get('host')}/assinaturas`;
+      const session = await createPortalSession(stripeCustomerId, returnUrl);
 
       res.json({ url: session.url });
     } catch (error) {
