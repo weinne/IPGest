@@ -69,37 +69,29 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     const customer = await stripe.customers.retrieve(customerId);
     console.log('[Stripe] Customer verified:', customer.id);
 
-    // Get or create portal configuration
-    let configuration;
-    const configurations = await stripe.billingPortal.configurations.list({ limit: 1 });
-
-    if (configurations.data.length > 0) {
-      configuration = configurations.data[0];
-      console.log('[Stripe] Using existing portal configuration:', configuration.id);
-    } else {
-      console.log('[Stripe] Creating new portal configuration');
-      configuration = await stripe.billingPortal.configurations.create({
-        features: {
-          customer_update: {
-            allowed_updates: ['email', 'address', 'phone'],
-            enabled: true,
-          },
-          invoice_history: { enabled: true },
-          payment_method_update: { enabled: true },
-          subscription_cancel: { enabled: true },
-          subscription_pause: { enabled: false },
-          subscription_update: {
-            enabled: true,
-            products: 'all',
-            proration_behavior: 'create_prorations',
-          },
+    // Create portal configuration
+    console.log('[Stripe] Creating portal configuration');
+    const configuration = await stripe.billingPortal.configurations.create({
+      features: {
+        customer_update: {
+          allowed_updates: ['email', 'address', 'phone'],
+          enabled: true,
         },
-        business_profile: {
-          headline: 'Gerenciar sua assinatura',
+        invoice_history: { enabled: true },
+        payment_method_update: { enabled: true },
+        subscription_cancel: { enabled: true },
+        subscription_pause: { enabled: false },
+        subscription_update: {
+          enabled: true,
+          default_allowed_updates: ['price', 'quantity'],
+          proration_behavior: 'create_prorations',
+          products: await listActiveProductIds(),
         },
-      });
-      console.log('[Stripe] Created new portal configuration:', configuration.id);
-    }
+      },
+      business_profile: {
+        headline: 'Gerenciar sua assinatura',
+      },
+    });
 
     // Create the portal session with the configuration
     const session = await stripe.billingPortal.sessions.create({
@@ -114,6 +106,15 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     console.error('[Stripe] Error creating portal session:', error);
     throw error;
   }
+}
+
+// Helper function to get all active product IDs
+async function listActiveProductIds() {
+  const products = await stripe.products.list({
+    active: true,
+    limit: 100,
+  });
+  return products.data.map(product => product.id);
 }
 
 export async function createSubscription(customerId: string, priceId: string) {
