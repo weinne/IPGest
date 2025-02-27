@@ -17,7 +17,15 @@ export default function AssinaturasPage() {
     },
     onSuccess: (data) => {
       if (data.url) {
-        window.location.href = data.url;
+        // Usar window.open para evitar bloqueio de popup
+        const portalWindow = window.open(data.url, '_blank');
+        if (!portalWindow) {
+          toast({
+            title: "Aviso",
+            description: "Por favor, permita popups para acessar o portal de assinaturas.",
+            variant: "default",
+          });
+        }
       }
     },
     onError: (error: Error) => {

@@ -1115,8 +1115,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!igreja) {
+        console.log("[Portal] Igreja not found:", req.user.igreja_id);
         return res.status(404).json({ message: "Igreja não encontrada" });
       }
+
+      console.log("[Portal] Igreja details:", {
+        id: igreja.id,
+        nome: igreja.nome,
+        stripe_customer_id: igreja.stripe_customer_id
+      });
 
       let stripeCustomerId = igreja.stripe_customer_id;
 
@@ -1141,38 +1148,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Stripe] Customer created and saved:", customer.id);
       }
 
-      // Create portal configuration if it doesn't exist
-      const configurations = await stripe.billingPortal.configurations.list({
-        active: true,
-        limit: 1,
-      });
-
-      if (!configurations.data.length) {
-        console.log("[Stripe] Creating default portal configuration");
-        await stripe.billingPortal.configurations.create({
-          business_profile: {
-            headline: "Portal de Assinaturas da Igreja",
-          },
-          features: {
-            subscription_cancel: { enabled: true },
-            subscription_pause: { enabled: false },
-            customer_update: { 
-              enabled: true,
-              allowed_updates: ['email', 'address', 'phone'],
-            },
-            invoice_history: { enabled: true },
-            payment_method_update: { enabled: true },
-          },
-        });
-      }
-
-      // Create portal session
       console.log("[Stripe] Creating portal session for customer:", stripeCustomerId);
-      const session = await stripe.billingPortal.sessions.create({
-        customer: stripeCustomerId,
-        return_url: `${req.protocol}://${req.get('host')}/assinaturas`,
-        configuration: configurations.data[0]?.id,
-      });
+
+      // Create portal session with minimal configuration
+      const session = await createPortalSession(
+        stripeCustomerId,
+        `${req.protocol}://${req.get('host')}/assinaturas`
+      );
 
       console.log("[Stripe] Portal session created:", session.url);
       res.json({ url: session.url });
