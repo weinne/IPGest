@@ -2,6 +2,9 @@ import Stripe from 'stripe';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY must be set');
+} else {
+  console.log('[Stripe] Inicializando com a chave secreta (primeiros 8 caracteres):', 
+    process.env.STRIPE_SECRET_KEY.substring(0, 8) + '...');
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
