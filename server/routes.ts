@@ -751,7 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(
           and(
             eq(mandatos_pastores.igreja_id, igreja_id),
-            data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
+                        data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
             data_fim ? lte(mandatos_pastores.data_fim, new Date(data_fim as string)) : undefined
           )
         );
@@ -905,56 +905,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log(`[Subscription Plans] Fetching plans for user: ${req.user?.username}`);
-      const plans = await storage.listSubscriptionPlans();
+
+      // Get products from Stripe
+      const products = await stripe.products.list({
+        active: true,
+        expand: ['data.default_price'],
+      });
+
+      // Format the response
+      const plans = products.data.map(product => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        features: product.features || [],
+        price_id: (product.default_price as Stripe.Price)?.id,
+        unit_amount: ((product.default_price as Stripe.Price)?.unit_amount || 0) / 100,
+        currency: (product.default_price as Stripe.Price)?.currency,
+      }));
+
       res.json(plans);
     } catch (error) {
-      console.error("[Subscription Plans] Error fetching plans:", error);
+      console.error("[Subscription Plans] Error fetching plans from Stripe:", error);
       res.status(500).json({ message: (error as Error).message });
-    }
-  });
-
-  app.post("/api/subscription-plans", isAdmin, async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
-
-    try {
-      logSubscriptionOp(req, "Create Plan", req.body);
-
-      // First create the product in Stripe
-      const product = await stripe.products.create({
-        name: req.body.name,
-        description: req.body.description,
-      });
-      console.log("[Stripe] Product created:", product.id);
-
-      // Create the price in Stripe
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: Math.round(req.body.price * 100), // Convert to cents and ensure integer
-        currency: 'brl',
-        recurring: {
-          interval: 'month',
-        },
-      });
-      console.log("[Stripe] Price created:", price.id);
-
-      // Create the plan in our database
-      const plan = await storage.createSubscriptionPlan({
-        name: req.body.name,
-        description: req.body.description,
-        stripe_price_id: price.id,
-        stripe_product_id: product.id,
-        features: req.body.features,
-        status: 'active',
-      });
-
-      logSubscriptionOp(req, "Plan Created", plan);
-      res.status(201).json(plan);
-    } catch (error) {
-      console.error("[Subscription Plans] Error creating plan:", error);
-      res.status(400).json({ 
-        message: "Erro ao criar plano de assinatura",
-        details: (error as Error).message 
-      });
     }
   });
 
@@ -984,14 +956,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[Stripe] Creating subscription for customer:", customer.id);
       const subscription = await createSubscription(
         customer.id,
-        req.body.stripe_price_id
+        req.body.price_id // Changed from stripe_price_id to price_id to match frontend
       );
       console.log("[Stripe] Subscription created:", subscription.id);
 
       // Store subscription in our database
       const dbSubscription = await storage.createSubscription({
         igreja_id: req.user.igreja_id,
-        plan_id: req.body.plan_id,
+        plan_id: subscription.id, // Using Stripe subscription ID as plan_id
         stripe_subscription_id: subscription.id,
         stripe_customer_id: customer.id,
         status: subscription.status as any,
@@ -1010,58 +982,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Erro ao criar assinatura",
         details: (error as Error).message 
       });
-    }
-  });
-
-  app.get("/api/subscriptions/current", async (req, res) => {
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-
-    try {
-      const subscription = await storage.getSubscriptionByIgreja(req.user.igreja_id);
-      if (!subscription) {
-        return res.status(404).json({ message: "No active subscription found" });
-      }
-
-      // Get the latest status from Stripe
-      const stripeSubscription = await getSubscription(subscription.stripe_subscription_id);
-
-      // Update our database if status changed
-      if (stripeSubscription.status !== subscription.status) {
-        await storage.updateSubscription(subscription.id, {
-          status: stripeSubscription.status as any,
-        });
-      }
-
-      res.json({
-        ...subscription,
-        status: stripeSubscription.status,
-      });
-    } catch (error) {
-      console.error("Error fetching subscription:", error);
-      res.status(500).json({ message: (error as Error).message });
-    }
-  });
-
-  app.post("/api/subscriptions/cancel", async (req, res) => {
-    if (!req.user?.igreja_id) return res.sendStatus(403);
-
-    try {
-      const subscription = await storage.getSubscriptionByIgreja(req.user.igreja_id);
-      if (!subscription) {
-        return res.status(404).json({ message: "No active subscription found" });
-      }
-
-      await cancelSubscription(subscription.stripe_subscription_id);
-
-      await storage.updateSubscription(subscription.id, {
-        status: "canceled",
-        canceled_at: new Date(),
-      });
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error canceling subscription:", error);
-      res.status(400).json({ message: (error as Error).message });
     }
   });
 
