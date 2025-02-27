@@ -751,7 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(
           and(
             eq(mandatos_pastores.igreja_id, igreja_id),
-                        data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
+            data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
             data_fim ? lte(mandatos_pastores.data_fim, new Date(data_fim as string)) : undefined
           )
         );
@@ -1036,6 +1036,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error('[Stripe Webhook] Error:', err);
       res.status(400).send(`Webhook Error: ${(err as Error).message}`);
+    }
+  });
+
+  app.post("/api/billing-portal", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
+    if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não identificada" });
+
+    try {
+      // Get igreja details
+      const igreja = await db.query.igrejas.findFirst({
+        where: eq(igrejas.id, req.user.igreja_id),
+      });
+
+      if (!igreja) {
+        return res.status(404).json({ message: "Igreja não encontrada" });
+      }
+
+      // Create Stripe Billing Portal session
+      const session = await stripe.billingPortal.sessions.create({
+        customer: igreja.stripe_customer_id,
+        return_url: `${req.protocol}://${req.get('host')}/assinaturas`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("[Billing Portal] Error creating session:", error);
+      res.status(500).json({ 
+        message: "Erro ao criar sessão do portal de assinaturas",
+        details: (error as Error).message 
+      });
     }
   });
 
