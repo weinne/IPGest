@@ -1164,6 +1164,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/create-checkout-session", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
+    if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não encontrada" });
+
+    try {
+      // Get igreja details
+      const igreja = await db.query.igrejas.findFirst({
+        where: eq(igrejas.id, req.user.igreja_id)
+      });
+
+      if (!igreja) {
+        return res.status(404).json({ message: "Igreja não encontrada" });
+      }
+
+      // Get or create Stripe customer
+      let stripeCustomerId = igreja.stripe_customer_id;
+
+      if (!stripeCustomerId) {
+        console.log("[Stripe] Creating customer for igreja:", igreja.id);
+        const customer = await createCustomer({
+          id: igreja.id,
+          nome: igreja.nome,
+          email: igreja.email
+        });
+        stripeCustomerId = customer.id;
+
+        // Save Stripe customer ID
+        await db.update(igrejas)
+          .set({ stripe_customer_id: stripeCustomerId })
+          .where(eq(igrejas.id, igreja.id));
+
+        console.log("[Stripe] Customer created and saved:", customer.id);
+      }
+
+      // Create Checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        line_items: [
+          {
+            price: req.body.priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${req.protocol}://${req.get('host')}/assinaturas?success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/assinaturas?canceled=true`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("[Checkout] Error:", error);
+      res.status(500).json({ 
+        message: "Erro ao criar sessão de checkout",
+        details: (error as Error).message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
