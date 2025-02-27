@@ -67,10 +67,36 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     const customer = await stripe.customers.retrieve(customerId);
     console.log('[Stripe] Customer verified:', customer.id);
 
-    // Create basic portal session without custom configuration
+    // Create configuration with the specific product
+    const configuration = await stripe.billingPortal.configurations.create({
+      features: {
+        customer_update: {
+          allowed_updates: ['email', 'address', 'phone'],
+          enabled: true,
+        },
+        invoice_history: { enabled: true },
+        payment_method_update: { enabled: true },
+        subscription_cancel: { enabled: true },
+        subscription_pause: { enabled: false },
+        subscription_update: {
+          enabled: true,
+          default_allowed_updates: ['price', 'quantity'],
+          proration_behavior: 'create_prorations',
+          products: ['prod_Rqd8mXTzFJQCVh'], // Produto específico configurado no Stripe
+        },
+      },
+      business_profile: {
+        headline: 'Gerenciar sua assinatura',
+      },
+    });
+
+    console.log('[Stripe] Portal configuration created:', configuration.id);
+
+    // Create portal session with the new configuration
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl,
+      configuration: configuration.id,
     });
 
     console.log('[Stripe] Portal session created:', session.url);
