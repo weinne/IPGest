@@ -14,29 +14,32 @@ export async function listActiveProducts() {
   console.log('[Stripe] API Key:', process.env.STRIPE_SECRET_KEY?.substring(0, 8) + '...');
 
   try {
+    // Primeiro, vamos buscar o produto específico
+    const product = await stripe.products.retrieve('prod_Rqd8mXTzFJQCVh');
+    console.log('[Stripe] Product:', product);
+
+    // Agora, vamos buscar os preços associados a este produto
     const prices = await stripe.prices.list({
+      product: 'prod_Rqd8mXTzFJQCVh',
       active: true,
-      expand: ['data.product'],
       type: 'recurring',
     });
 
     console.log('[Stripe] Raw prices response:', JSON.stringify(prices, null, 2));
 
-    const products = prices.data.map(price => {
-      const product = price.product as Stripe.Product;
-      return {
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        features: (product.features || []).map(f => f.name),
-        price_id: price.id,
-        unit_amount: price.unit_amount ? price.unit_amount / 100 : 0,
-        currency: price.currency,
-      };
-    });
+    // Formatar a resposta
+    const formattedProduct = {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      features: product.features || [],
+      price_id: prices.data[0]?.id, // Pega o primeiro preço ativo
+      unit_amount: prices.data[0]?.unit_amount ? prices.data[0].unit_amount / 100 : 0,
+      currency: prices.data[0]?.currency || 'brl',
+    };
 
-    console.log('[Stripe] Formatted products:', JSON.stringify(products, null, 2));
-    return { data: products };
+    console.log('[Stripe] Formatted product:', formattedProduct);
+    return { data: [formattedProduct] };
   } catch (error) {
     console.error('[Stripe] Error listing products:', error);
     throw error;
