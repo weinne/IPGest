@@ -757,7 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
       const ocorrencias = [
-        ...membrosOcorrencias,
+        ...membrosOOcorrencias,
         ...liderancasOcorrencias,
         ...pastoresOcorrencias
       ].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
@@ -912,17 +912,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expand: ['data.default_price'],
       });
 
+      console.log("[Stripe] Products response:", JSON.stringify(products, null, 2));
+
       // Format the response
       const plans = products.data.map(product => ({
         id: product.id,
         name: product.name,
         description: product.description,
-        features: product.features || [],
-        price_id: (product.default_price as Stripe.Price)?.id,
-        unit_amount: ((product.default_price as Stripe.Price)?.unit_amount || 0) / 100,
-        currency: (product.default_price as Stripe.Price)?.currency,
+        features: product.features?.map(f => f.name) || [],
+        price_id: (product.default_price as any)?.id,
+        unit_amount: ((product.default_price as any)?.unit_amount || 0) / 100,
+        currency: (product.default_price as any)?.currency,
       }));
 
+      console.log("[Stripe] Formatted plans:", JSON.stringify(plans, null, 2));
       res.json(plans);
     } catch (error) {
       console.error("[Subscription Plans] Error fetching plans from Stripe:", error);
