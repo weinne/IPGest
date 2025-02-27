@@ -67,10 +67,53 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     const customer = await stripe.customers.retrieve(customerId);
     console.log('[Stripe] Customer verified:', customer.id);
 
-    // Create portal session
+    // List existing configurations
+    const configurations = await stripe.billingPortal.configurations.list();
+    console.log('[Stripe] Existing configurations:', configurations.data.length);
+
+    let configurationId;
+
+    if (configurations.data.length > 0) {
+      // Use existing configuration
+      configurationId = configurations.data[0].id;
+      console.log('[Stripe] Using existing configuration:', configurationId);
+    } else {
+      // Create new configuration
+      console.log('[Stripe] Creating new configuration with product prod_Rqd8mXTzFJQCVh');
+      const configuration = await stripe.billingPortal.configurations.create({
+        business_profile: {
+          headline: 'Gerenciar sua assinatura',
+          privacy_policy_url: 'https://example.com/privacy',
+          terms_of_service_url: 'https://example.com/terms',
+        },
+        features: {
+          subscription_update: {
+            enabled: true,
+            default_allowed_updates: ['price'],
+            products: [
+              {
+                product: 'prod_Rqd8mXTzFJQCVh',
+                prices: ['price_1OtkPbCQwUCwQTDHBupEOAQH']
+              }
+            ]
+          },
+          customer_update: {
+            allowed_updates: ['email', 'address'],
+            enabled: true
+          },
+          invoice_history: { enabled: true },
+          payment_method_update: { enabled: true }
+        },
+      });
+      configurationId = configuration.id;
+      console.log('[Stripe] Created new configuration:', configurationId);
+    }
+
+    // Create portal session with configuration
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl,
+      configuration: configurationId
     });
 
     console.log('[Stripe] Portal session created:', session.url);
