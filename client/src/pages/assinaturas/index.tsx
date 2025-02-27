@@ -6,6 +6,21 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { CreditCard, Loader2 } from "lucide-react";
 
+// Plano estático como fallback
+const PLANO_PADRAO = {
+  id: "prod_Rqd8mXTzFJQCVh",
+  name: "Plano Pro",
+  description: "Plano completo para gestão da igreja",
+  features: [
+    { name: "Gestão de membros" },
+    { name: "Relatórios e estatísticas" },
+    { name: "Controle de grupos e sociedades" },
+    { name: "Gestão de liderança" },
+  ],
+  unit_amount: 40,
+  currency: "brl"
+};
+
 export default function AssinaturasPage() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -15,7 +30,9 @@ export default function AssinaturasPage() {
     queryKey: ['/api/subscription-plans'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/subscription-plans');
-      return response.json();
+      const data = await response.json();
+      console.log('Resposta da API:', data);
+      return data;
     },
   });
 
@@ -57,6 +74,11 @@ export default function AssinaturasPage() {
     },
   });
 
+  // Usar o plano padrão se a API não retornar dados
+  const planos = productsQuery.data?.data?.length > 0 
+    ? productsQuery.data.data 
+    : [PLANO_PADRAO];
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navigation />
@@ -75,7 +97,7 @@ export default function AssinaturasPage() {
             </div>
           ) : (
             <div className="grid gap-8 mt-8">
-              {productsQuery.data?.data.map((plano: any) => (
+              {planos.map((plano) => (
                 <div key={plano.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                   <h3 className="text-2xl font-semibold">{plano.name}</h3>
                   <p className="text-3xl font-bold mt-4">
