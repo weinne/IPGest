@@ -751,8 +751,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(
           and(
             eq(mandatos_pastores.igreja_id, igreja_id),
-            datainicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
-            data_fim ? lte(mandatos_pastores.data_fim, new Date(data_fim as string)) : undefined
+            data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
+            data_fim ? lte(mandatos_pastores.data_fim, new Date(datafim as string)) : undefined
           )
         );
 
@@ -1107,7 +1107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não identificada" });
 
     try {
-      console.log("[Portal] Redirecting to portal for igreja:", req.user.igreja_id);
+      console.log("[Portal] Creating portal session for igreja:", req.user.igreja_id);
 
       // Get igreja details
       const igreja = await db.query.igrejas.findFirst({
@@ -1141,12 +1141,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Stripe] Customer created and saved:", customer.id);
       }
 
+      // Create portal configuration if it doesn't exist
+      const configurations = await stripe.billingPortal.configurations.list({
+        active: true,
+        limit: 1,
+      });
+
+      if (!configurations.data.length) {
+        console.log("[Stripe] Creating default portal configuration");
+        await stripe.billingPortal.configurations.create({
+          business_profile: {
+            headline: "Portal de Assinaturas da Igreja",
+          },
+          features: {
+            subscription_cancel: { enabled: true },
+            subscription_pause: { enabled: false },
+            customer_update: { 
+              enabled: true,
+              allowed_updates: ['email', 'address', 'phone'],
+            },
+            invoice_history: { enabled: true },
+            payment_method_update: { enabled: true },
+          },
+        });
+      }
+
       // Create portal session
+      console.log("[Stripe] Creating portal session for customer:", stripeCustomerId);
       const session = await stripe.billingPortal.sessions.create({
         customer: stripeCustomerId,
         return_url: `${req.protocol}://${req.get('host')}/assinaturas`,
+        configuration: configurations.data[0]?.id,
       });
 
+      console.log("[Stripe] Portal session created:", session.url);
       res.json({ url: session.url });
     } catch (error) {
       console.error("[Portal] Error:", error);
