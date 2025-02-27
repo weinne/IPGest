@@ -23,7 +23,7 @@ import {
   subscription_plans,
   subscriptions
 } from "@shared/schema";
-import { stripe, createCustomer, createSubscription, cancelSubscription, updateSubscription, getSubscription, listActiveProducts, createPortalSession } from "./stripe";
+import { stripe, createCustomer, createSubscription, cancelSubscription, updateSubscription, getSubscription, listActiveProducts, createPortalSession, hasActiveSubscription } from "./stripe";
 
 const scryptAsync = promisify(scrypt);
 
@@ -753,8 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eq(mandatos_pastores.igreja_id, igreja_id),
             data_inicio ? gte(mandatos_pastores.data_inicio, new Date(data_inicio as string)) : undefined,
             data_fim ? lte(mandatos_pastores.data_fim, new Date(data_fim as string)) : undefined
-          )
-        );
+          )        );
 
       const ocorrencias = [
         ...membrosOcorrencias,
@@ -1104,62 +1103,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/subscription-portal", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
-    if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não identificada" });
+    if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não encontrada" });
 
     try {
       console.log("[Portal] Creating portal session for igreja:", req.user.igreja_id);
 
-      // Get igreja details
       const igreja = await db.query.igrejas.findFirst({
-        where: eq(igrejas.id, req.user.igreja_id),
+        where: eq(igrejas.id, req.user.igreja_id)
       });
 
       if (!igreja) {
-        console.log("[Portal] Igreja not found:", req.user.igreja_id);
         return res.status(404).json({ message: "Igreja não encontrada" });
       }
 
-      console.log("[Portal] Igreja details:", {
-        id: igreja.id,
-        nome: igreja.nome,
-        stripe_customer_id: igreja.stripe_customer_id
-      });
+      console.log("[Portal] Igreja details:", igreja);
 
-      let stripeCustomerId = igreja.stripe_customer_id;
-
-      // If no Stripe customer exists, create one
-      if (!stripeCustomerId) {
-        console.log("[Stripe] Creating customer for igreja:", igreja.id);
-        const customer = await createCustomer({
-          id: igreja.id,
-          nome: igreja.nome || `Igreja #${igreja.id}`,
-          email: igreja.email
-        });
-        stripeCustomerId = customer.id;
-
-        // Update igreja with the new customer ID
-        await db
-          .update(igrejas)
-          .set({ stripe_customer_id: customer.id })
-          .where(eq(igrejas.id, igreja.id));
-
-        console.log("[Stripe] Customer created and saved:", customer.id);
+      if (!igreja.stripe_customer_id) {
+        return res.status(400).json({ message: "Igreja não possui assinatura" });
       }
 
-      // Create portal session using the helper function
-      console.log("[Stripe] Creating portal session for customer:", stripeCustomerId);
+      // Verificar se tem assinatura ativa
+      const hasSubscription = await hasActiveSubscription(igreja.stripe_customer_id);
+      if (!hasSubscription) {
+        return res.status(400).json({ message: "Igreja não possui assinatura ativa" });
+      }
+
       const session = await createPortalSession(
-        stripeCustomerId,
+        igreja.stripe_customer_id,
         `${req.protocol}://${req.get('host')}/assinaturas`
       );
 
-      console.log("[Stripe] Portal session created:", session.url);
-      res.json({ url: session.url });
+      res.json(session);
     } catch (error) {
       console.error("[Portal] Error:", error);
       res.status(500).json({ 
-        message: "Erro ao acessar portal de assinaturas",
-        details: (error as Error).message,
+        message: "Erro ao acessar portal",
+        details: (error as Error).message 
       });
     }
   });

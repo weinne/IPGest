@@ -90,7 +90,6 @@ export async function createPortalSession(customerId: string, returnUrl: string)
       console.log('[Stripe] Using existing configuration:', configurationId);
     } else {
       // Create new configuration
-      console.log('[Stripe] Creating new configuration with product prod_Rqd8mXTzFJQCVh');
       const configuration = await stripe.billingPortal.configurations.create({
         business_profile: {
           headline: 'Gerenciar sua assinatura',
@@ -100,13 +99,7 @@ export async function createPortalSession(customerId: string, returnUrl: string)
         features: {
           subscription_update: {
             enabled: true,
-            default_allowed_updates: ['price'],
-            products: [
-              {
-                product: 'prod_Rqd8mXTzFJQCVh',
-                prices: ['price_1OtkPbCQwUCwQTDHBupEOAQH']
-              }
-            ]
+            default_allowed_updates: ['price']
           },
           customer_update: {
             allowed_updates: ['email', 'address'],
@@ -132,6 +125,20 @@ export async function createPortalSession(customerId: string, returnUrl: string)
   } catch (error) {
     console.error('[Stripe] Error creating portal session:', error);
     throw error;
+  }
+}
+
+export async function hasActiveSubscription(customerId: string): Promise<boolean> {
+  try {
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: 'active',
+      limit: 1
+    });
+    return subscriptions.data.length > 0;
+  } catch (error) {
+    console.error('[Stripe] Error checking subscription:', error);
+    return false;
   }
 }
 

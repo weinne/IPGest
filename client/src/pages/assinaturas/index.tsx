@@ -113,7 +113,7 @@ export default function AssinaturasPage() {
             <Button 
               variant="outline"
               onClick={() => portalMutation.mutate()}
-              disabled={portalMutation.isPending}
+              disabled={portalMutation.isPending || portalMutation.isError}
             >
               {portalMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
