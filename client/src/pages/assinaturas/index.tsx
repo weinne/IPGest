@@ -8,7 +8,7 @@ import { CreditCard, Loader2 } from "lucide-react";
 
 // Plano estático como fallback
 const PLANO_PADRAO = {
-  id: "prod_Rqd8mXTzFJQCVh",
+  id: "prod_Rqn8FO2oF9OF4w",
   name: "Plano Pro",
   description: "Plano completo para gestão da igreja",
   features: [
@@ -17,6 +17,7 @@ const PLANO_PADRAO = {
     { name: "Controle de grupos e sociedades" },
     { name: "Gestão de liderança" },
   ],
+  price_id: "price_1Qx5Y4D80OO610Mc4iLE1K5d",
   unit_amount: 40,
   currency: "brl"
 };
