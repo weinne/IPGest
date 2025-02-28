@@ -23,12 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -36,7 +31,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { insertMembroSchema, type InsertMembro } from "@shared/schema";
 import { Loader2, UserPlus, Upload } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import cn from 'classnames';
+import cn from "classnames";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
@@ -44,8 +39,8 @@ import { Separator } from "@/components/ui/separator";
 
 // CPF formatting function
 const formatCPF = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  const digits = value.replace(/\D/g, "");
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 };
 
 export function NovoMembroDialog() {
@@ -80,7 +75,7 @@ export function NovoMembroDialog() {
       tipo: "comungante",
       tipo_admissao: "profissao_fe",
       numero_rol: undefined,
-      data_admissao: new Date().toISOString().split('T')[0], // Pré-preenchido com data atual
+      data_admissao: new Date().toISOString().split("T")[0], // Pré-preenchido com data atual
       data_exclusao: null,
       motivo_exclusao: null,
     },
@@ -105,11 +100,11 @@ export function NovoMembroDialog() {
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
       if (!response.ok) {
-        throw new Error('Erro ao buscar endereço.');
+        throw new Error("Erro ao buscar endereço.");
       }
       const data = await response.json();
       if (data.erro) {
-        throw new Error('CEP inválido.');
+        throw new Error("CEP inválido.");
       }
       return data;
     } catch (error) {
@@ -129,9 +124,9 @@ export function NovoMembroDialog() {
     } catch (error) {
       console.error("Erro ao buscar CEP:", error);
       toast({
-        title: 'Erro ao buscar endereço',
+        title: "Erro ao buscar endereço",
         description: (error as Error).message,
-        variant: 'destructive'
+        variant: "destructive",
       });
     }
   };
@@ -141,8 +136,8 @@ export function NovoMembroDialog() {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
-          if (key === 'foto' && value instanceof File) {
-            formData.append('foto', value);
+          if (key === "foto" && value instanceof File) {
+            formData.append("foto", value);
           } else {
             formData.append(key, String(value));
           }
@@ -197,18 +192,28 @@ export function NovoMembroDialog() {
 
         <ScrollArea className="flex-1 px-6 overflow-y-auto">
           <Form {...form}>
-            <form id="new-member-form" onSubmit={form.handleSubmit((data) => {
-              const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
-              const file = fileInput?.files?.[0];
-              mutation.mutate({ ...data, foto: file });
-            })} className="space-y-6 py-4">
-
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <form
+              id="new-member-form"
+              onSubmit={form.handleSubmit((data) => {
+                const fileInput =
+                  document.querySelector<HTMLInputElement>(
+                    'input[type="file"]',
+                  );
+                const file = fileInput?.files?.[0];
+                mutation.mutate({ ...data, foto: file });
+              })}
+              className="space-y-6 py-4"
+            >
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="basic">Básico</TabsTrigger>
                   <TabsTrigger value="personal">Pessoal</TabsTrigger>
                   <TabsTrigger value="contact">Contato</TabsTrigger>
-                  <TabsTrigger value="church">Igreja</TabsTrigger>
+                  <TabsTrigger value="church">Religião</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="basic" className="space-y-4">
@@ -254,7 +259,10 @@ export function NovoMembroDialog() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione o status" />
@@ -263,7 +271,82 @@ export function NovoMembroDialog() {
                           <SelectContent>
                             <SelectItem value="ativo">Ativo</SelectItem>
                             <SelectItem value="inativo">Inativo</SelectItem>
-                            <SelectItem value="disciplina">Em Disciplina</SelectItem>
+                            <SelectItem value="disciplina">
+                              Em Disciplina
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="data_admissao"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data de Admissão</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tipo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="comungante">
+                              Comungante
+                            </SelectItem>
+                            <SelectItem value="nao_comungante">
+                              Não Comungante
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tipo_admissao"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Admissão</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo de admissão" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="batismo">Batismo</SelectItem>
+                            <SelectItem value="profissao_fe">
+                              Profissão de Fé
+                            </SelectItem>
+                            <SelectItem value="transferencia">
+                              Transferência
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -279,17 +362,28 @@ export function NovoMembroDialog() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Motivo da Exclusão</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || undefined}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value || undefined}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione o motivo" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="transferencia">Transferência</SelectItem>
-                                <SelectItem value="excomunhao">Excomunhão</SelectItem>
-                                <SelectItem value="exclusao">Exclusão</SelectItem>
-                                <SelectItem value="falecimento">Falecimento</SelectItem>
+                                <SelectItem value="transferencia">
+                                  Transferência
+                                </SelectItem>
+                                <SelectItem value="excomunhao">
+                                  Excomunhão
+                                </SelectItem>
+                                <SelectItem value="exclusao">
+                                  Exclusão
+                                </SelectItem>
+                                <SelectItem value="falecimento">
+                                  Falecimento
+                                </SelectItem>
                                 <SelectItem value="pedido">A Pedido</SelectItem>
                               </SelectContent>
                             </Select>
@@ -364,7 +458,10 @@ export function NovoMembroDialog() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Sexo</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione o sexo" />
@@ -404,18 +501,27 @@ export function NovoMembroDialog() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estado Civil</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || undefined}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione o estado civil" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                            <SelectItem value="solteiro">
+                              Solteiro(a)
+                            </SelectItem>
                             <SelectItem value="casado">Casado(a)</SelectItem>
-                            <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                            <SelectItem value="divorciado">
+                              Divorciado(a)
+                            </SelectItem>
                             <SelectItem value="viuvo">Viúvo(a)</SelectItem>
-                            <SelectItem value="separado">Separado(a)</SelectItem>
+                            <SelectItem value="separado">
+                              Separado(a)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -572,71 +678,11 @@ export function NovoMembroDialog() {
                           <Input
                             type="number"
                             {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
                           />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="data_admissao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Admissão</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="tipo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="comungante">Comungante</SelectItem>
-                            <SelectItem value="nao_comungante">Não Comungante</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="tipo_admissao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Admissão</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o tipo de admissão" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="batismo">Batismo</SelectItem>
-                            <SelectItem value="profissao_fe">Profissão de Fé</SelectItem>
-                            <SelectItem value="transferencia">Transferência</SelectItem>
-                          </SelectContent>
-                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
