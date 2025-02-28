@@ -6,7 +6,7 @@ import {
   boolean,
   date,
   timestamp,
-  jsonb,
+  json,
   varchar,
   index,
 } from "drizzle-orm/pg-core";
@@ -690,8 +690,8 @@ export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export const session = pgTable(
   "session",
   {
-    sid: varchar("sid", { length: 255 }).notNull().primaryKey(),
-    sess: jsonb("sess").notNull(),
+    sid: varchar("sid").notNull().primaryKey(),
+    sess: json("sess").notNull(),
     expire: timestamp("expire", { precision: 6 }).notNull(),
   },
   (table) => {
