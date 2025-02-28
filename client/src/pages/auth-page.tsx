@@ -22,11 +22,8 @@ import { Loader2 } from "lucide-react";
 // Assuming PageContainer is defined elsewhere and handles theme switching
 // This is a placeholder;  replace with the actual PageContainer component
 const PageContainer = ({ children }) => (
-  <div className="min-h-screen">
-    {children}
-  </div>
+  <div className="min-h-screen">{children}</div>
 );
-
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
@@ -195,7 +192,7 @@ export default function AuthPage() {
                         name="igreja_presbitero"
                         render={({ field }) => (
                           <FormItem className="mb-6">
-                            <FormLabel>Presbítero Responsável</FormLabel>
+                            <FormLabel>Pessoa Responsável</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>

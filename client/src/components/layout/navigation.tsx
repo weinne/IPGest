@@ -7,9 +7,10 @@ import {
   Menu,
   LogOut,
   ChevronDown,
-  UserCog,
+  Users,
   Settings,
   User,
+  CreditCard,
 } from "lucide-react";
 import { allRoutes } from "@/lib/routes";
 import {
@@ -24,22 +25,14 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navigation() {
+
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
 
   const isAdmin = user?.role === "administrador";
 
   // Only add the users management route for admins
-  const routes = isAdmin
-    ? [
-        ...allRoutes,
-        {
-          path: "/usuarios",
-          label: "Usuários",
-          icon: UserCog,
-        },
-      ]
-    : allRoutes;
+  const routes = isAdmin ? [...allRoutes] : allRoutes;
 
   const NavLinks = () => (
     <>
@@ -128,6 +121,18 @@ export default function Navigation() {
                   <DropdownMenuItem>
                     <User className="mr-2 h-4 w-4" />
                     Meu Perfil
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/assinaturas">
+                  <DropdownMenuItem>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Assinaturas
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/usuarios">
+                  <DropdownMenuItem>
+                    <Users className="mr-2 h-4 w-4" />
+                    Usuários
                   </DropdownMenuItem>
                 </Link>
                 <DropdownMenuSeparator />
