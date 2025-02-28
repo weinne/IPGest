@@ -8,6 +8,7 @@ import {
   timestamp,
   jsonb,
   varchar,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -686,25 +687,14 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 
 // Definição da tabela de sessão para connect-pg-simple
-export const session = pgTable("session", {
-  sid: varchar("sid", { length: 255 }).notNull().primaryKey(),
-  sess: jsonb("sess").notNull(),
-  expire: timestamp("expire").notNull(),
-}, (table) => {
-  return [
-    index("IDX_session_expire").on(table.expire)
-  ];
-});
-import {
-  pgTable,
-  text,
-  serial,
-  integer,
-  boolean,
-  date,
-  timestamp,
-  jsonb,
-  varchar,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+export const session = pgTable(
+  "session",
+  {
+    sid: varchar("sid").notNull().primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => {
+    return [index("IDX_session_expire").on(table.expire)];
+  },
+);
