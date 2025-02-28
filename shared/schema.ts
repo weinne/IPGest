@@ -690,9 +690,9 @@ export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export const session = pgTable(
   "session",
   {
-    sid: varchar("sid").notNull().primaryKey(),
+    sid: varchar("sid", { length: 255 }).notNull().primaryKey(),
     sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
+    expire: timestamp("expire", { precision: 6 }).notNull(),
   },
   (table) => {
     return [index("IDX_session_expire").on(table.expire)];
