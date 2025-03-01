@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -58,12 +61,13 @@ app.use((req, res, next) => {
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client
-  const port = 5000;
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+  const host = process.env.HOST || "0.0.0.0";
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host,
+    reusePort: process.platform === "win32" ? false : true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on ${host}:${port}`);
   });
 })();
