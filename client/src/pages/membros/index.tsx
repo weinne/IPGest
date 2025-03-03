@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/layout/navigation";
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { NovoMembroDialog } from "./novo-membro-dialog";
 import { EditarMembroDialog } from "./editar-membro-dialog";
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { UserCircle } from "lucide-react";
@@ -148,15 +148,52 @@ const columns = [
 export default function MembrosPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const observerElem = useRef<HTMLDivElement | null>(null);
 
-  const { data: membros = [], isLoading } = useQuery<Membro[]>({
-    queryKey: ["/api/membros", user?.igreja_id], // Include igreja_id in the query key
-    enabled: !!user?.igreja_id, // Only fetch when igreja_id is available
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["/api/membros", user?.igreja_id],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await apiRequest("GET", `/api/membros?page=${pageParam}`);
+      return res.json();
+    },
+    getNextPageParam: (lastPage, pages) => {
+      if (lastPage.length === 0) return undefined;
+      return pages.length + 1;
+    },
+    enabled: !!user?.igreja_id,
   });
 
-  // Log para debug
-  console.log("Membros retornados da API:", membros);
-  console.log("Membros inativos:", membros.filter(m => m.status === "inativo"));
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0];
+      if (target.isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    },
+    [fetchNextPage, hasNextPage]
+  );
+
+  useEffect(() => {
+    const option = {
+      root: null,
+      rootMargin: "20px",
+      threshold: 0,
+    };
+    const observer = new IntersectionObserver(handleObserver, option);
+    if (observerElem.current) observer.observe(observerElem.current);
+    return () => {
+      if (observerElem.current) observer.unobserve(observerElem.current);
+    };
+  }, [handleObserver]);
+
+  const membros = data?.pages.flat() || [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -177,15 +214,11 @@ export default function MembrosPage() {
               <div className="text-center py-4">Carregando...</div>
             ) : (
               <>
-                {/* Log antes de renderizar a tabela */}
-                <div className="hidden">
-                  Total de membros: {membros.length}
-                  Membros por status: {JSON.stringify(membros.reduce((acc, m) => {
-                    acc[m.status] = (acc[m.status] || 0) + 1;
-                    return acc;
-                  }, {} as Record<string, number>))}
-                </div>
                 <DataTable columns={columns} data={membros} searchColumn="nome" />
+                <div ref={observerElem} className="h-10" />
+                {isFetchingNextPage && (
+                  <div className="text-center py-4">Carregando mais...</div>
+                )}
               </>
             )}
           </CardContent>

@@ -78,6 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Reset all queries to their initial state
       queryClient.resetQueries();
+
+      // Clear the infinite query cache for members data
+      queryClient.removeQueries(["/api/membros"]);
     },
     onError: (error: Error) => {
       toast({
