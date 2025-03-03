@@ -193,6 +193,12 @@ export default function MembrosPage() {
     };
   }, [handleObserver]);
 
+  useEffect(() => {
+    return () => {
+      queryClient.removeQueries(["/api/membros", user?.igreja_id]);
+    };
+  }, [queryClient, user?.igreja_id]);
+
   const membros = data?.pages.flat() || [];
 
   return (
