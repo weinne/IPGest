@@ -113,6 +113,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/membros", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.user?.igreja_id) return res.sendStatus(403);
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    try {
+      console.log("Buscando membros para igreja:", req.user.igreja_id);
+      const result = await db
+        .select()
+        .from(membros)
+        .where(eq(membros.igreja_id, req.user.igreja_id))
+        .orderBy(membros.nome)
+        .limit(limit)
+        .offset(offset);
+
+      console.log("Membros encontrados:", result.length);
+      res.json(result);
+    } catch (error) {
+      console.error("Erro ao buscar membros:", error);
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
   app.post("/api/membros", upload.single('foto'), canWrite, async (req, res) => {
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
