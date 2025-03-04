@@ -235,6 +235,18 @@ export class DatabaseStorage implements IStorage {
       cidade: igreja_cidade,
       estado: igreja_estado,
       presbitero: igreja_presbitero,
+      cnpj: null,
+      cep: null,
+      endereco: null,
+      numero: null,
+      complemento: null,
+      bairro: null,
+      website: null,
+      telefone: null,
+      email: null,
+      logo_url: null,
+      data_fundacao: null,
+      stripe_customer_id: null
     });
 
     // Então criar usuário associado com igreja
@@ -351,8 +363,8 @@ export class DatabaseStorage implements IStorage {
 
     // Ensure we only return results where membro exists and properly format the response
     const formattedResult = result
-      .filter(r => r.membro !== null)
-      .map(r => ({
+      .filter((r: { membro: null; }) => r.membro !== null)
+      .map((r: { membro: any; cargo: string; }) => ({
         membro: r.membro,
         cargo: r.cargo as string
       }));
@@ -484,13 +496,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(membros.igreja_id, igreja_id));
 
     if (filters.tipo) {
-      query = query.where(eq(membros.tipo, filters.tipo));
+      query = query.where(eq(membros.tipo, filters.tipo as "comungante" | "nao_comungante"));
     }
     if (filters.sexo) {
-      query = query.where(eq(membros.sexo, filters.sexo));
+      query = query.where(eq(membros.sexo, filters.sexo as "masculino" | "feminino"));
     }
     if (filters.status) {
-      query = query.where(eq(membros.status, filters.status));
+      query = query.where(eq(membros.status, filters.status as "ativo" | "inativo" | "disciplina"));
     }
     if (filters.data_admissao_inicio && filters.data_admissao_fim) {
       query = query.where(
@@ -770,9 +782,9 @@ export class DatabaseStorage implements IStorage {
       );
 
     return {
-      crescimento_mensal,
+      crescimento_mensal : crescimentoMensal,
       distribuicao_tipos: distribuicaoTipos,
-      distribuicao_sociedades,
+      distribuicao_sociedades : distribuicaoSociedades,
       distribuicao_idade: distribuicaoIdade
     };
   }

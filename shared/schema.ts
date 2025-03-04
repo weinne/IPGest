@@ -360,12 +360,14 @@ export const insertUserSchema = createInsertSchema(users)
     password: true,
   })
   .extend({
+    igreja_id: z.number(),
     igreja_nome: z.string().min(3),
     igreja_cidade: z.string().min(3),
     igreja_estado: z.string().length(2),
     igreja_presbitero: z.string().min(3),
     nome_completo: z.string().min(3).optional(),
     email: z.string().email("Email inválido").optional(),
+    role: z.enum(["administrador", "comum"]).default("comum"),
   });
 
 export const insertGrupoSchema = createInsertSchema(grupos)
