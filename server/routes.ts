@@ -97,13 +97,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     if (!req.user?.igreja_id) return res.sendStatus(403);
 
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
     try {
       console.log("Buscando membros para igreja:", req.user.igreja_id);
       const result = await db
         .select()
         .from(membros)
         .where(eq(membros.igreja_id, req.user.igreja_id))
-        .orderBy(membros.nome);
+        .orderBy(membros.nome)
+        .limit(limit)
+        .offset(offset);
 
       console.log("Membros encontrados:", result.length);
       res.json(result);

@@ -29,15 +29,22 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   searchColumn?: string;
+  fetchNextPage: () => void;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   searchColumn,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const observerElem = React.useRef<HTMLDivElement | null>(null);
 
   const table = useReactTable({
     data,
@@ -53,6 +60,29 @@ export function DataTable<TData, TValue>({
       columnFilters,
     },
   });
+
+  const handleObserver = React.useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0];
+      if (target.isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    },
+    [fetchNextPage, hasNextPage]
+  );
+
+  React.useEffect(() => {
+    const option = {
+      root: null,
+      rootMargin: "20px",
+      threshold: 0,
+    };
+    const observer = new IntersectionObserver(handleObserver, option);
+    if (observerElem.current) observer.observe(observerElem.current);
+    return () => {
+      if (observerElem.current) observer.unobserve(observerElem.current);
+    };
+  }, [handleObserver]);
 
   return (
     <div>
@@ -118,24 +148,10 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Anterior
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Próxima
-        </Button>
-      </div>
+      <div ref={observerElem} className="h-10" />
+      {isFetchingNextPage && (
+        <div className="text-center py-4">Carregando mais...</div>
+      )}
     </div>
   );
 }
