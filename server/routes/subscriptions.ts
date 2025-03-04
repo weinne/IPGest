@@ -11,7 +11,7 @@ import {
   hasActiveSubscription 
 } from "../stripe";
 import { logSubscriptionOp } from "../utils";
-import { storage } from "server/storage";
+import { storage } from "server/repositories/storage";
 
 /**
  * Router instance for handling subscription-related routes.

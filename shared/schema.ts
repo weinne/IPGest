@@ -360,7 +360,6 @@ export const insertUserSchema = createInsertSchema(users)
     password: true,
   })
   .extend({
-    igreja_id: z.number(),
     igreja_nome: z.string().min(3),
     igreja_cidade: z.string().min(3),
     igreja_estado: z.string().length(2),

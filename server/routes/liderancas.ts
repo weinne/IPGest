@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { storage } from '../storage';
+import { storage } from '../repositories/storage';
 import { db } from '../db';
 import { liderancas, pastores, mandatos_liderancas, mandatos_pastores } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';

@@ -1,5 +1,5 @@
 import express, { Router, Request } from 'express';
-import { storage } from '../storage';
+import { storage } from '../repositories/storage';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { igrejas } from '@shared/schema';
