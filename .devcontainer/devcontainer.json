@@ -1,0 +1,25 @@
+{
+  "name": "IPGest Dev Container",
+  "dockerFile": "Dockerfile",
+  "appPort": ["3000:3000"],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+      }
+    }
+  },
+  "containerEnv": {
+    "DATABASE_URL": "postgresql://postgres:postgres@127.0.0.1:5432/ipgest_db?sslmode=disable",
+    "PGDATABASE": "ipgest_db",
+    "PGHOST": "127.0.0.1",
+    "PGPORT": "5432",
+    "PGUSER": "postgres",
+    "PGPASSWORD": "postgres",
+    "PORT": "5000",
+    "HOST": "0.0.0.0",
+    "DATABASE_MODE": "local"
+  },
+  "postCreateCommand": "npm install && npm run db:push",
+  "remoteUser": "vscode"
+}

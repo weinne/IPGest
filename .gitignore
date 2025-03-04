@@ -4,6 +4,4 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
-.devcontainer
 .env
-supervisord.conf
