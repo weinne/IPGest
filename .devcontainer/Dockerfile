@@ -7,7 +7,7 @@ RUN apt-get update && \
 # Configura o PostgreSQL
 USER postgres
 RUN /etc/init.d/postgresql start && \
-    psql --command "CREATE USER postgres WITH SUPERUSER PASSWORD 'postgres';" && \
+ --help    psql --command "ALTER USER postgres WITH PASSWORD 'postgres';" && \
     createdb ipgest_db
 
 # Define o usuário de volta para vscode
