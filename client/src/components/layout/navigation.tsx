@@ -23,20 +23,37 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Navigation() {
-
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
 
   const isAdmin = user?.role === "administrador";
 
-  // Only add the users management route for admins
-  const routes = isAdmin ? [...allRoutes] : allRoutes;
+  // Buscar assinatura atual
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/subscription");
+      return response.json();
+    },
+  });
+
+  // Verificar se tem plano Pro
+  const hasPro = subscription?.status === "active" && subscription?.plan_id === import.meta.env.VITE_NEXT_PUBLIC_STRIPE_PROD_ID;
+
+  // Filtrar rotas baseado na assinatura
+  const availableRoutes = allRoutes.filter(route => {
+    if (route.path === "/membros") return true; // Módulo de membros sempre disponível
+    if (!isAdmin && route.path === "/usuarios") return false; // Módulo de usuários só para admin
+    return hasPro; // Demais módulos só com plano Pro
+  });
 
   const NavLinks = () => (
     <>
-      {routes.map((route) => {
+      {availableRoutes.map((route) => {
         const Icon = route.icon;
         return (
           <Link key={route.path} href={route.path}>
@@ -109,7 +126,7 @@ export default function Navigation() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {isAdmin && (
+                {isAdmin && hasPro && (
                   <Link href="/configuracoes">
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
@@ -129,12 +146,14 @@ export default function Navigation() {
                     Assinaturas
                   </DropdownMenuItem>
                 </Link>
-                <Link href="/usuarios">
-                  <DropdownMenuItem>
-                    <Users className="mr-2 h-4 w-4" />
-                    Usuários
-                  </DropdownMenuItem>
-                </Link>
+                {isAdmin && hasPro && (
+                  <Link href="/usuarios">
+                    <DropdownMenuItem>
+                      <Users className="mr-2 h-4 w-4" />
+                      Usuários
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                   <LogOut className="mr-2 h-4 w-4" />

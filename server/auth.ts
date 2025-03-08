@@ -68,7 +68,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    console.log("Registration request body:", req.body); // Adicionado log para depuração
+    console.log("Registration request body:", req.body);
     const existingUser = await storage.getUserByUsername(req.body.username);
     if (existingUser) {
       return res.status(400).send("Username already exists");
@@ -79,6 +79,19 @@ export function setupAuth(app: Express) {
         ...req.body,
         password: await hashPassword(req.body.password),
       });
+
+      // Criar assinatura gratuita
+      if (user.igreja_id) {
+        await storage.createSubscription({
+          igreja_id: user.igreja_id,
+          plan_id: process.env.VITE_NEXT_PUBLIC_STRIPE_FREE_PROD_ID!,
+          stripe_subscription_id: null,
+          stripe_customer_id: 'free_tier',
+          status: 'active',
+          current_period_start: new Date(),
+          current_period_end: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365), // 1 ano
+        });
+      }
 
       req.login(user, (err) => {
         if (err) return next(err);

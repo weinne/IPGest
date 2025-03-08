@@ -18,6 +18,35 @@ import { storage } from "server/repositories/storage";
  */
 const router = express.Router();
 
+// Rota para obter a assinatura atual
+router.get("/", async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
+  if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não identificada" });
+
+  try {
+    // Buscar assinatura ativa
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.igreja_id, req.user.igreja_id))
+      .where(eq(subscriptions.status, 'active'));
+
+    // Se não tem assinatura, retorna plano gratuito
+    if (!subscription) {
+      return res.json({
+        status: "active",
+        plan_id: process.env.VITE_NEXT_PUBLIC_STRIPE_FREE_PROD_ID,
+        plan_name: "Plano Free"
+      });
+    }
+
+    res.json(subscription);
+  } catch (error) {
+    console.error("[Subscription] Error fetching subscription:", error);
+    res.status(500).json({ message: "Erro ao buscar assinatura" });
+  }
+});
+
 // Rotas de planos de assinatura
 router.get("/plans", async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
@@ -76,7 +105,7 @@ router.post("/", async (req, res) => {
     // Store subscription in our database
     const dbSubscription = await storage.createSubscription({
       igreja_id: req.user.igreja_id,
-      plan_id: parseInt(subscription.id, 10),
+      plan_id: process.env.VITE_NEXT_PUBLIC_STRIPE_PROD_ID!, // Assinatura paga sempre será do plano pro
       stripe_subscription_id: subscription.id,
       stripe_customer_id: customer.id,
       status: subscription.status as any,
@@ -252,12 +281,17 @@ router.get("/portal", async (req, res) => {
 });
 
 // Sessão de checkout
-router.post("/create-checkout-session", async (req, res) => {
+router.post("/checkout", async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ message: "Não autenticado" });
   if (!req.user?.igreja_id) return res.status(403).json({ message: "Igreja não encontrada" });
 
   try {
     console.log("[Checkout] Iniciando sessão para igreja:", req.user.igreja_id);
+    console.log("[Checkout] Dados recebidos:", req.body);
+
+    if (!req.body.priceId) {
+      throw new Error("Price ID não fornecido");
+    }
 
     // Get igreja details
     const igreja = await db.query.igrejas.findFirst({
@@ -292,6 +326,7 @@ router.post("/create-checkout-session", async (req, res) => {
     }
 
     // Create Checkout session
+    console.log("[Stripe] Creating checkout session with price:", req.body.priceId);
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       line_items: [
@@ -306,7 +341,7 @@ router.post("/create-checkout-session", async (req, res) => {
       billing_address_collection: 'required',
       payment_method_types: ['card'],
       allow_promotion_codes: true,
-      locale: 'pt-BR', // Adiciona suporte ao português
+      locale: 'pt-BR',
     });
 
     console.log("[Stripe] Checkout session created:", session.url);

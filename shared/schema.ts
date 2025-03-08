@@ -236,9 +236,7 @@ export const subscriptions = pgTable("subscriptions", {
   igreja_id: integer("igreja_id")
     .references(() => igrejas.id)
     .notNull(),
-  plan_id: integer("plan_id")
-    .references(() => subscription_plans.id)
-    .notNull(),
+  plan_id: text("plan_id").notNull(),
   stripe_subscription_id: text("stripe_subscription_id").notNull(),
   stripe_customer_id: text("stripe_customer_id").notNull(),
   status: text("status", {

@@ -1,4 +1,6 @@
 import Stripe from 'stripe';
+import fs from 'fs';
+import path from 'path';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY must be set');
@@ -8,9 +10,51 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-02-24.acacia',
   typescript: true,
 });
+
+// Função para atualizar o arquivo .env
+async function updateEnvFile(freeProd: Stripe.Product, proProd: Stripe.Product, freePriceId: string, proPriceId: string) {
+  const envPath = path.join(process.cwd(), '.env');
+  let envContent = await fs.promises.readFile(envPath, 'utf-8');
+
+  // Separar o conteúdo em linhas
+  const lines = envContent.split('\n');
+  const updatedLines = lines.map(line => {
+    // Ignorar comentários e linhas vazias
+    if (line.trim().startsWith('#') || line.trim() === '') {
+      return line;
+    }
+
+    // Atualizar os valores correspondentes
+    if (line.includes('VITE_NEXT_PUBLIC_STRIPE_FREE_PROD_ID=')) {
+      return `VITE_NEXT_PUBLIC_STRIPE_FREE_PROD_ID="${freeProd.id}"`;
+    }
+    if (line.includes('VITE_NEXT_PUBLIC_STRIPE_FREE_PROD_PRICE_ID=')) {
+      return `VITE_NEXT_PUBLIC_STRIPE_FREE_PROD_PRICE_ID="${freePriceId}"`;
+    }
+    if (line.includes('VITE_NEXT_PUBLIC_STRIPE_PROD_ID=')) {
+      return `VITE_NEXT_PUBLIC_STRIPE_PROD_ID="${proProd.id}"`;
+    }
+    if (line.includes('VITE_NEXT_PUBLIC_STRIPE_PROD_PRICE_ID=')) {
+      return `VITE_NEXT_PUBLIC_STRIPE_PROD_PRICE_ID="${proPriceId}"`;
+    }
+
+    return line;
+  });
+
+  // Juntar as linhas de volta e escrever no arquivo
+  const newContent = updatedLines.join('\n');
+  await fs.promises.writeFile(envPath, newContent);
+
+  console.log('[Stripe] Arquivo .env atualizado com os IDs dos produtos e preços:', {
+    freeProdId: freeProd.id,
+    freePriceId,
+    proProdId: proProd.id,
+    proPriceId
+  });
+}
 
 export async function listActiveProducts() {
   console.log('[Stripe] Listing active products');
@@ -41,7 +85,7 @@ export async function listActiveProducts() {
           id: product.id,
           name: product.name,
           description: product.description,
-          features: product.features || [],
+          metadata: product.metadata,
           price_id: prices.data[0]?.id,
           unit_amount: prices.data[0]?.unit_amount ? prices.data[0].unit_amount / 100 : 0,
           currency: prices.data[0]?.currency || 'brl',
@@ -187,4 +231,76 @@ export async function listPaymentMethods(customerId: string) {
     customer: customerId,
     type: 'card',
   });
+}
+
+// Função para criar os produtos do Stripe
+export async function ensureStripeProducts() {
+  try {
+    console.log('[Stripe] Verificando produtos...');
+
+    // Buscar produtos existentes
+    const existingProducts = await stripe.products.list({
+      active: true,
+      limit: 100,
+    });
+
+    // Procurar produto Free existente
+    let freeProd = existingProducts.data.find(p => p.name === 'Plano Free');
+    if (!freeProd) {
+      console.log('[Stripe] Criando produto Free...');
+      freeProd = await stripe.products.create({
+        name: 'Plano Free',
+        description: 'Plano gratuito para gestão básica',
+        default_price_data: {
+          currency: 'brl',
+          unit_amount: 0,
+          recurring: {
+            interval: 'month'
+          }
+        }
+      });
+      console.log('[Stripe] Produto Free criado:', freeProd.id);
+    } else {
+      console.log('[Stripe] Produto Free já existe:', freeProd.id);
+    }
+
+    // Procurar produto Pro existente
+    let proProd = existingProducts.data.find(p => p.name === 'Plano Pro');
+    if (!proProd) {
+      console.log('[Stripe] Criando produto Pro...');
+      proProd = await stripe.products.create({
+        name: 'Plano Pro',
+        description: 'Plano completo para gestão da igreja',
+        default_price_data: {
+          currency: 'brl',
+          unit_amount: 4990,
+          recurring: {
+            interval: 'month'
+          }
+        }
+      });
+      console.log('[Stripe] Produto Pro criado:', proProd.id);
+    } else {
+      console.log('[Stripe] Produto Pro já existe:', proProd.id);
+    }
+
+    // Buscar os preços atuais
+    const freePrice = await stripe.prices.list({ product: freeProd.id, limit: 1 });
+    const proPrice = await stripe.prices.list({ product: proProd.id, limit: 1 });
+
+    // Atualizar as variáveis de ambiente com os IDs dos preços
+    const freePriceId = freePrice.data[0]?.id || freeProd.default_price as string;
+    const proPriceId = proPrice.data[0]?.id || proProd.default_price as string;
+
+    // Atualizar o arquivo .env
+    await updateEnvFile(freeProd, proProd, freePriceId, proPriceId);
+
+    return {
+      free: freeProd,
+      pro: proProd
+    };
+  } catch (error) {
+    console.error('[Stripe] Erro ao verificar/criar produtos:', error);
+    throw error;
+  }
 }
